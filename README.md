@@ -10,8 +10,10 @@ Symlinks cannot be used within this repo, since it may be stored on Dropbox. Tha
 
 ##   Installation / Usage   ##
 
-* Clone or sync the repo to its permanent location and run `install.sh`
-* Clone [the apjanke/oh-my-zsh-custom repo](https://github.com/apjanke/oh-my-zsh-custom) and link it at `~/.oh-my-zsh-custom`.
+* Clone or sync the repo to its permanent location
+ * `git clone https://github.com/apjanke/dotfiles.git`
+* Run `install.sh` from that cloned repo
+* Clone the [apjanke/oh-my-zsh-custom](https://github.com/apjanke/oh-my-zsh-custom) repo and symlink it at `~/.oh-my-zsh-custom`.
 
 `install.sh` will set up the appropriate links in the current user's home directory, overwriting any previous links or files. They will be linked to the location `install.sh` is run from. If you relocate the repo/synced directory, you'll need to re-run it.
 
@@ -63,4 +65,3 @@ The symlinks are only done one level deep. This will be an issue if there end up
 ##  License  ##
 
 All material in this project is licensed under the MIT License unless otherwise noted. See [LICENSE.md](LICENSE.md).
-
