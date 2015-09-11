@@ -1,0 +1,27 @@
+[ui]
+username = Andrew Janke <andrew@apjanke.net>
+merge = internal:merge
+
+[diff]
+git = 1
+showfunc = 1
+unified = 8
+
+[defaults]
+commit = -v
+
+[extensions]
+color =
+rebase =
+histedit =
+progress =
+transplant =
+pager =
+mq =
+
+[defaults]
+qnew = -U
+
+[mq]
+plain = True
+

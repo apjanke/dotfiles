@@ -1,0 +1,2 @@
+cp ~/bin/templates/cpp $1
+gvim $1

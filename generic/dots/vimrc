@@ -1,0 +1,12 @@
+set   ts=8
+set   shiftwidth=4
+set   sts=4
+set   cindent
+set   showmatch
+set   autoindent
+set   cpoptions-=m
+set   incsearch
+set   guioptions=agirL
+set   mousefocus
+syntax on
+filetype plugin indent on

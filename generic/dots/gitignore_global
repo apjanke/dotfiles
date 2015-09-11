@@ -1,0 +1,51 @@
+*~
+
+# Mac OS X
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+#ignore thumbnails created by windows
+Thumbs.db
+
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+# Matlab
+*.asv
+*.m~
+
+
+# NetBeans working files
+nbproject/private/
+*/nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# Visual Studio artifacts
+*.obj
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.sbr
+

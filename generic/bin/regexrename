@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+# script to rename files based on regexes
+
+my ($spat, @files) = @ARGV;
+
+die "Error: first arg must be s/foo/bar/ regex\n",
+    "Usage: $0 s/from/to/[gimosex] file1 ...\n"
+    unless $spat =~ /^s(.).*\1.*\1([gimosex])?$/;
+
+my $errs = 0;
+
+for (@files) {
+    my $f = $_;
+    eval $spat;
+    die "Error executing spat: $@\n"
+	if $@;
+    my $to = $_;
+    unless (rename $f, $to) {
+	warn "Warning: Failed renaming '$f' to '$to': $!\n";
+	$errs++;
+    }
+}
+
+exit !!$errs;
