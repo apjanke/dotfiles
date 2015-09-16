@@ -52,6 +52,9 @@ if [ -d "$HOME/bin" ]; then PATH="$HOME/bin:$PATH"; fi
 # Hack: unconditionally load the Ruby gem location I've been working with
 maybe_add_path "$HOME/.gem/ruby/2.0.0/bin"
 
+export GOPATH=$HOME/local/go-work
+maybe_add_path "$HOME/local/go-work/bin"
+
 # ls customization
 uname=`uname`
 if ls --version 2>/dev/null | grep GNU &>/dev/null; then
@@ -155,7 +158,6 @@ if [ $uname = "Darwin" ]; then
   export XML_CATALOG_FILES=/usr/local/etc/xml/catalog
 
 fi
-
 
 #  Appearance  #
 
