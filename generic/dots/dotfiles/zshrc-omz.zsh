@@ -28,8 +28,6 @@ fi
 ZSH_BLACKLISTED_THEMES=(rkj-repos)
 ZSH_DEFAULT_USER="janke"
 
-plugins=( osx themes nyan sublime brew vagrant emoji ) 
-
 #DISABLE_AUTO_TITLE=true
 DISABLE_AUTO_UPDATE=true
 source $ZSH/oh-my-zsh.sh

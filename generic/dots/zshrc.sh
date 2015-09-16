@@ -8,6 +8,7 @@
 #ZSH_THEME=apjanke-02
 ZSH=${ZSH:-$HOME/.oh-my-zsh}
 if [[ $DISABLE_OH_MY_ZSH != 1 && -d $ZSH ]]; then
+  plugins=( osx themes nyan sublime brew vagrant emoji ) 
   source ~/.dotfiles/zshrc-omz.zsh
 else
   source ~/.dotfiles/zshrc-no-omz.zsh
@@ -48,6 +49,21 @@ function maybe_bindkey() {
 maybe_bindkey "kcuu1" up-line-or-beginning-search      # [Up-Arrow]
 maybe_bindkey "kcud1" down-line-or-beginning-search    # [Down-Arrow]
 
+#  Git and GitHub stuff  #
+
+# Check out a PR locally
+function _apj_print_and_do() {
+  echo -E "==>" "$@"
+  "$@"
+}
+function gh-local-pr() {
+  emulate -L zsh
+  local pr=$1
+  local remote=${2:-upstream}
+  _apj_print_and_do git fetch $remote pull/$pr/head:pr-$pr \
+    || return
+  _apj_print_and_do git checkout pr-$pr
+}
 
 
 
