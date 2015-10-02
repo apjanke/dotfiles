@@ -13,7 +13,6 @@
   fi
   for site_dir ( $site_dirs ); do
     if [[ -d $site_dir  && ${fpath[(I)$site_dir]} == 0 ]]; then
-      echo Located site-functions dir $site_dir
       FPATH=$site_dir:$FPATH
     fi
   done
