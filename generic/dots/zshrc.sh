@@ -2,8 +2,8 @@
 # based on it; it invokes oh-my-zsh, but sets other stuff too
 
 
-# Pick up additional site-functions that may not be on system path
-# by default
+# Pick up additional site-functions that may not be on system zsh's
+# $fpath by default
 () {
   local site_dir site_dirs
 
