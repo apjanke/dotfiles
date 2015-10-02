@@ -24,6 +24,7 @@ alias tree="tree -I '.git|.svn|*.swp'"
 # Git stuff
 alias gst='git status'
 alias gc='git commit -v'
+alias gco='git checkout'
 # Hacks around default behavior that I dislike
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner

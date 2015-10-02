@@ -1,6 +1,24 @@
 # This is not the standard .zhsrc from oh-my-zsh. I wrote my own 
 # based on it; it invokes oh-my-zsh, but sets other stuff too
 
+
+# Pick up additional site-functions that may not be on system path
+# by default
+() {
+  local site_dir site_dirs
+
+  site_dirs=( /usr/local/share/zsh/site-functions )
+  if type brew &>/dev/null; then
+    site_dirs+=$(brew --prefix)/share/zsh/site-functions
+  fi
+  for site_dir ( $site_dirs ); do
+    if [[ -d $site_dir  && ${fpath[(I)$site_dir]} == 0 ]]; then
+      echo Located site-functions dir $site_dir
+      FPATH=$site_dir:$FPATH
+    fi
+  done
+}
+
 # OH-MY-ZSH
 
 #DISABLE_OH_MY_ZSH=1
@@ -8,7 +26,7 @@
 #ZSH_THEME=apjanke-02
 ZSH=${ZSH:-$HOME/.oh-my-zsh}
 if [[ $DISABLE_OH_MY_ZSH != 1 && -d $ZSH ]]; then
-  plugins=( osx themes nyan sublime brew vagrant emoji ) 
+  plugins=( osx themes nyan brew git )
   source ~/.dotfiles/zshrc-omz.zsh
 else
   source ~/.dotfiles/zshrc-no-omz.zsh
