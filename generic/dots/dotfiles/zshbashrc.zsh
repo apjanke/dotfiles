@@ -108,9 +108,13 @@ if [ $uname = "Darwin" ]; then
     man "$*" | man2html -title "man $*" | browser
   }
 
+  # Homebrew stuff
+
+  alias bas='brew audit --strict --no-test-do-check'
+  
   # brewsubl - open a brew formula in subl (doesn't work with taps)
   function brewsubl {
-    subl "$(brew --repository)/Library/Formula/$1.rb"
+    subl "$(brew --repository)/Library/Formula/${1%%.rb}.rb"
   }
 
   # brewsublogs - open the brew logs dir for a formula in subl
