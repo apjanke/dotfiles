@@ -373,6 +373,9 @@ defaults write com.apple.DiskUtility advanced-image-options -bool true
 # Enable Debug Menu in the Mac App Store
 defaults write com.apple.appstore ShowDebugMenu -bool true
 
+# UI sound effects
+defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -bool false
+
 ################################################
 # Google Chrome & Google Chrome Canary
 ################################################
