@@ -27,3 +27,5 @@ else
   export PS1="[\h: \W] \$ "
 fi
 
+
+export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
