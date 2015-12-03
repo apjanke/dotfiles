@@ -30,6 +30,9 @@ nbdist/
 nbactions.xml
 nb-configuration.xml
 
+# RubyMine project files
+.idea
+
 # Visual Studio artifacts
 *.obj
 *.pdb
