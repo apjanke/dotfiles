@@ -1,7 +1,6 @@
 # This is not the standard .zhsrc from oh-my-zsh. I wrote my own 
 # based on it; it invokes oh-my-zsh, but sets other stuff too
 
-
 # Pick up additional site-functions that may not be on system zsh's
 # $fpath by default
 () {
@@ -25,16 +24,20 @@
 #ZSH_THEME=apjanke-02
 ZSH=${ZSH:-$HOME/.oh-my-zsh}
 if [[ $DISABLE_OH_MY_ZSH != 1 && -d $ZSH ]]; then
-  plugins=( osx themes nyan brew git )
+  plugins=( osx themes nyan brew )
   source ~/.dotfiles/zshrc-omz.zsh
 else
   source ~/.dotfiles/zshrc-no-omz.zsh
 fi
 
+#source ~/local/opp/agnoster/agnoster-zsh-theme/agnoster.zsh-theme
+
 # Regular non-oh-my-zsh stuff after here
 
 # Pull in common bash/zsh configuration
-if [ -f $HOME/.dotfiles/zshbashrc.zsh ]; then source $HOME/.dotfiles/zshbashrc.zsh; fi
+if [ -f $HOME/.dotfiles/zshbashrc.zsh ]; then 
+  source $HOME/.dotfiles/zshbashrc.zsh; 
+fi
 
 # zsh autocorrect is more trouble than it's worth for me; disable it
 setopt no_correct
@@ -45,17 +48,7 @@ setopt no_beep
 setopt no_interactivecomments
 
 # Completion control
-zstyle ':completion:*' rehash true
-#zstyle ':completion:*' completer _complete _ignored
-#zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-#zstyle ':completion:*' matcher-list '' 'm:{[:lower:]}={[:upper:]}'
 
-autoload -U up-line-or-beginning-search
-autoload -U down-line-or-beginning-search
-zle -N up-line-or-beginning-search
-zle -N down-line-or-beginning-search
-
-# Leading substring search for history
 function maybe_bindkey() {
   local cap=$1 widget=$2
   if [[ -n ${terminfo[$cap]} ]]; then
@@ -63,8 +56,21 @@ function maybe_bindkey() {
   fi
 }
 
+zstyle ':completion:*' rehash true
+#zstyle ':completion:*' completer _complete _ignored
+#zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+#zstyle ':completion:*' matcher-list '' 'm:{[:lower:]}={[:upper:]}'
+
+# Leading substring search for history
+autoload -U up-line-or-beginning-search
+autoload -U down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+
 maybe_bindkey "kcuu1" up-line-or-beginning-search      # [Up-Arrow]
 maybe_bindkey "kcud1" down-line-or-beginning-search    # [Down-Arrow]
+maybe_bindkey "khome" beginning-of-line
+maybe_bindkey "kend" beginning-of-line
 
 #  Git and GitHub stuff  #
 
@@ -83,4 +89,4 @@ function gh-local-pr() {
 }
 
 
-
+export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
