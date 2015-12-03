@@ -110,6 +110,8 @@ if [ $uname = "Darwin" ]; then
 
   # Homebrew stuff
 
+  export HOMEBREW_DEVELOPER=1
+  export HOMEBREW_SANDBOX=1
   alias bas='brew audit --strict --no-test-do-check'
   
   # brewsubl - open a brew formula in subl (doesn't work with taps)
