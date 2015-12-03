@@ -1,7 +1,9 @@
 #!/bin/bash
 #
-# Updates user and system settings to my preferred state.
+# Updates the current user's settings to my preferred state.
 # This script is idempotent, so it can be run repeatedly on the same machine
+# and account.
+
 function CFPreferencesAppSynchronize() {
     python - <<END
 from Foundation import CFPreferencesAppSynchronize
@@ -153,6 +155,10 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.mouse MouseTwoFingerDou
 # Disable “natural” (Lion-style) scrolling
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
 
+# Always show scrollbars
+# Possible values: 'WhenScrolling', 'Automatic' and 'Always'
+defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
+
 # Swipe between pages with two fingers
 defaults write NSGlobalDomain AppleEnableSwipeNavigateWithScrolls -bool false
 
@@ -184,7 +190,7 @@ defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 osascript -e 'tell application "Finder" to set desktop picture to POSIX file "/Library/Desktop Pictures/Wave.jpg"'
 
 ################################################
-# Finder
+# Finder & Spotlight
 ################################################
 
 # Finder: disable window animations and Get Info animations
@@ -208,6 +214,13 @@ defaults write com.apple.finder WarnOnEmptyTrash -bool false
 
 # Show the ~/Library folder
 chflags nohidden ~/Library
+
+# Disable Spotlight indexing for any volume that gets mounted and has not yet
+# been indexed before.
+# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
+sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
+
+
 
 ################################################
 # Safari
@@ -243,11 +256,6 @@ defaults write com.apple.mail NSUserKeyEquivalents -dict-add "Send" -string "@\\
 ################################################
 # Safari & WebKit
 ################################################
-
-# Disable Spotlight indexing for any volume that gets mounted and has not yet
-# been indexed before.
-# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
-sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
 
 # Safari opens with: A new window
 defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool false
@@ -415,3 +423,4 @@ for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
 	killall "${app}" > /dev/null 2>&1
 done
 echo "Done. Note that some of these changes require a logout/restart to take effect."
+
