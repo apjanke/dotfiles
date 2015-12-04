@@ -2,10 +2,19 @@
 #
 # Setup and installation of per-user tools on OS X
 #  * Oh My Zsh
+#
+# TODO: figure out if I can use https instead of git effectively, with
+# a password manager
 
-# TODO:
-# Install fonts
-# iTerm2 preferences
+set -e
+
+# Prerequisites:
+#  Xcode CLT or git installed
+#  ssh keys
+
+if [[ ! -e ~/.ssh/github_rsa ]]; then
+  echo "You must install ssh keys first before cloning the repos"
+fi
 
 # Install Oh My Zsh
 # (using manual installation)

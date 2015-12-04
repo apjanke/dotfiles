@@ -11,9 +11,9 @@ CFPreferencesAppSynchronize('$1')
 END
 }
 
+MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
+#echo MYDIR is $MYDIR
 
-# Ask for the administrator password up front
-sudo -v
 
 ################################################
 # Dock
@@ -54,6 +54,9 @@ done
 
 killall Dock
 
+################################################
+# Misc OS UI stuff
+################################################
 
 # Hot corners
 # Possible values:
@@ -77,9 +80,6 @@ defaults write com.apple.dock wvous-tr-modifier -int 0
 #defaults write com.apple.dock wvous-bl-corner -int 5
 #defaults write com.apple.dock wvous-bl-modifier -int 0
 
-# Show system info on login screen
-sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
-
 # Disable transparency in the menu bar and elsewhere on Yosemite
 defaults write com.apple.universalaccess reduceTransparency -bool true
 
@@ -89,7 +89,6 @@ defaults write NSGlobalDomain NSTableViewDefaultSizeMode -int 1
 # Increase window resize speed for Cocoa applications
 defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
 
-
 # Expand save panel by default
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
@@ -97,7 +96,7 @@ defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
 # Save to disk (not to iCloud) by default
 defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
 
-# Disable Resume system-wide
+# Disable Application Resume
 defaults write com.apple.systempreferences NSQuitAlwaysKeepsWindows -bool false
 
 ################################################
@@ -109,20 +108,23 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool
 defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
+# Note: the pinch-to-zoom and two-finger-rotate settings here seem to work, but they may
+# not be reflected in the System Preferences thing. Running this seems to disable the behavior for
+# me, but the boxes are still checked in System Preferences > Trackpad
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad UserPreferences -int 1
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFiveFingerPinchGesture -int 2
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 2
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerPinchGesture -int 2
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 2
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadPinch -bool false
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -int 1
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRotate -bool false
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerDoubleTapGesture -bool false
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 0
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerDrag -bool true
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 0
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerTapGesture -int 0
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerVertSwipeGesture -int 0
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerDoubleTapGesture -bool false
-defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 0
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 2
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerPinchGesture -int 2
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 2
 
 defaults write com.apple.AppleMultitouchTrackpad UserPreferences -int 1
 defaults write com.apple.AppleMultitouchTrackpad TrackpadRotate -bool false
@@ -132,13 +134,12 @@ defaults write com.apple.AppleMultitouchTrackpad TrackpadTwoFingerDoubleTapGestu
 defaults write com.apple.AppleMultitouchTrackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 0
 defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 0
 defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerVertSwipeGesture -int 0
-defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 0
 defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture -int 0
 defaults write com.apple.AppleMultitouchTrackpad TrackpadFiveFingerPinchGesture -int 2
 defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 2
 defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerPinchGesture -int 2
+defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 0
 defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerVertSwipeGesture -int 2
-
 
 defaults write com.apple.AppleMultitouchTrackpad UserPreferences -int 1
 
@@ -168,6 +169,9 @@ defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
 
 # Use F1, F2, etc. as standard function keys
 defaults write NSGlobalDomain com.apple.keyboard.fnState -bool true
+
+# Analog clock in menu bar
+defaults write com.apple.menuextra.clock IsAnalog -bool true
 
 ###############################################################################
 # Screen                                                                      #
@@ -214,12 +218,6 @@ defaults write com.apple.finder WarnOnEmptyTrash -bool false
 
 # Show the ~/Library folder
 chflags nohidden ~/Library
-
-# Disable Spotlight indexing for any volume that gets mounted and has not yet
-# been indexed before.
-# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
-sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
-
 
 
 ################################################
@@ -283,11 +281,6 @@ defaults write com.apple.Safari SendDoNotTrackHTTPHeader -bool true
 
 # Don't even ask about the push notifications
 defaults write com.apple.Safari CanPromptForPushNotifications -bool false
-
-# Load new settings before rebuilding the index
-killall mds > /dev/null 2>&1
-# Make sure indexing is enabled for the main volume
-sudo mdutil -i on / > /dev/null
 
 # Enable the Develop menu and the Web Inspector in Safari
 defaults write com.apple.Safari IncludeDevelopMenu -bool true
@@ -382,6 +375,7 @@ defaults write com.apple.DiskUtility advanced-image-options -bool true
 defaults write com.apple.appstore ShowDebugMenu -bool true
 
 # UI sound effects
+# (requires logout to take effect)
 defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -bool false
 
 ################################################
@@ -413,14 +407,42 @@ defaults write org.m0k.transmission WarningDonate -bool false
 defaults write org.m0k.transmission WarningLegal -bool false
 
 ################################################
+# Sublime Text
+################################################
+
+ST2_PREFS="$HOME/Library/Application Support/Sublime Text 2"
+mkdir -p "$ST2_PREFS/Packages/User"
+cp "$MYDIR/../settings-manual/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS/Packages/User"
+
+################################################
+# F.lux
+################################################
+
+defaults write org.herf.Flux disable-com.apple.Aperture -int 1
+defaults write org.herf.Flux lateColorTemp -int 3500
+defaults write org.herf.Flux lateLoc -int 0
+defaults write org.herf.Flux location -int 11231
+defaults write org.herf.Flux locationTextField -string "11231"
+defaults write org.herf.Flux locationType -string "Z"
+defaults write org.herf.Flux nightColorTemp -float 4030
+defaults write org.herf.Flux steptime -int 40
+defaults write org.herf.Flux wakeTime -int 600
+
+################################################
 # Kill affected applications
 ################################################
 
-for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
-	"Dock" "Finder" "Google Chrome" "Google Chrome Canary" "Mail" "Messages" \
-	"Opera" "Safari" "SizeUp" "Spectacle" "SystemUIServer" \
-	"Transmission" "Twitter" "iCal"; do
-	killall "${app}" > /dev/null 2>&1
-done
+# I'm not bothering with the kill right now because it screws up the session, and you
+# need to log out and back in anyway
+DO_KILL=0
+if [[ $DO_KILL == 1 ]]; then
+  for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
+      "Dock" "Finder" "Google Chrome" "Google Chrome Canary" "Mail" "Messages" \
+      "Opera" "Safari" "SizeUp" "Spectacle" "SystemUIServer" \
+      "Transmission" "Twitter" "iCal"; do
+    killall "${app}" > /dev/null 2>&1
+  done
+fi
+
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 
