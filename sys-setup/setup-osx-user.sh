@@ -4,6 +4,10 @@
 # This script is idempotent, so it can be run repeatedly on the same machine
 # and account.
 
+# I'm not bothering with the kill right now because it screws up the session, and you
+# need to log out and back in anyway
+DO_KILL=0
+
 function CFPreferencesAppSynchronize() {
     python - <<END
 from Foundation import CFPreferencesAppSynchronize
@@ -429,12 +433,19 @@ defaults write org.herf.Flux steptime -int 40
 defaults write org.herf.Flux wakeTime -int 600
 
 ################################################
+# File associations
+################################################
+
+if which duti >/dev/null; then
+  if [[ -e "/Applications/BBEdit.app" ]]; then 
+    duti -s com.barebones.bbedit .txt all
+  fi
+fi
+
+################################################
 # Kill affected applications
 ################################################
 
-# I'm not bothering with the kill right now because it screws up the session, and you
-# need to log out and back in anyway
-DO_KILL=0
 if [[ $DO_KILL == 1 ]]; then
   for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
       "Dock" "Finder" "Google Chrome" "Google Chrome Canary" "Mail" "Messages" \
