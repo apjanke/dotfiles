@@ -21,6 +21,7 @@ alias lla="ls -lha"
 alias lsa='ls -lah'
 alias lso="ls -og"
 alias tree="tree -I '.git|.svn|*.swp'"
+alias duh="du -csh"
 # Git stuff
 alias gst='git status'
 alias gc='git commit -v'
