@@ -43,6 +43,7 @@ brew install caskroom/cask/brew-cask
 
 # Special case: do cask-managed dependencies first, because regular `brew install`
 # formulae may need them
+# TODO: check for xquartz already installed outside cask
 brew cask install xquartz
 
 for tap in "${taps[@]}"; do

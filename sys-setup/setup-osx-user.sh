@@ -158,6 +158,7 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.mouse MouseOneFingerDou
 defaults write com.apple.driver.AppleBluetoothMultitouch.mouse MouseTwoFingerDoubleTapGesture -int 0
 
 # Disable “natural” (Lion-style) scrolling
+# (In VMware guest VMs, re-enable it, since it doesn't interact well there)
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
 
 # Always show scrollbars
