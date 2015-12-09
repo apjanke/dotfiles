@@ -50,7 +50,8 @@ I think I'm just missing some `scutil --set *Name` [from here](https://github.co
  - Change time-to-sleep, time-to-display-off
 - Configure screensaver
  - Random screensaver; require password immediately; upper-left corner hotspot
-
+- Keyboard shortcuts
+ - e.g. Ctrl-arrow for switching spaces, vs Ctrl-shift-8/9
 
 #  Enhancements   #
 
