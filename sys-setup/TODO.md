@@ -12,6 +12,15 @@
 - Don't `sudo -v`; let it authenticate lazily, since this script can't run unattended anyway.
 - Support for specific versions of OS X
 
+- Remove spurious plistbuddy diagnostic messages
+```
+$ ./setup-osx-user.sh
+Copy: ":Window Settings:Basic Improved" Entry Already Exists
+Add: ":Window Settings:Basic Improved:shellExitAction" Entry Already Exists
+Add: ":Window Settings:Basic Improved:columnCount" Entry Already Exists
+Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
+```
+
 ##  System Setup Bugs  ##
 
 - Do not install XQuartz via `brew cask` when a standalone is installed

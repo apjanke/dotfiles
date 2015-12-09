@@ -3,6 +3,10 @@
 # Updates the current user's settings to my preferred state.
 # This script is idempotent, so it can be run repeatedly on the same machine
 # and account.
+#
+# The coding style has a lot of copy-and-paste instead of being factored in to
+# functions. This is intentional, to allow easy interactive copy-and-pasting of
+# individual commands to the terminal.
 
 # I'm not bothering with the kill right now because it screws up the session, and you
 # need to log out and back in anyway
@@ -56,8 +60,24 @@ defaults write com.apple.dock launchanim -bool false
 defaults write com.apple.dock expose-animation-duration -float 0.1
 
 # Remove unwanted apps
-apps=( Launchpad Mail Contacts Notes Reminders Maps Messages FaceTime iBooks "App Store" "System Preferences" Pages Numbers Keynote Photos )
-for app in "${apps[@]}"; do
+unwanted_apps=(
+  Launchpad
+  Mail
+  Contacts
+  Notes
+  Reminders
+  Maps
+  Messages
+  FaceTime
+  iBooks
+  "App Store"
+  "System Preferences"
+  Pages
+  Numbers
+  Keynote
+  Photos
+  )
+for app in "${unwanted_apps[@]}"; do
   dloc=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$app/  {print NR}")
   if [ -n "$dloc" ]; then
     dloc=$[$dloc-1]
@@ -72,7 +92,9 @@ killall Dock
 ################################################
 
 # Hot corners
-# Possible values:
+# Key names: wvous-<loc>-corner, wvous-<loc>-modifier
+#   where <loc> may be: tl, tr, bl, br
+# Possible "corner" values:
 #  0: no-op
 #  2: Mission Control
 #  3: Show application windows
@@ -83,15 +105,13 @@ killall Dock
 # 10: Put display to sleep
 # 11: Launchpad
 # 12: Notification Center
+
 # Top left screen corner → Start screen saver
 defaults write com.apple.dock wvous-tl-corner -int 5
 defaults write com.apple.dock wvous-tl-modifier -int 0
 # Top right screen corner → Desktop
 defaults write com.apple.dock wvous-tr-corner -int 4
 defaults write com.apple.dock wvous-tr-modifier -int 0
-# Bottom left screen corner → Start screen saver
-#defaults write com.apple.dock wvous-bl-corner -int 5
-#defaults write com.apple.dock wvous-bl-modifier -int 0
 
 # Disable transparency in the menu bar and elsewhere on Yosemite
 defaults write com.apple.universalaccess reduceTransparency -bool true
