@@ -9,10 +9,16 @@
 DO_KILL=0
 
 function CFPreferencesAppSynchronize() {
-    python - <<END
+  python - <<END
 from Foundation import CFPreferencesAppSynchronize
 CFPreferencesAppSynchronize('$1')
 END
+}
+
+# Delete a default quietly and idempotently
+function defaults-delete() {
+  defaults delete "$1" "$2" 2>/dev/null
+  true
 }
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
@@ -32,10 +38,13 @@ defaults write com.apple.dock showhidden -bool true
 defaults write com.apple.dock tilesize -float 32
 # Autohide dock
 defaults write com.apple.dock autohide -bool true
+# Auto-hiding delay: killed, because I prefer the default behavior
 # Remove the auto-hiding Dock delay
-defaults write com.apple.dock autohide-delay -float 0
+#defaults write com.apple.dock autohide-delay -float 0
+defaults-delete com.apple.dock autohide-delay
 # Remove the animation when hiding/showing the Dock
-defaults write com.apple.dock autohide-time-modifier -float 0
+#defaults write com.apple.dock autohide-time-modifier -float 0
+defaults-delete com.apple.dock autohide-time-modifier
 
 # Change minimize/maximize window effect
 defaults write com.apple.dock mineffect -string "scale"
