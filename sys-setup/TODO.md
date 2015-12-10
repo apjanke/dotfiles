@@ -31,12 +31,7 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
  - Need to support both CLT and no-CLT boxes for Homebrew testing, and I don't know how to uninstall CLT installs
 - As part of Xcode setup, launch it (to get it verified) and agree to the EULA.
  - Or just switch to the CLT for everything, and I'll special-case the Xcode-only Homebrew test box installs
-
-####  Fully setting hostname via CLI  ####
-
-Current hostname-setting mechanism sets the host at the "Unix" level. (E.g. it shows up correctly in terminal sessions.) But the displayed name in Sharing and in Finder stays the old name. Seems there's a Mac-specific layer that needs to be set in addition to or instead of how we're currently setting it.
-
-I think I'm just missing some `scutil --set *Name` [from here](https://github.com/mathiasbynens/dotfiles/blob/ed0019b7f87828aad94a94665c198b556bd7be02/.osx#L15-L19).
+- Check whether Java is installed, and fail early if it isn't, instead of waiting to hit something in Homebrew that depends on it
 
 ##  User Setup Bugs  ##
 
