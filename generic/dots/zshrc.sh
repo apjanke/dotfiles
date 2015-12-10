@@ -24,7 +24,7 @@
 #ZSH_THEME=apjanke-02
 ZSH=${ZSH:-$HOME/.oh-my-zsh}
 if [[ $DISABLE_OH_MY_ZSH != 1 && -d $ZSH ]]; then
-  plugins=( osx themes nyan brew )
+  plugins=( osx themes nyan brew github )
   source ~/.dotfiles/zshrc-omz.zsh
 else
   source ~/.dotfiles/zshrc-no-omz.zsh

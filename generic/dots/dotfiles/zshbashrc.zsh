@@ -49,6 +49,8 @@ function maybe_add_path() {
 
 # Prefer local binaries
 PATH="/usr/local/bin:$PATH"
+# Alternate Homebrew locations
+if [ -d "/homebrew" ]; then PATH="/homebrew/bin:$PATH"; fi
 # Get my local dirs on the path
 if [ -d "$HOME/bin" ]; then PATH="$HOME/bin:$PATH"; fi
 # Hack: unconditionally load the Ruby gem location I've been working with
