@@ -29,6 +29,8 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 - Better way of choosing an Xcode installation or CLT install up front, to get `git`, which is required for installing some of this other stuff
  - Or just an alternate source of a usable `git` for bootstrapping the installs
  - Need to support both CLT and no-CLT boxes for Homebrew testing, and I don't know how to uninstall CLT installs
+- As part of Xcode setup, launch it (to get it verified) and agree to the EULA.
+ - Or just switch to the CLT for everything, and I'll special-case the Xcode-only Homebrew test box installs
 
 ####  Fully setting hostname via CLI  ####
 
