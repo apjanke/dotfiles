@@ -1,7 +1,5 @@
 # TODO
 
-- Review https://github.com/mathiasbynens/dotfiles; looks like he's got some new stuff since I first copied stuff over.
-
 #  Bugs  #
 
 (Also includes stuff I just don't know how to do from the command line.)

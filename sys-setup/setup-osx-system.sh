@@ -59,6 +59,14 @@ fi
 # Set the timezone; see `sudo systemsetup -listtimezones` for other values
 sudo systemsetup -settimezone "America/New_York" > /dev/null
 
+# Allow remote login
+sudo systemsetup -setremotelogin on
+
+# Sleep timings
+#sudo systemsetup -setcomputersleep 60
+#sudo systemsetup -setdisplaysleep 15
+#sudo systemsetup -setharddisksleep 60
+
 # Show system info on login screen
 sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
 

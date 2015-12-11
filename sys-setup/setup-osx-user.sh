@@ -542,6 +542,7 @@ defaults write com.apple.appstore WebKitDeveloperExtras -bool true
 
 # UI sound effects
 # (requires logout to take effect)
+# (this does not actually work, at least on 10.9+)
 defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -bool false
 
 ################################################
