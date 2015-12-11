@@ -34,10 +34,13 @@ MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 # Left side of screen
 defaults write com.apple.dock orientation -string left
 defaults write com.apple.dock pinning -string middle
-# Dim hidden apps
+
+# Dim icons of hidden apps
 defaults write com.apple.dock showhidden -bool true
+
 # Dock icon size
 defaults write com.apple.dock tilesize -float 32
+
 # Autohide dock
 defaults write com.apple.dock autohide -bool true
 # Auto-hiding delay: killed, because I prefer the default behavior
@@ -57,6 +60,16 @@ defaults write com.apple.dock launchanim -bool false
 # Speed up Mission Control animations
 defaults write com.apple.dock expose-animation-duration -float 0.1
 
+# Don’t group windows by application in Mission Control
+# (i.e. use the old Exposé behavior instead)
+defaults write com.apple.dock expose-group-by-app -bool false
+
+# Disable Dashboard
+defaults write com.apple.dashboard mcx-disabled -bool true
+
+# Don’t show Dashboard as a Space
+defaults write com.apple.dock dashboard-in-overlay -bool true
+
 # Remove unwanted apps
 unwanted_apps=(
   Launchpad
@@ -69,6 +82,7 @@ unwanted_apps=(
   FaceTime
   iBooks
   "App Store"
+  "Photo Booth"
   "System Preferences"
   Pages
   Numbers
@@ -157,7 +171,7 @@ sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo Hos
 defaults write com.apple.SoftwareUpdate ScheduleFrequency -int 1
 
 ################################################
-# Trackpad, mouse, and keyboard
+# Trackpad, mouse, keyboard, and other HCI peripheral stuff
 ################################################
 
 # Trackpad: enable tap to click for this user and for the login screen
@@ -234,6 +248,9 @@ defaults write com.apple.menuextra.clock IsAnalog -bool true
 # Remove duplicates in the “Open With” menu (also see `lscleanup` alias)
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
 
+# Increase sound quality for Bluetooth headphones/headsets
+defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
+
 ###############################################################################
 # Screen                                                                      #
 ###############################################################################
@@ -261,28 +278,109 @@ osascript -e 'tell application "Finder" to set desktop picture to POSIX file "/L
 # Finder: disable window animations and Get Info animations
 defaults write com.apple.finder DisableAllAnimations -bool true
 
+# Finder: show status bar
+defaults write com.apple.finder ShowStatusBar -bool true
+
 # Finder: show path bar
 defaults write com.apple.finder ShowPathbar -bool true
 
-# Open ~ by default
-defaults write com.apple.finder NewWindowTarget -string PfHm
-defaults write com.apple.finder NewWindowTargetPath -string "file:///Users/$USER/"
-# No tags
+# Do not display tags
 defaults write com.apple.finder ShowRecentTags -boolean false
 
 # Use list view in all Finder windows by default
-# : 'Nlsv' = list, 'icnv', `clmv` = column, 'Flwv'
+# Modes: 'Nlsv' = list, 'icnv', `clmv` = column, 'Flwv'
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
+# Set default location for new Finder windows
+# For home dir, use "PfHm"
+# For desktop, use "PfDe"
+# For arbitrary paths, use "PfLo" and `file:///full/path/here/`
+defaults write com.apple.finder NewWindowTarget -string "PfHm"
+defaults write com.apple.finder NewWindowTargetPath -string "file:///Users/$USER/"
+
+# Show icons for hard drives, servers, and removable media on the desktop
+defaults write com.apple.finder ShowExternalHardDrivesOnDesktop -bool true
+defaults write com.apple.finder ShowHardDrivesOnDesktop -bool true
+defaults write com.apple.finder ShowMountedServersOnDesktop -bool false
+defaults write com.apple.finder ShowRemovableMediaOnDesktop -bool false
+
+# Finder: show hidden files by default
+#defaults write com.apple.finder AppleShowAllFiles -bool true
+
+# Finder: show all filename extensions
+#defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 
 # Disable the warning before emptying the Trash
 defaults write com.apple.finder WarnOnEmptyTrash -bool false
 
+# Disable the warning when changing a file extension
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+# Spring loading for directories
+defaults write NSGlobalDomain com.apple.springing.enabled -bool false
+
 # Show the ~/Library folder
 chflags nohidden ~/Library
 
+# Remove Dropbox’s green checkmark icons in Finder
+#file=/Applications/Dropbox.app/Contents/Resources/emblem-dropbox-uptodate.icns
+#[ -e "${file}" ] && mv -f "${file}" "${file}.bak"
+
+# Expand the following File Info panes:
+# “General”, “Open with”, and “Sharing & Permissions”
+defaults write com.apple.finder FXInfoPanesExpanded -dict \
+  General -bool true \
+  OpenWith -bool true \
+  Privileges -bool true
+
+
+# Hide Spotlight tray-icon (and subsequent helper)
+#sudo chmod 600 /System/Library/CoreServices/Search.bundle/Contents/MacOS/Search
+# Disable Spotlight indexing for any volume that gets mounted and has not yet
+# been indexed before.
+# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
+sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
+# Change indexing order and disable some search results
+# Yosemite-specific search results (remove them if you are using OS X 10.9 or older):
+#   MENU_DEFINITION
+#   MENU_CONVERSION
+#   MENU_EXPRESSION
+#   MENU_SPOTLIGHT_SUGGESTIONS (send search queries to Apple)
+#   MENU_WEBSEARCH             (send search queries to Apple)
+#   MENU_OTHER
+spotlight_items=(
+  '{"enabled" = 1;"name" = "APPLICATIONS";}'
+  '{"enabled" = 1;"name" = "SYSTEM_PREFS";}'
+  '{"enabled" = 1;"name" = "DIRECTORIES";}'
+  '{"enabled" = 1;"name" = "PDF";}'
+  '{"enabled" = 1;"name" = "CONTACT";}'
+  '{"enabled" = 1;"name" = "EVENT_TODO";}'
+  '{"enabled" = 1;"name" = "IMAGES";}'
+  '{"enabled" = 1;"name" = "MESSAGES";}'
+  '{"enabled" = 0;"name" = "FONTS";}'
+  '{"enabled" = 0;"name" = "DOCUMENTS";}'
+  '{"enabled" = 0;"name" = "BOOKMARKS";}'
+  '{"enabled" = 0;"name" = "MUSIC";}'
+  '{"enabled" = 0;"name" = "MOVIES";}'
+  '{"enabled" = 0;"name" = "PRESENTATIONS";}'
+  '{"enabled" = 0;"name" = "SPREADSHEETS";}'
+  '{"enabled" = 0;"name" = "SOURCE";}'
+  )
+# If Yosemite or later:
+if false
+  spotlight_items=("${spotlight_items[@]}"
+  '{"enabled" = 0;"name" = "MENU_DEFINITION";}' \
+  '{"enabled" = 0;"name" = "MENU_OTHER";}' \
+  '{"enabled" = 0;"name" = "MENU_CONVERSION";}' \
+  '{"enabled" = 0;"name" = "MENU_EXPRESSION";}' \
+  '{"enabled" = 0;"name" = "MENU_WEBSEARCH";}' \
+  '{"enabled" = 0;"name" = "MENU_SPOTLIGHT_SUGGESTIONS";}'
+  )
+fi
+defaults write com.apple.spotlight orderedItems -array "${spotlight_items[@]}"
 
 ################################################
-# Safari
+# Safari & WebKit
 ################################################
 
 # Enable Safari’s debug menu
@@ -301,20 +399,6 @@ defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebK
 
 # Add a context menu item for showing the Web Inspector in web views
 defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
-
-# Disable send and reply animations in Mail.app
-defaults write com.apple.mail DisableReplyAnimations -bool true
-defaults write com.apple.mail DisableSendAnimations -bool true
-
-# Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
-defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
-
-# Add the keyboard shortcut ⌘ + Enter to send an email in Mail.app
-defaults write com.apple.mail NSUserKeyEquivalents -dict-add "Send" -string "@\\U21a9"
-
-################################################
-# Safari & WebKit
-################################################
 
 # Safari opens with: A new window
 defaults write com.apple.Safari AlwaysRestoreSessionAtLaunch -bool false
@@ -352,6 +436,20 @@ defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebK
 defaults write NSGlobalDomain WebKitDeveloperExtras -bool true
 
 ################################################
+# Mail.app
+################################################
+
+# Disable send and reply animations in Mail.app
+defaults write com.apple.mail DisableReplyAnimations -bool true
+defaults write com.apple.mail DisableSendAnimations -bool true
+
+# Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
+defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
+
+# Add the keyboard shortcut ⌘ + Enter to send an email in Mail.app
+defaults write com.apple.mail NSUserKeyEquivalents -dict-add "Send" -string "@\\U21a9"
+
+################################################
 # iTerm2
 ################################################
 
@@ -371,6 +469,7 @@ defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
 
 # Show all processes in Activity Monitor
 defaults write com.apple.ActivityMonitor ShowCategory -int 0
+
 # Update Frequency: Often (2 sec)
 defaults write com.apple.ActivityMonitor UpdatePeriod -int 2
 
@@ -389,6 +488,9 @@ defaults write com.tapbots.TweetbotMac soundType -int 2
 
 # Image Thumbnails: Small
 defaults write com.tapbots.TweetbotMac statusViewImageType -int 1
+
+# Bypass the annoyingly slow t.co URL shortener
+defaults write com.tapbots.TweetbotMac OpenURLsDirectly -bool true
 
 ################################################
 # Terminal.app
@@ -435,6 +537,9 @@ defaults write com.apple.DiskUtility advanced-image-options -bool true
 # Enable Debug Menu in the Mac App Store
 defaults write com.apple.appstore ShowDebugMenu -bool true
 
+# Enable the WebKit Developer Tools in the Mac App Store
+defaults write com.apple.appstore WebKitDeveloperExtras -bool true
+
 # UI sound effects
 # (requires logout to take effect)
 defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -bool false
@@ -446,6 +551,10 @@ defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -bool false
 # Disable the all too sensitive backswipe on trackpads
 defaults write com.google.Chrome AppleEnableSwipeNavigateWithScrolls -bool false
 defaults write com.google.Chrome.canary AppleEnableSwipeNavigateWithScrolls -bool false
+
+# Disable the all too sensitive backswipe on Magic Mouse
+defaults write com.google.Chrome AppleEnableMouseSwipeNavigateWithScrolls -bool false
+defaults write com.google.Chrome.canary AppleEnableMouseSwipeNavigateWithScrolls -bool false
 
 # Use the system-native print preview dialog
 defaults write com.google.Chrome DisablePrintPreview -bool true
@@ -471,9 +580,9 @@ defaults write org.m0k.transmission WarningLegal -bool false
 # Sublime Text
 ################################################
 
-ST2_PREFS="$HOME/Library/Application Support/Sublime Text 2"
-mkdir -p "$ST2_PREFS/Packages/User"
-cp "$MYDIR/../settings-manual/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS/Packages/User"
+ST2_PREFS_DIR="$HOME/Library/Application Support/Sublime Text 2"
+mkdir -p "$ST2_PREFS_DIR/Packages/User"
+cp "$MYDIR/../settings-manual/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS_DIR/Packages/User"
 
 ################################################
 # F.lux
@@ -506,10 +615,12 @@ fi
 # User settings for when running as a guest inside a VM
 
 if pkgutil --pkg-info com.vmware.tools.macos.pkg.files &>/dev/null; then
+
   # Re-enable “natural” (Lion-style) scrolling
   # This will end up having old-style scrolling in effect, because of interaction
   # with the host's scrolling setup and/or the VM's mouse driver
   defaults write NSGlobalDomain com.apple.swipescrolldirection -bool true
+
 fi
 
 ################################################
@@ -519,7 +630,7 @@ fi
 if [[ $DO_KILL == 1 ]]; then
   for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
       "Dock" "Finder" "Google Chrome" "Google Chrome Canary" "Mail" "Messages" \
-      "Opera" "Safari" "SizeUp" "Spectacle" "SystemUIServer" \
+      "Opera" Safari" "SizeUp" "Spectacle" "SystemUIServer" \
       "Transmission" "Twitter" "iCal"; do
     killall "${app}" > /dev/null 2>&1
   done

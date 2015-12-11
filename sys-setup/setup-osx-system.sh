@@ -51,10 +51,13 @@ else
   fi
 fi
 
-
 ################################################
 # System-wide behaviors
 ################################################
+
+
+# Set the timezone; see `sudo systemsetup -listtimezones` for other values
+sudo systemsetup -settimezone "America/New_York" > /dev/null
 
 # Show system info on login screen
 sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
@@ -68,6 +71,20 @@ sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Vol
 killall mds > /dev/null 2>&1
 # Make sure indexing is enabled for the main volume
 sudo mdutil -i on / > /dev/null
+
+################################################
+# VM Guest specific stuff
+################################################
+
+# System settings for when running as a guest inside a VM
+
+if pkgutil --pkg-info com.vmware.tools.macos.pkg.files &>/dev/null; then
+
+  # Enable Retina/HiDPI display modes (requires restart)
+  # This may not actually work, on a per-program basis
+  sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
+
+fi
 
 echo "Done."
 
