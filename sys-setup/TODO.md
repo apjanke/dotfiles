@@ -8,7 +8,6 @@
 
 ##  Core Bugs  ##
 
-- De-Dropboxify
 - Don't `sudo -v`; let it authenticate lazily, since this script can't run unattended anyway.
 - Support for specific versions of OS X
 
@@ -23,16 +22,13 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 
 ##  System Setup Bugs  ##
 
-- Do not install XQuartz via `brew cask` when a standalone is installed
 - Install Dropbox
 - Install selected Mac App Store apps from command line
-- Better way of choosing an Xcode installation or CLT install up front, to get `git`, which is required for installing some of this other stuff
+- Better way of choosing an Xcode installation or CLT install up front, to get `git`, which is required for installing some of this other stuff, and install it automatically
  - Or just an alternate source of a usable `git` for bootstrapping the installs
  - Need to support both CLT and no-CLT boxes for Homebrew testing, and I don't know how to uninstall CLT installs
 - As part of Xcode setup, launch it (to get it verified) and agree to the EULA.
  - Or just switch to the CLT for everything, and I'll special-case the Xcode-only Homebrew test box installs
-- Check whether Java is installed, and fail early if it isn't, instead of waiting to hit something in Homebrew that depends on it
-- Have stuff work with either Xcode selection or Xcode CLT installation
 
 ##  User Setup Bugs  ##
 
@@ -60,18 +56,18 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 - Keyboard shortcuts
  - e.g. Ctrl-arrow for switching spaces, vs Ctrl-shift-8/9
 - Make JustNotes dock-only (and not show in menu bar)
+- Disable the dashboard thing with widgets
 
 #  Enhancements   #
 
 ##  Big stuff  ##
 
-- See if I can de-Dropboxify this stuff
+- Install fonts, at system level
 - Support alternate Homebrew installations
  - Alternate `brew --prefix` location
  - Dedicated Homebrew user
-- Detect when running inside a VM guest and choose some alternate settings automatically
- - Install VMware tools automatically?
-- Install fonts, at system level
+ - As arguments
+- Install VMware tools automatically, instead of requiring manual installation and using that to determine whether running inside a VM
 - Research other people's mechanisms for setting this stuff up
 
 ##  Core scripts   ##
@@ -90,7 +86,6 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 
 - Install iTerm2 somehow
 - Learn `brew cask` and get stuff installed using it?
-- Accept hostname as an argument to setup
 - Consider enabling HFS+ compression on some areas by default
 - Script installation of Xcode, including versioning app name
 

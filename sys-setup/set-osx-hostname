@@ -1,0 +1,20 @@
+#!/bin/bash
+# set-osx-hostname
+#
+# Sets the hostname in all the various ways you need to on OS X.
+# This is intended to be the equivalent of manually setting it in the
+# System Preferences > Sharing control panel.
+
+function set-osx-hostname() {
+  name=$1
+  sudo scutil --set ComputerName "$name"
+  sudo scutil --set HostName "$name"
+  sudo scutil --set LocalHostName "$name"
+}
+
+if [[ -z "$1" ]]; then
+  echo "Usage: $0 <hostname>" >&2
+  exit 1
+fi
+
+set-osx-hostname "$1"

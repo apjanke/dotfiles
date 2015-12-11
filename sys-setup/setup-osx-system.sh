@@ -1,15 +1,6 @@
 #!/bin/bash
 #
 # Updates the system settings to my preferred state.
-#
-
-# Use this manually to set hostname:
-function set-osx-hostname() {
-  name=$1
-  sudo scutil --set ComputerName "$name"
-  sudo scutil --set HostName "$name"
-  sudo scutil --set LocalHostName "$name"
-}
 
 # Ask for administrator password up front
 sudo -v
