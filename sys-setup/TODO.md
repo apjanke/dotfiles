@@ -36,6 +36,7 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 - Need to disable notifications for various programs.
 - Install Dropbox
 - Configure Dropbox selective sync
+
 - Set up accounts in Tweetbot
 - Set up accounts in Slack
 - Set up mail accounts in Thunderbird
@@ -46,13 +47,10 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 - Set up Moom (run automatically, run as menu bar application)
 - Configure Bartender from CLI (support both v1 (for 10.9) and v2)
 - Configure Finder
- - Default to list view
  - Change items in sidebar (remove some, add some, reorder others)
- - New windows open in home directory
-- Power Management settings
- - Change time-to-sleep, time-to-display-off
+ - https://discussions.apple.com/thread/3200109?start=15
 - Configure screensaver
- - Random screensaver; require password immediately; upper-left corner hotspot
+ - Random screensaver
 - Keyboard shortcuts
  - e.g. Ctrl-arrow for switching spaces, vs Ctrl-shift-8/9
 - Make JustNotes dock-only (and not show in menu bar)
@@ -73,7 +71,7 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 ##  Core scripts   ##
 
 - Network install
- - On a frewsh install, I want to do a `sh -c $(curl ...)` to grab the master installer and have it do the whole shebang from there.
+ - On a fresh install, I want to do a `sh -c $(curl ...)` to grab the master installer and have it do the whole shebang from there.
 - Add top-level logging
 - Factor Homebrew stuff out: pull default formula lists
 
@@ -94,7 +92,6 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 - Disable FaceTime Account
 - Disable Messages Account
 - Change items in Dock
- - Remove unwanted items
  - Add new things as persistent items
  - Rearrange item order
 - Install SSH keys from central source or peer

@@ -62,10 +62,12 @@ sudo systemsetup -settimezone "America/New_York" > /dev/null
 # Allow remote login
 sudo systemsetup -setremotelogin on
 
-# Sleep timings
-#sudo systemsetup -setcomputersleep 60
-#sudo systemsetup -setdisplaysleep 15
-#sudo systemsetup -setharddisksleep 60
+# Power management settings
+sudo pmset -b displaysleep 15
+sudo pmset -c displaysleep 15
+sudo pmset -b sleep 30
+sudo pmset -c sleep 0
+sudo pmset -b lessbright 0
 
 # Show system info on login screen
 sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
