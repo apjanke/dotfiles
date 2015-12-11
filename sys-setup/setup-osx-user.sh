@@ -367,7 +367,7 @@ spotlight_items=(
   '{"enabled" = 0;"name" = "SOURCE";}'
   )
 # If Yosemite or later:
-if false
+if false; then
   spotlight_items=("${spotlight_items[@]}"
   '{"enabled" = 0;"name" = "MENU_DEFINITION";}' \
   '{"enabled" = 0;"name" = "MENU_OTHER";}' \
@@ -541,9 +541,8 @@ defaults write com.apple.appstore ShowDebugMenu -bool true
 defaults write com.apple.appstore WebKitDeveloperExtras -bool true
 
 # UI sound effects
-# (requires logout to take effect)
-# (this does not actually work, at least on 10.9+)
-defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -bool false
+# (requires logout and some time to take effect)
+defaults write com.apple.systemsound com.apple.sound.uiaudio.enabled -int 0
 
 ################################################
 # Google Chrome & Google Chrome Canary
@@ -631,7 +630,7 @@ fi
 if [[ $DO_KILL == 1 ]]; then
   for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
       "Dock" "Finder" "Google Chrome" "Google Chrome Canary" "Mail" "Messages" \
-      "Opera" Safari" "SizeUp" "Spectacle" "SystemUIServer" \
+      "Opera" "Safari" "SizeUp" "Spectacle" "SystemUIServer" \
       "Transmission" "Twitter" "iCal"; do
     killall "${app}" > /dev/null 2>&1
   done
