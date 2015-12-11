@@ -4,7 +4,6 @@
 #
 
 # Use this manually to set hostname:
-
 function set-osx-hostname() {
   name=$1
   sudo scutil --set ComputerName "$name"
@@ -15,26 +14,27 @@ function set-osx-hostname() {
 # Ask for administrator password up front
 sudo -v
 
-
 ################################################
 # Tools and editors
 ################################################
 
 # Install Xcode CLT
 # (needed for system git, at least)
-
-rslt=$(sudo xcode-select --install 2>&1)
-if [[ $? == 0 ]]; then
-  echo " "
-  echo "Now, complete the Xcode CLT install in that dialog!"
-  echo -n "When done, press enter to continue: "
-  read DUMMY
-  echo " "
-elif [[ $rslt == *"already installed"* ]]; then
-  echo "Looks like Xcode CLT is already installed."
-else
-  echo "Error installing Xcode CLT: $rslt"
-  exit 1
+# Disabled for now so user can manually choose whether to install Xcode or CLT
+if false; then
+  rslt=$(sudo xcode-select --install 2>&1)
+  if [[ $? == 0 ]]; then
+    echo " "
+    echo "Now, complete the Xcode CLT install in that dialog!"
+    echo -n "When done, press enter to continue: "
+    read DUMMY
+    echo " "
+  elif [[ $rslt == *"already installed"* ]]; then
+    echo "Looks like Xcode CLT is already installed."
+  else
+    echo "Error installing Xcode CLT: $rslt"
+    exit 1
+  fi
 fi
 
 # Only /usr/local exists by default
@@ -78,5 +78,5 @@ killall mds > /dev/null 2>&1
 # Make sure indexing is enabled for the main volume
 sudo mdutil -i on / > /dev/null
 
-
 echo "Done."
+

@@ -26,8 +26,6 @@ function defaults-delete() {
 }
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
-#echo MYDIR is $MYDIR
-
 
 ################################################
 # Dock
@@ -470,6 +468,19 @@ if which duti >/dev/null; then
   if [[ -e "/Applications/BBEdit.app" ]]; then 
     duti -s com.barebones.bbedit .txt all
   fi
+fi
+
+################################################
+# VM Guest specific stuff
+################################################
+
+# User settings for when running as a guest inside a VM
+
+if pkgutil --pkg-info com.vmware.tools.macos.pkg.files &>/dev/null; then
+  # Re-enable “natural” (Lion-style) scrolling
+  # This will end up having old-style scrolling in effect, because of interaction
+  # with the host's scrolling setup and/or the VM's mouse driver
+  defaults write NSGlobalDomain com.apple.swipescrolldirection -bool true
 fi
 
 ################################################

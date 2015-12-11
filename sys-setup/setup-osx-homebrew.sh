@@ -9,11 +9,16 @@ THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # Prerequisites
 
-rslt=$(xcode-select --install 2>&1)
-if [[ "$rslt" = *"already installed"* ]]; then
-  echo Xcode CLT is installed.
-else
-  echo "Error: Xcode CLT is not installed. Please install it (like with setup-osx-system.sh)"
+# Check for Xcode or CLT
+if ! xcode-select -p >/dev/null; then
+  echo "Error: Neither Xcode nor CLT are installed. Please install one."
+  echo "  To install CLT:  sudo xcode-select --install"
+  echo "  To do Xcode:     Install Xcode and then sudo xcode-select -s /Applications/Xcode-<version>.app"
+  exit 1
+fi
+# Check for JDK
+if ! pkgutil --pkgs | grep com.oracle.jdk >/dev/null; then
+  echo "Error: Java JDK is not installed. Please install it."
   exit 1
 fi
 
@@ -21,7 +26,7 @@ fi
 if [[ -z $(which brew) ]]; then
   ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 else
-  echo "Homebrew is already installed"
+  echo "Homebrew is already installed."
 fi
 
 # Pick what to install
@@ -53,8 +58,6 @@ for tap in "${taps[@]}"; do
   echo brew tap $tap
   brew tap $tap
 done
-
-# TODO: Check for Java installed
 
 # Hack: do gcc first, since :recommended dependencies might not pick it up,
 # due to a Homebrew dependency resolution bug
