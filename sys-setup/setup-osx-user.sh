@@ -259,6 +259,18 @@ defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
+# Configure screen saver
+# (Careful with this; it seems to break things)
+if false; then
+defaults -currentHost delete com.apple.screensaver moduleDict
+defaults -currentHost write com.apple.screensaver "CleanExit" -string "YES"
+defaults -currentHost write com.apple.screensaver "PrefsVersion" -int 100
+defaults -currentHost write com.apple.screensaver moduleDict -dict-add "displayName" -string Random
+defaults -currentHost write com.apple.screensaver moduleDict -dict-add "moduleName" -string Random
+defaults -currentHost write com.apple.screensaver moduleDict -dict-add "path" -string "/System/Library/Screen Savers/Random.saver"
+defaults -currentHost write com.apple.screensaver moduleDict -dict-add "type" -int 8
+fi
+
 # Disable shadow in screenshots
 defaults write com.apple.screencapture disable-shadow -bool true
 
