@@ -43,13 +43,16 @@ brew install caskroom/cask/brew-cask
 
 # Special case: do cask-managed dependencies first, because regular `brew install`
 # formulae may need them
-# TODO: check for xquartz already installed outside cask
-brew cask install xquartz
+if [ ! -e /Applications/Utilities/XQuartz.app ]; then
+  brew cask install xquartz
+fi
 
 for tap in "${taps[@]}"; do
   echo brew tap $tap
   brew tap $tap
 done
+
+# TODO: Check for Java installed
 
 # Hack: do gcc first, since :recommended dependencies might not pick it up,
 # due to a Homebrew dependency resolution bug

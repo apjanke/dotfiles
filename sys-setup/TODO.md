@@ -32,6 +32,7 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 - As part of Xcode setup, launch it (to get it verified) and agree to the EULA.
  - Or just switch to the CLT for everything, and I'll special-case the Xcode-only Homebrew test box installs
 - Check whether Java is installed, and fail early if it isn't, instead of waiting to hit something in Homebrew that depends on it
+- Have stuff work with either Xcode selection or Xcode CLT installation
 
 ##  User Setup Bugs  ##
 
@@ -58,6 +59,7 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
  - Random screensaver; require password immediately; upper-left corner hotspot
 - Keyboard shortcuts
  - e.g. Ctrl-arrow for switching spaces, vs Ctrl-shift-8/9
+- Make JustNotes dock-only (and not show in menu bar)
 
 #  Enhancements   #
 
