@@ -5,6 +5,8 @@
 # This is idempotent, so you can rerun it on a machine that already has brew installed,
 # though you may see spurious error messages.
 
+THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
+
 # Prerequisites
 
 rslt=$(xcode-select --install 2>&1)
@@ -23,10 +25,10 @@ else
 fi
 
 # Pick what to install
-my_brew_cfg_dir="$HOME/Dropbox/computer/my computer setup/homebrew stuff"
+my_brew_cfg_dir="$THISDIR/homebrew"
 if [ -e "$my_brew_cfg_dir" ]; then
   echo "Found brew config dir"
-  taps=($(cat "$my_brew_cfg_dir/brew-taps-common"))
+  taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
   formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
   casks=()
 else
