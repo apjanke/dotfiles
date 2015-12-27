@@ -26,6 +26,8 @@ alias duh="du -csh"
 alias gst='git status'
 alias gc='git commit -v'
 alias gco='git checkout'
+alias gdc='git diff | cat'
+alias glo='git log --oneline'
 # Hacks around default behavior that I dislike
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
@@ -115,7 +117,8 @@ if [ $uname = "Darwin" ]; then
 
   export HOMEBREW_DEVELOPER=1
   export HOMEBREW_SANDBOX=1
-  alias bas='brew audit --strict --no-test-do-check'
+  alias bas='brew audit --strict --online'
+  alias baso='brew audit --strict --online'
   
   # brewsubl - open a brew formula in subl (doesn't work with taps)
   function brewsubl {
