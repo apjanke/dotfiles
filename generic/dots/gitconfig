@@ -29,3 +29,8 @@
 	required = true
 [http]
 	sslVerify = true
+[alias]
+	co = checkout
+	br = branch
+	ci = commit
+	authors = dummy-command
