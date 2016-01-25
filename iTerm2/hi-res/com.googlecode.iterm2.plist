@@ -2233,9 +2233,9 @@
 	<key>NSWindow Frame Preferences</key>
 	<string>635 80 924 485 0 0 1680 1028 </string>
 	<key>NSWindow Frame iTerm Window 0</key>
-	<string>709 202 962 826 0 0 1680 1028 </string>
+	<string>988 522 650 506 0 0 1680 1028 </string>
 	<key>NSWindow Frame iTerm Window 1</key>
-	<string>-1 438 1042 586 0 0 1680 1028 </string>
+	<string>4 518 650 506 0 0 1680 1028 </string>
 	<key>NeverWarnAboutShortLivedSessions_F6494785-3DAD-431E-B7FF-B08061D8DB72</key>
 	<true/>
 	<key>New Bookmarks</key>
@@ -4423,7 +4423,7 @@
 				<real>0.44058024883270264</real>
 			</dict>
 			<key>Guid</key>
-			<string>42EF4AB5-1020-47FD-9CCC-D458DD0EA3EF</string>
+			<string>FA31A917-4256-4FCA-A9E1-B1A230EF3CBD</string>
 			<key>Hide After Opening</key>
 			<false/>
 			<key>Horizontal Spacing</key>
@@ -4912,7 +4912,7 @@
 				<real>0.44058024883270264</real>
 			</dict>
 			<key>Guid</key>
-			<string>16FC27F8-FCC4-4BCE-9228-BF38E589AB58</string>
+			<string>00FD6454-D789-4343-82F3-0968BE9BEBBD</string>
 			<key>Hide After Opening</key>
 			<false/>
 			<key>Horizontal Spacing</key>
@@ -5164,7 +5164,7 @@
 	<key>NoSyncTimeOfLastPromo</key>
 	<real>455742936.14235598</real>
 	<key>NoSyncTimeOfLastPromoDownload</key>
-	<real>468718901.50500202</real>
+	<real>471913599.513125</real>
 	<key>OnlyWhenMoreTabs</key>
 	<true/>
 	<key>OpenArrangementAtStartup</key>
@@ -5229,7 +5229,7 @@
 	<key>SUHasLaunchedBefore</key>
 	<true/>
 	<key>SULastCheckTime</key>
-	<date>2015-11-08T23:41:25Z</date>
+	<date>2015-12-15T23:06:35Z</date>
 	<key>SavePasteHistory</key>
 	<false/>
 	<key>ShowBookmarkName</key>
