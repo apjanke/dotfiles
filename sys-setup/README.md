@@ -10,3 +10,7 @@ This is all "alpha" quality, for personal use. All of it, including any interfac
 #  References   #
 
 The OS X scripts are largely based on Mathias Bynens' dotfiles (https://github.com/mathiasbynens/dotfiles).
+
+Other system-setup resources used as inspiration:
+
+* @von's mac-setup script: https://github.com/von/mac-setup

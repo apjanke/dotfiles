@@ -6,10 +6,11 @@
 # System Preferences > Sharing control panel.
 
 function set-osx-hostname() {
-  name=$1
+  name="$1"
   sudo scutil --set ComputerName "$name"
   sudo scutil --set HostName "$name"
   sudo scutil --set LocalHostName "$name"
+  sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$name"
 }
 
 if [[ -z "$1" ]]; then
