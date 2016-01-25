@@ -17,7 +17,7 @@ if [[ $APJ_OMZ_DEBUG == 1 ]]; then
 fi
 
 ZSH_THEME_SCM_CHECK_TIMEOUT=0.5
-CASE_SENSITIVE=true
+#CASE_SENSITIVE=true
 if [[ $DISABLE_OH_MY_ZSH_CUSTOM != 1 ]]; then
   ZSH_CUSTOM=$HOME/.oh-my-zsh-custom
   ZSH_THEME=${ZSH_THEME:-apjanke-01}
