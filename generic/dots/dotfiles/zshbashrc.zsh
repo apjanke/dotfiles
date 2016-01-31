@@ -65,16 +65,16 @@ maybe_add_path "$HOME/local/go-work/bin"
 uname=`uname`
 if ls --version 2>/dev/null | grep GNU &>/dev/null; then
   # Color on by default
-  alias ls="ls --color"
+  alias ls="ls --color --quoting-style=literal"
 elif [ $uname = "Darwin" ] || [ $uname = "FreeBSD" ]; then
   # On BSD, prefer GNU ls for nicer colors
   # (Unsure if I really want to do this, b/c of gls' uneven column widths)
   if which gls &>/dev/null && gls --color -d . &>/dev/null; then
-    alias ls="gls --color"
+    alias ls="gls --color --quoting-style=literal"
   fi
 fi
 if which gls &>/dev/null; then
-  alias gls="gls --color"
+  alias gls="gls --color --quoting-style=literal"
 fi
 
 #  Command configuration  #
@@ -117,6 +117,7 @@ if [ $uname = "Darwin" ]; then
 
   export HOMEBREW_DEVELOPER=1
   export HOMEBREW_SANDBOX=1
+  export HOMEBREW_EDITOR=subl
   alias bas='brew audit --strict --online'
   alias baso='brew audit --strict --online'
   
