@@ -1,14 +1,38 @@
 # This is not the standard .zhsrc from oh-my-zsh. I wrote my own 
 # based on it; it invokes oh-my-zsh, but sets other stuff too
 
+# Debugging prompt with timestamp for profiling under `zsh -x`
+#PS4=$'+ %D{%s.%6.} %N:%i> '
+
+if type brew &>/dev/null; then
+  HOMEBREW_PREFIX=$(brew --prefix)
+fi
+
+# Convert TERMINFO to a multi-entry path and pick up Homebrew's terminfo
+# TODO: detect whether $TERMINFO_DIRS is supported on this system
+() {
+  if [[ -z $TERMINFO_DIRS ]]; then
+    export TERMINFO_DIRS=~/.terminfo
+    if [[ -n $HOMEBREW_PREFIX ]]; then
+      TERMINFO_DIRS="$TERMINFO_DIRS:$HOMEBREW_PREFIX/share/terminfo"
+    fi
+    if [[ -n $TERMINFO ]]; then
+      TERMINFO_DIRS="$TERMINFO_DIRS:$TERMINFO"
+      TERMINFO=""
+    fi
+    # Include the default location
+    TERMINFO_DIRS="$TERMINFO_DIRS:" 
+  fi
+}
+
 # Pick up additional site-functions that may not be on system zsh's
 # $fpath by default
 () {
   local site_dir site_dirs
 
   site_dirs=( /usr/local/share/zsh/site-functions )
-  if type brew &>/dev/null; then
-    site_dirs+=$(brew --prefix)/share/zsh/site-functions
+  if [[ -n $HOMEBREW_PREFIX ]]; then
+    site_dirs+=$HOMEBREW_PREFIX/share/zsh/site-functions
   fi
   for site_dir ( $site_dirs ); do
     if [[ -d $site_dir  && ${fpath[(I)$site_dir]} == 0 ]]; then

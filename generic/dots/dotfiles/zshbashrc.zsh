@@ -10,8 +10,6 @@
 
 # Aliases and environment
 
-export TERMINFO_DIRS=~/.terminfo:$TERMINFO
-TERMINFO=""
 
 # Misc stuff
 alias cls="clear"
