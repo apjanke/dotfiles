@@ -1,0 +1,16 @@
+! Rxvt and Rxvt-Unicode
+
+! Meslo misbehaves and is displayed extra-wide for some reason.
+!URxvt*font: xft:Meslo LG M Regular:size=10
+! Plain Menlo seems to work though
+!URxvt*font: xft:Menlo:size=10
+! But I find it ugly under X11, so just used regular fixed width
+Rxvt*font: fixed
+Rxvt*background: Black
+Rxvt*foreground: White
+URxvt*scrollstyle: plain
+Rxvt*scrollBar_right: true
+Rxvt*saveLines: 5000
+
+XTerm*background: Black
+XTerm*foreground: White
