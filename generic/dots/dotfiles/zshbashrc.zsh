@@ -26,6 +26,10 @@ alias gc='git commit -v'
 alias gco='git checkout'
 alias gdc='git diff | cat'
 alias glo='git log --oneline'
+gpom() {
+  echo git pull origin master
+  git pull origin master
+}
 # Hacks around default behavior that I dislike
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
