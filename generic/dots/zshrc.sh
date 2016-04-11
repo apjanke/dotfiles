@@ -41,22 +41,34 @@ fi
   done
 }
 
-# OH-MY-ZSH
-
-#DISABLE_OH_MY_ZSH=1
-#DISABLE_OH_MY_ZSH_CUSTOM=1
-#ZSH_THEME=apjanke-02
-ZSH=${ZSH:-$HOME/.oh-my-zsh}
-if [[ $DISABLE_OH_MY_ZSH != 1 && -d $ZSH ]]; then
-  plugins=( osx themes nyan brew github )
-  source ~/.dotfiles/zshrc-omz.zsh
-else
-  source ~/.dotfiles/zshrc-no-omz.zsh
+# Default $TMPPREFIX may be insecure
+if [[ $OSTYPE == Darwin* ]]; then
+  TMPPREFIX=$TMPDIR/zsh
 fi
 
-#source ~/local/opp/agnoster/agnoster-zsh-theme/agnoster.zsh-theme
+# OH-MY-ZSH or other Zsh Configurator
 
-# Regular non-oh-my-zsh stuff after here
+# Load selected configurator, falling back to stock if it is not
+# installed on this system.
+
+# Valid configurators: "oh-my-zsh", "prezto", or "none"
+ZSH_CONFIGURATOR=oh-my-zsh
+#ZSH_CONFIGURATOR=prezto
+if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
+  #_OMZ_DEBUG=1
+  #_OMZ_DEBUG_SMKX=1
+  #DISABLE_OH_MY_ZSH_CUSTOM=1
+  ZSH_THEME=apjanke-01
+  ZSH=${ZSH:-$HOME/.oh-my-zsh}
+  plugins=( osx themes nyan brew github )
+  source ~/.dotfiles/zshrc-oh-my-zsh.zsh
+elif [[ $ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.prezto" ]]; then
+  source ~/.dotfiles/zshrc-prezto.zsh
+else
+  source ~/.dotfiles/zshrc-none.zsh
+fi
+
+# Regular non-configurator-driven stuff after here
 
 # Pull in common bash/zsh configuration
 if [ -f $HOME/.dotfiles/zshbashrc.zsh ]; then 
@@ -73,12 +85,18 @@ setopt no_interactivecomments
 
 # Completion control
 
-function maybe_bindkey() {
-  local cap=$1 widget=$2
-  if [[ -n ${terminfo[$cap]} ]]; then
-    bindkey ${terminfo[$cap]} $widget
-  fi
-}
+if which omz_bindkey &>/dev/null; then
+  function maybe_bindkey() {
+    omz_bindkey -t "$@"
+  }
+else
+  function maybe_bindkey() {
+    local cap=$1 widget=$2
+    if [[ -n ${terminfo[$cap]} ]]; then
+      bindkey ${terminfo[$cap]} $widget
+    fi
+  }
+fi
 
 zstyle ':completion:*' rehash true
 #zstyle ':completion:*' completer _complete _ignored
@@ -94,7 +112,7 @@ zle -N down-line-or-beginning-search
 maybe_bindkey "kcuu1" up-line-or-beginning-search      # [Up-Arrow]
 maybe_bindkey "kcud1" down-line-or-beginning-search    # [Down-Arrow]
 maybe_bindkey "khome" beginning-of-line
-maybe_bindkey "kend" beginning-of-line
+maybe_bindkey "kend" end-of-line
 
 #  Git and GitHub stuff  #
 

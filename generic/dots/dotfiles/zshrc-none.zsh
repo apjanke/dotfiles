@@ -1,9 +1,9 @@
-# .zshrc-no-omz
+# zshrc-none.zsh
 #
-# zshrc for use when oh-my-zsh is not being used
-# This contains alternate setup for the things in omz that I rely on
+# zshrc for use when no configurator framework (oh-my-zsh, prezto, etc) is being used
+# This contains alternate setup for the things in OMZ that I rely on.
 #
-# Mostly copied from the indicated omz files, with my termsupport changes
+# Mostly copied from the indicated OMZ files, with my own termsupport changes
 #
 # Stuff that is covered by my other common setup like .zshbashrc is not included
 # here.

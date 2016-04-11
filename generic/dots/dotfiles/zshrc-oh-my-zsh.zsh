@@ -1,6 +1,6 @@
-# .zshrc-omz
+# zshrc-oh-my-zsh.zsh
 #
-# Logic for loading Oh My Zsh
+# Logic for loading and configuring Oh My Zsh
 
 # bindkey needs to be done before loading OMZ to hack around a load order issue
 bindkey -e
