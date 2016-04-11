@@ -26,6 +26,10 @@ alias gc='git commit -v'
 alias gco='git checkout'
 alias gdc='git diff | cat'
 alias glo='git log --oneline'
+gloc() {
+  local n=${1:-10}
+  git log --oneline | head -$n
+}
 gpom() {
   echo git pull origin master
   git pull origin master
@@ -122,21 +126,16 @@ if [ $uname = "Darwin" ]; then
   export HOMEBREW_EDITOR=subl
   alias bas='brew audit --strict --online'
   alias baso='brew audit --strict --online'
+  alias brew-repo='cd $(brew --repo)'
+  alias brew-core='cd $(brew --repo)/Library/Taps/homebrew/homebrew-core'
   
-  # brewsubl - open a brew formula in subl (doesn't work with taps)
-  function brewsubl {
-    subl "$(brew --repository)/Library/Formula/${1%%.rb}.rb"
-  }
-
-  # brewsublogs - open the brew logs dir for a formula in subl
-  function brewsublogs {
-    local logdir=~/Library/Logs/Homebrew/$1
-    if [ -e $logdir ]; then
-      subl $logdir
-    else
-      print "No such directory: $logdir"
-      return 1
+  # brew187 - run brew under Ruby 1.8.7
+  function brew187 {
+    local ruby187_prefix=$(brew --prefix ruby187 2>/dev/null)
+    if [[ -z "$ruby187_prefix" ]]; then
+      echo >&2 "Error: no ruby187 installation found"
     fi
+    HOMEBREW_RUBY_PATH="$ruby187_prefix/bin/ruby" brew "$@"
   }
 
   # brew-gist-logs - brew gist-logs wrapper, with login support
