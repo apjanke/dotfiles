@@ -34,3 +34,5 @@
 	br = branch
 	ci = commit
 	authors = dummy-command
+[github]
+	user = apjanke
