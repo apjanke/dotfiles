@@ -46,6 +46,10 @@ alias ...='cd ../..'
 alias cd..='cd ..'
 alias cd...='cd ../..'
 alias cd....='cd ../../..'
+mkcd() {
+  mkdir -p "$1"
+  cd "$1"
+}
 
 #  Paths and commands  #
 
@@ -124,10 +128,12 @@ if [ $uname = "Darwin" ]; then
   export HOMEBREW_DEVELOPER=1
   export HOMEBREW_SANDBOX=1
   export HOMEBREW_EDITOR=subl
-  alias bas='brew audit --strict --online'
+  alias bas='brew audit --strict'
   alias baso='brew audit --strict --online'
   alias brew-repo='cd $(brew --repo)'
   alias brew-core='cd $(brew --repo)/Library/Taps/homebrew/homebrew-core'
+  alias bpull='brew pull2 --branch-okay'
+  alias bpullb='brew pull2 --branch-okay --bottle'
   
   # brew187 - run brew under Ruby 1.8.7
   function brew187 {
