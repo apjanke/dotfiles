@@ -6,6 +6,20 @@
 # though you may see spurious error messages.
 
 THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
+GITHUB_USERNAME=apjanke
+
+_do() {
+  echo "$@"
+  "$@"
+}
+
+ensure_github_user_fork_remote() {
+  USERNAME=$1
+  REPO=$2
+  if ! git remote get-url $USERNAME &>/dev/null; then
+    _do git remote add $USERNAME https://github.com/$USERNAME/$REPO.git
+  fi
+}
 
 # Prerequisites
 
@@ -28,6 +42,10 @@ if [[ -z $(which brew) ]]; then
 else
   echo "Homebrew is already installed."
 fi
+cd $(brew --repo)
+git fetch --unshallow
+ensure_github_user_fork_remote $GITHUB_USERNAME brew
+git fetch --all
 
 # Pick what to install
 my_brew_cfg_dir="$THISDIR/homebrew"
@@ -46,30 +64,32 @@ else
 fi
 
 # Install Homebrew Cask
-brew install caskroom/cask/brew-cask
+_do brew install caskroom/cask/brew-cask
 
 # Special case: do cask-managed dependencies first, because regular `brew install`
 # formulae may need them
 if [ ! -e /Applications/Utilities/XQuartz.app ]; then
-  brew cask install xquartz
+  _do brew cask install xquartz
 fi
 
 for tap in "${taps[@]}"; do
-  echo brew tap $tap
-  brew tap $tap
+  _do brew tap --full $tap
+  cd $(brew --prefix)/Library/Taps/$tap
+  tap_repo_name=homebrew-$(basename $tap)
+  ensure_github_user_fork_remote $GITHUB_USERNAME $tap_repo_name
+  git fetch --all
 done
 
 # Hack: do gcc first, since :recommended dependencies might not pick it up,
 # due to a Homebrew dependency resolution bug
-echo brew install gcc
-brew install gcc
-echo brew install "${formulae[@]}"
-brew install "${formulae[@]}"
+if [ ! -e $(brew --prefix)/bin/cc ]; then
+  brew install gcc
+  _do brew install gcc
+fi
+_do brew install "${formulae[@]}"
 
 for cask in "${casks[@]}"; do
-  echo brew cask install $cask
-  brew cask install $cask
+  _do brew cask install $cask
 done
-
 
 
