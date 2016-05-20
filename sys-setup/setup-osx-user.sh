@@ -603,6 +603,16 @@ if [[ -e "$SERIALS_DIR/Sublime Text 2 license.txt" ]]; then
 fi
 
 ################################################
+# BBEdit
+################################################
+
+if [[ -e "$SERIALS_DIR/BBEdit license.txt" ]]; then
+  BBEDIT_SERIAL=$(cat "$SERIALS_DIR/BBEdit 11 license.txt")
+  defaults write com.barebones.bbedit BBEditSerialNumber:11.0 "$BBEDIT_SERIAL"
+fi
+
+
+################################################
 # F.lux
 ################################################
 
