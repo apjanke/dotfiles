@@ -634,6 +634,8 @@ if which duti >/dev/null; then
   if [[ -e "/Applications/BBEdit.app" ]]; then 
     duti -s com.barebones.bbedit .txt all
   fi
+else
+  echo "duti is not installed. Not setting file associations."
 fi
 
 ################################################
