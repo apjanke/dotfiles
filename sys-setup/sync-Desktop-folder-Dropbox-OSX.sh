@@ -9,6 +9,8 @@
 # probably a way to do this with Rez/DeRez, but I don't care enough to
 # research it now.
 
+# TODO: This fails if you have no files in the local Desktop folder
+
 # My directory structure convention
 DROPBOX="$HOME/Dropbox"
 DB_DESKTOP="$DROPBOX/computer/data/Desktops/OSX/Desktop"
