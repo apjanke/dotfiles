@@ -26,6 +26,8 @@ function defaults-delete() {
 }
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
+DROPBOX="$HOME/Dropbox"
+SERIALS_DIR="$DROPBOX/records/licenses and serials"
 
 ################################################
 # Dock
@@ -595,6 +597,10 @@ defaults write org.m0k.transmission WarningLegal -bool false
 ST2_PREFS_DIR="$HOME/Library/Application Support/Sublime Text 2"
 mkdir -p "$ST2_PREFS_DIR/Packages/User"
 cp "$MYDIR/../settings-manual/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS_DIR/Packages/User"
+mkdir -p "$ST2_PREFS_DIR/Settings"
+if [[ -e "$SERIALS_DIR/Sublime Text 2 license.txt" ]]; then
+  cp "$SERIALS_DIR/Sublime Text 2 license.txt" "$ST2_PREFS_DIR/Settings/License.sublime_license"
+fi
 
 ################################################
 # F.lux
