@@ -14,6 +14,7 @@ set -e
 
 if [[ ! -e ~/.ssh/github_rsa ]]; then
   echo "You must install ssh keys first before cloning the repos"
+  exit 1
 fi
 
 # Install Oh My Zsh
@@ -41,7 +42,7 @@ if [ ! -e ~/.oh-my-zsh-custom ]; then
   ln -s "$omz_repo_dir/oh-my-zsh-custom" ~/.oh-my-zsh-custom
 fi
 
-if [ `uname` = Darwin ]; then
+if [ $(uname) = Darwin ]; then
   curr_shell=$(dscl /Search -read "/Users/$USER" UserShell | awk '{print $2}')
 else
   curr_shell="$SHELL"
