@@ -5,8 +5,11 @@
 # This is idempotent, so you can rerun it on a machine that already has brew installed,
 # though you may see spurious error messages.
 
+set -e
+
 THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
 GITHUB_USERNAME=apjanke
+my_brew_cfg_dir="$THISDIR/homebrew"
 
 _do() {
   echo "$@"
@@ -27,7 +30,8 @@ ensure_github_user_fork_remote() {
 if ! xcode-select -p >/dev/null; then
   echo "Error: Neither Xcode nor CLT are installed. Please install one."
   echo "  To install CLT:  sudo xcode-select --install"
-  echo "  To do Xcode:     Install Xcode and then sudo xcode-select -s /Applications/Xcode-<version>.app"
+  echo "  To do Xcode:     Install Xcode and then:"
+  echo "     sudo xcode-select -s /Applications/Xcode-<version>.app"
   exit 1
 fi
 # Check for JDK
@@ -38,19 +42,27 @@ fi
 
 # Install Homebrew
 if [[ -z $(which brew) ]]; then
-  ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  INSTALLER_URL=https://raw.githubusercontent.com/Homebrew/install/master/install
+  ruby -e "$(curl -fsSL $INSTALLER_URL)"
 else
   echo "Homebrew is already installed."
 fi
 cd $(brew --repo)
-git fetch --unshallow
+if [[ -e .git/shallow ]]; then
+  git fetch --unshallow
+fi
 ensure_github_user_fork_remote $GITHUB_USERNAME brew
+git fetch --all
+cd "$(brew --prefix)/Library/Taps/homebrew/homebrew-core"
+if [[ -e .git/shallow ]]; then
+  git fetch --unshallow
+fi
+ensure_github_user_fork_remote $GITHUB_USERNAME homebrew-core
 git fetch --all
 
 # Pick what to install
-my_brew_cfg_dir="$THISDIR/homebrew"
-if [ -e "$my_brew_cfg_dir" ]; then
-  echo "Found brew config dir"
+if [[ -e "$my_brew_cfg_dir" ]]; then
+  echo "Found brew config dir at $my_brew_cfg_dir"
   taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
   formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
   casks=()
@@ -72,14 +84,17 @@ if [ ! -e /Applications/Utilities/XQuartz.app ]; then
   _do brew cask install xquartz
 fi
 
+# Install taps
 for tap in "${taps[@]}"; do
+  tap_base_name=homebrew-$(basename $tap)
+  tap_owner_name=$(dirname $tap)
   _do brew tap --full $tap
-  cd $(brew --prefix)/Library/Taps/$tap
-  tap_repo_name=homebrew-$(basename $tap)
-  ensure_github_user_fork_remote $GITHUB_USERNAME $tap_repo_name
+  cd $(brew --prefix)/Library/Taps/$tap_owner_name/$tap_base_name
+  ensure_github_user_fork_remote $GITHUB_USERNAME $tap_base_name
   git fetch --all
 done
 
+# Install formulae
 # Hack: do gcc first, since :recommended dependencies might not pick it up,
 # due to a Homebrew dependency resolution bug
 if [ ! -e $(brew --prefix)/bin/cc ]; then

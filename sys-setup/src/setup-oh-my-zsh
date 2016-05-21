@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Setup and installation of Oh My Zsh on OS X, using my conventions
+
+set -e
+
+# Prerequisites:
+#  Xcode CLT or git installed
+#  ssh keys
+
+if [[ ! -e ~/.ssh/github_rsa ]]; then
+  echo "You must install GitHub SSH keys first before cloning GitHub repos"
+  exit 1
+fi
+
+# Install Oh My Zsh
+# (using manual installation)
+
+omz_repos_dir=~/local/opp/oh-my-zsh
+mkdir -p "$omz_repos_dir"
+if [[ ! -e "$omz_repos_dir/oh-my-zsh" ]]; then
+  echo "Cloning oh-my-zsh"
+  git clone https://github.com/apjanke/oh-my-zsh.git "$omz_repos_dir/oh-my-zsh"
+  pushd "$omz_repos_dir/oh-my-zsh"
+  git remote add upstream https://github.com/robbyrussell/oh-my-zsh.git
+  git fetch --all
+  popd
+fi
+if [[ ! -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
+  echo "Cloning oh-my-zsh-custom"
+  git clone https://github.com/apjanke/oh-my-zsh-custom.git "$omz_repos_dir/oh-my-zsh-custom"
+fi
+if [[ ! -e ~/.oh-my-zsh ]]; then
+  echo "Linking .oh-my-zsh"
+  ln -s "$omz_repos_dir/oh-my-zsh" ~/.oh-my-zsh
+fi
+if [[ ! -e ~/.oh-my-zsh-custom ]]; then
+  echo "Linking .oh-my-zsh-custom"
+  ln -s "$omz_repos_dir/oh-my-zsh-custom" ~/.oh-my-zsh-custom
+fi
+
+if [[ $(uname) = Darwin ]]; then
+  curr_shell=$(dscl /Search -read "/Users/$USER" UserShell | awk '{print $2}')
+else
+  curr_shell="$SHELL"
+fi
+if [[ $curr_shell != /bin/zsh ]]; then
+  chsh -s /bin/zsh
+fi

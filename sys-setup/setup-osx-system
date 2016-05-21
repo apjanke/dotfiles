@@ -2,6 +2,10 @@
 #
 # Updates the system settings to my preferred state.
 
+# Be conservative, and also so aborting a sudo with Ctrl-C will
+# abort the whole script
+set -e
+
 # Ask for administrator password up front
 sudo -v
 
@@ -40,10 +44,10 @@ if [[ ! -e /usr/local/bin ]]; then
 fi
 
 # Link Sublime Text command line tool
-
 if [[ -e /usr/local/bin/subl ]]; then
   echo "subl is already linked"
 else
+  # Prefer Sublime version 2 since 3 is still in beta
   if [[ -e "/Applications/Sublime Text 2.app" ]]; then
     sudo ln -s -v "/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
   elif [[ -e "/Applications/Sublime Text 3.app" ]]; then
@@ -55,8 +59,7 @@ fi
 # System-wide behaviors
 ################################################
 
-
-# Set the timezone; see `sudo systemsetup -listtimezones` for other values
+# Set the time zone; see `sudo systemsetup -listtimezones` for other values
 sudo systemsetup -settimezone "America/New_York" > /dev/null
 
 # Allow remote login
@@ -77,6 +80,18 @@ sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo Hos
 # Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
 sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
 
+# Reveal IP address, hostname, OS version, etc. when clicking the clock
+# in the login window
+sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+
+# Disable Spotlight indexing for any volume that gets mounted and has not yet
+# been indexed before.
+# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
+sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
+
+# Hide Spotlight tray-icon (and subsequent helper)
+#sudo chmod 600 /System/Library/CoreServices/Search.bundle/Contents/MacOS/Search
+
 # Load new settings before rebuilding the index
 killall mds > /dev/null 2>&1
 # Make sure indexing is enabled for the main volume
@@ -89,11 +104,9 @@ sudo mdutil -i on / > /dev/null
 # System settings for when running as a guest inside a VM
 
 if pkgutil --pkg-info com.vmware.tools.macos.pkg.files &>/dev/null; then
-
   # Enable Retina/HiDPI display modes (requires restart)
-  # This may not actually work, on a per-program basis
+  # This may not work well, on a per-program basis
   sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true
-
 fi
 
 echo "Done."

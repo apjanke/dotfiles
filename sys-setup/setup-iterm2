@@ -1,6 +1,9 @@
 #!/bin/bash
 #
 # Sets up this user's iTerm2 settings
+#
+# This is a work in progress. Once it's working, it should be
+# integrated into the main setup-osx-user script.
 
 system_profiler SPDisplaysDataType | grep "Retina: Yes" &>/dev/null
 if [[ $? == 0 ]]
