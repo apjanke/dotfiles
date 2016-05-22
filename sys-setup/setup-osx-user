@@ -14,13 +14,32 @@
 # individual commands to the terminal. A "defaults-write" call may be replaced with
 # "defaults write" at the command line.
 
+set -e
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
 SERIALS_DIR="$DROPBOX/records/licenses and serials"
 WALLPAPER_FILE="/Library/Desktop Pictures/Wave.jpg"
 
-while getopts vk opt; do
+PROGRAM_NAME="$(basename $0)"
+
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - set up system settings to apjanke's preferred ones
+
+Usage:
+  $PROGRAM_NAME [-x]
+  $PROGRAM_NAME -h
+
+Options:
+    -h    display help
+    -v    verbose output
+    -k    kill affected programs after updating settings
+    -x    trace program execution
+EOF
+}
+
+while getopts vkxh opt; do
   case $opt in
     v)
       VERBOSE=1
@@ -28,14 +47,19 @@ while getopts vk opt; do
     k)
       DO_KILL=1
       ;;
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
     \?)
-      echo >&2 "Invalid option: -$OPTARG"
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
       exit 1
       ;;
   esac
 done
-
-OSX_VERSION=$(sw_vers -productVersion)
 
 function CFPreferencesAppSynchronize() {
   python - <<END
@@ -105,6 +129,10 @@ function defaults-delete() {
     v_echo "defaults $domain $key is already deleted"
   fi
 }
+
+function main() {
+
+OSX_VERSION=$(sw_vers -productVersion)
 
 ################################################
 # Dock
@@ -585,19 +613,24 @@ defaults-write com.tapbots.TweetbotMac OpenURLsDirectly -bool true
 # Terminal.app
 ################################################
 
-# Copy the Basic profile to "Basic Improved"
-pathToTerminalPrefs="${HOME}/Library/Preferences/com.apple.Terminal.plist"
-/usr/libexec/PlistBuddy -c "Copy :Window\ Settings:Basic :Window\ Settings:Basic\ Improved" ${pathToTerminalPrefs}
-/usr/libexec/PlistBuddy -c "Set :Window\ Settings:Basic\ Improved:name Basic\ Improved" ${pathToTerminalPrefs}
+# Create a "Basic Improved" profile based on "Basic"
+plistbuddy=/usr/libexec/PlistBuddy
+improved=":Window\ Settings:Basic\ Improved"
+terminalPrefsFile="${HOME}/Library/Preferences/com.apple.Terminal.plist"
+# Assume any existing "Improved" profile is set up correctly
+if ! $plistbuddy -c "Print $improved" $terminalPrefsFile &>/dev/null; then
+  $plistbuddy -c "Copy :Window\ Settings:Basic $improved" $terminalPrefsFile
+  $plistbuddy -c "Set $improved:name Basic\ Improved" $terminalPrefsFile
+  # Close if the shell exited cleanly
+  $plistbuddy -c "Add $improved:shellExitAction integer 1" $terminalPrefsFile
+  # Make the window a bit larger
+  $plistbuddy -c "Add $improved:columnCount integer 100" $terminalPrefsFile
+  $plistbuddy -c "Add $improved:rowCount integer 30" $terminalPrefsFile
+fi
 
-# Modify the "Basic Improved" profile
-# Close if the shell exited cleanly
-/usr/libexec/PlistBuddy -c "Add :Window\ Settings:Basic\ Improved:shellExitAction integer 1" ${pathToTerminalPrefs}
-# Make the window a bit larger
-/usr/libexec/PlistBuddy -c "Add :Window\ Settings:Basic\ Improved:columnCount integer 100" ${pathToTerminalPrefs}
-/usr/libexec/PlistBuddy -c "Add :Window\ Settings:Basic\ Improved:rowCount integer 30" ${pathToTerminalPrefs}
+CHANGED=0
 
-# Set the "Basic Improved" as the default
+# Set "Basic Improved" as the default profile
 defaults-write com.apple.Terminal "Startup Window Settings" -string "Basic Improved"
 defaults-write com.apple.Terminal "Default Window Settings" -string "Basic Improved"
 
@@ -607,7 +640,9 @@ defaults-write com.apple.Terminal Shell -string ""
 # Disable the line/prompt marker display (El Capitan+)
 defaults-write com.apple.Terminal ShowLineMarks -bool false
 
-CFPreferencesAppSynchronize "com.apple.Terminal"
+if [[ $CHANGED == 1 ]]; then
+  CFPreferencesAppSynchronize "com.apple.Terminal"
+fi
 
 ################################################
 # Miscellaneous
@@ -746,5 +781,15 @@ if [[ $DO_KILL == 1 ]]; then
   done
 fi
 
-echo "Done. Note that some of these changes require a logout/restart to take effect."
+echo "Done."
+if [[ $ANY_CHANGED == 1 ]]; then 
+  echo "Some of these changes may require a logout/restart to take effect."
+fi
 
+}
+
+if [[ $OPT_TRACE == 1 ]]; then
+  set -x
+fi
+
+main; exit 0
