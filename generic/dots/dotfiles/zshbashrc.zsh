@@ -134,6 +134,7 @@ if [ $uname = "Darwin" ]; then
   alias brew-core='cd $(brew --repo)/Library/Taps/homebrew/homebrew-core'
   alias bpull='brew pull2 --branch-okay'
   alias bpullb='brew pull2 --branch-okay --bottle'
+  alias plistbuddy='/usr/libexec/PlistBuddy'
   
   # brew187 - run brew under Ruby 1.8.7
   function brew187 {
