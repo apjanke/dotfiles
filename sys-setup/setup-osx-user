@@ -97,7 +97,7 @@ function defaults-write() {
     value="$1"
     value_type=string
   fi
-  local current=$(defaults read "$domain" "$key")
+  local current=$(defaults read "$domain" "$key" 2>/dev/null)
   #echo "current is '$current', want '$value'"
   # booleans are written as true/false, but read back as 1/0
   local expected
