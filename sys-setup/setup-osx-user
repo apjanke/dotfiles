@@ -133,10 +133,12 @@ function defaults-delete() {
 function main() {
 
 OSX_VERSION=$(sw_vers -productVersion)
+plistbuddy=/usr/libexec/PlistBuddy
 
 ################################################
 # Dock
 ################################################
+
 CHANGED=0
 
 # Left side of screen
@@ -206,7 +208,7 @@ for app in "${unwanted_apps[@]}"; do
   dloc=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$app/  {print NR}")
   if [ -n "$dloc" ]; then
     dloc=$[$dloc-1]
-    /usr/libexec/PlistBuddy -c "Delete persistent-apps:$dloc" ~/Library/Preferences/com.apple.dock.plist
+    $plistbuddy -c "Delete persistent-apps:$dloc" ~/Library/Preferences/com.apple.dock.plist
   fi
 done
 
@@ -614,7 +616,6 @@ defaults-write com.tapbots.TweetbotMac OpenURLsDirectly -bool true
 ################################################
 
 # Create a "Basic Improved" profile based on "Basic"
-plistbuddy=/usr/libexec/PlistBuddy
 improved=":Window\ Settings:Basic\ Improved"
 terminalPrefsFile="${HOME}/Library/Preferences/com.apple.Terminal.plist"
 # Assume any existing "Improved" profile is set up correctly
