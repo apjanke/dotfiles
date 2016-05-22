@@ -39,6 +39,9 @@ Options:
 EOF
 }
 
+DO_KILL=0
+VERBOSE=0
+OPT_TRACE=0
 while getopts vkxh opt; do
   case $opt in
     v)
@@ -130,6 +133,18 @@ function defaults-delete() {
   fi
 }
 
+function remove-dock-persistent-app() {
+  local file_label=$1
+  local dockPrefsPlistFile="$HOME/Library/Preferences/com.apple.dock.plist"
+  local ix=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$file_label/  {print NR}")
+  if [[ -n "$ix" ]]; then
+    ix=$[$ix-1]
+    /usr/libexec/PlistBuddy -c "Delete persistent-apps:$ix" $dockPrefsPlistFile
+    v_echo "Deleted persistent Dock app $file_label"
+    changed-something
+  fi
+}
+
 function main() {
 
 OSX_VERSION=$(sw_vers -productVersion)
@@ -205,11 +220,7 @@ unwanted_apps=(
   "Microsoft Document Connection"
   )
 for app in "${unwanted_apps[@]}"; do
-  dloc=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$app/  {print NR}")
-  if [ -n "$dloc" ]; then
-    dloc=$[$dloc-1]
-    $plistbuddy -c "Delete persistent-apps:$dloc" ~/Library/Preferences/com.apple.dock.plist
-  fi
+  remove-dock-persistent-app $app
 done
 
 if [[ $CHANGED == 1 ]]; then
