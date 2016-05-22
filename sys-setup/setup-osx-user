@@ -5,31 +5,47 @@
 # This script is idempotent, so it can be run repeatedly on the same machine
 # and account.
 #
-# Options:
-#    -v    verbose output
-#    -k    kill all affected apps
-#
 # The coding style has a lot of copy-and-paste instead of being factored in to
 # functions. This is intentional, to allow easy interactive copy-and-pasting of
 # individual commands to the terminal. A "defaults-write" call may be replaced with
 # "defaults write" at the command line.
 
-
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
 SERIALS_DIR="$DROPBOX/records/licenses and serials"
 WALLPAPER_FILE="/Library/Desktop Pictures/Wave.jpg"
+PROGRAM_NAME="$(basename $0)"
 
-while getopts vk opt; do
+function usage() {
+  cat <<EOF
+Usage: 
+  $PROGRAM_NAME [-v] [-k] [-x] [-h]
+
+Options:
+    -v    verbose output
+    -k    kill all affected apps
+    -x    trace program execution
+    -h    display help
+EOF
+}
+
+while getopts vkxh opt; do
   case $opt in
     v)
       VERBOSE=1
       ;;
     k)
-      DO_KILL=1
+      OPT_KILL=1
+      ;;
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
       ;;
     \?)
-      echo >&2 "Invalid option: -$OPTARG"
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
       exit 1
       ;;
   esac
@@ -85,10 +101,10 @@ function defaults-write() {
   fi
   # This changed-value check is not perfect; it gets false positives for complex types
   if [[ "$current" == "$expected" ]]; then
-    v_echo "defaults-write: $domain $key is already set: $current"
+    v_echo "defaults $domain $key is already set: $current"
   else
     defaults write "$domain" "$key" "$@"
-    v_echo "defaults-write: wrote defaults $domain $key: $value"
+    v_echo "wrote defaults $domain $key: $value"
     changed-something
   fi
 }
@@ -105,6 +121,10 @@ function defaults-delete() {
     v_echo "defaults $domain $key is already deleted"
   fi
 }
+
+if [[ $OPT_TRACE == 1 ]]; then
+  set -x
+fi
 
 ################################################
 # Dock
@@ -124,7 +144,7 @@ defaults-write com.apple.dock tilesize -float 32
 # Autohide dock
 defaults-write com.apple.dock autohide -bool true
 # Auto-hiding delay
-# (I prefer a bit of delay, so I'm leaving it in)
+# Remove the auto-hiding Dock delay
 #defaults-write com.apple.dock autohide-delay -float 0
 defaults-delete com.apple.dock autohide-delay
 # Remove the animation when hiding/showing the Dock
@@ -183,7 +203,7 @@ for app in "${unwanted_apps[@]}"; do
 done
 
 if [[ $CHANGED == 1 ]]; then
-  killall dock 2>/dev/null
+  killall dock
 fi
 
 ################################################
@@ -736,7 +756,7 @@ fi
 # Kill affected applications
 ################################################
 
-if [[ $DO_KILL == 1 ]]; then
+if [[ $OPT_KILL == 1 ]]; then
   for app in "Activity Monitor" "Address Book" "Calendar" "Contacts" "cfprefsd" \
       "Dock" "Finder" "Google Chrome" "Google Chrome Canary" "Mail" "Messages" \
       "Opera" "Safari" "SizeUp" "Spectacle" "SystemUIServer" \
