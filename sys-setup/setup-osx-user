@@ -124,7 +124,7 @@ function defaults-write() {
 function defaults-delete() {
   local domain="$1"
   local key="$2"
-  if ! defaults read "$domain" "$key" &>/dev/null; then
+  if defaults read "$domain" "$key" &>/dev/null; then
     defaults delete "$domain" "$key"
     v_echo "deleted defaults $domain $key"
     changed-something
