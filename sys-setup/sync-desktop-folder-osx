@@ -10,7 +10,6 @@
 # research it now.
 
 # TODO: This fails if you have no files in the local Desktop folder
-# TODO: Replace symlinks with hard links
 
 # My directory structure convention
 DROPBOX="$HOME/Dropbox"
