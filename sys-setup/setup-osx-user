@@ -14,10 +14,13 @@ MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
 SERIALS_DIR="$DROPBOX/records/licenses and serials"
 WALLPAPER_FILE="/Library/Desktop Pictures/Wave.jpg"
+
 PROGRAM_NAME="$(basename $0)"
 
 function usage() {
   cat <<EOF
+$PROGRAM_NAME - set up user settings to apjanke's preferred ones
+
 Usage: 
   $PROGRAM_NAME [-v] [-k] [-x] [-h]
 
@@ -50,8 +53,6 @@ while getopts vkxh opt; do
       ;;
   esac
 done
-
-OSX_VERSION=$(sw_vers -productVersion)
 
 function CFPreferencesAppSynchronize() {
   python - <<END
@@ -122,9 +123,10 @@ function defaults-delete() {
   fi
 }
 
-if [[ $OPT_TRACE == 1 ]]; then
-  set -x
-fi
+
+function main() {
+
+OSX_VERSION=$(sw_vers -productVersion)
 
 ################################################
 # Dock
@@ -767,3 +769,10 @@ fi
 
 echo "Done. Note that some of these changes require a logout/restart to take effect."
 
+}
+
+if [[ $OPT_TRACE == 1 ]]; then
+  set -x
+fi
+
+main

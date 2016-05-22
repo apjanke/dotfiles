@@ -6,6 +6,40 @@
 # abort the whole script
 set -e
 
+PROGRAM_NAME="$(basename $0)"
+
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - set up system settings to apjanke's preferred ones
+
+Usage:
+  $PROGRAM_NAME [-x]
+  $PROGRAM_NAME -h
+
+Options:
+    -x    trace program execution
+    -h    display help
+EOF
+}
+
+while getopts xh opt; do
+  case $opt in
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      exit 1
+      ;;
+  esac
+done
+
+function main() {
+
 # Ask for administrator password up front
 sudo -v
 
@@ -111,3 +145,10 @@ fi
 
 echo "Done."
 
+}
+
+if [[ $OPT_TRACE == 1 ]]; then
+  set -x
+fi
+
+main

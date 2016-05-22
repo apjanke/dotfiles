@@ -1,22 +1,51 @@
 #!/bin/bash
 #
-# Sets up Homebrew on a machine
+# Sets up Homebrew on this machine
 #
 # This is idempotent, so you can rerun it on a machine that already has brew installed,
-# though you may see spurious error messages.
+# though you may see (lots of) spurious warning messages. Each run does git fetches, so
+# it requires a network connection even if everything is already set up.
 
 set -e
 
-THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
-GITHUB_USERNAME=apjanke
-my_brew_cfg_dir="$THISDIR/homebrew"
+PROGRAM_NAME="$(basename $0)"
 
-_do() {
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - set up Homebrew and some formulae on this machine
+
+Usage:
+  $PROGRAM_NAME [-x]
+  $PROGRAM_NAME -h
+
+Options:
+    -x    trace program execution
+    -h    display help
+EOF
+}
+
+while getopts xh opt; do
+  case $opt in
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      exit 1
+      ;;
+  esac
+done
+
+function _do() {
   echo "$@"
   "$@"
 }
 
-ensure_github_user_fork_remote() {
+function ensure_github_user_fork_remote() {
   USERNAME=$1
   REPO=$2
   if ! git remote get-url $USERNAME &>/dev/null; then
@@ -24,19 +53,27 @@ ensure_github_user_fork_remote() {
   fi
 }
 
+function main() {
+
+THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
+GITHUB_USERNAME=apjanke
+my_brew_cfg_dir="$THISDIR/homebrew"
+
 # Prerequisites
 
 # Check for Xcode or CLT
 if ! xcode-select -p >/dev/null; then
-  echo "Error: Neither Xcode nor CLT are installed. Please install one."
-  echo "  To install CLT:  sudo xcode-select --install"
-  echo "  To do Xcode:     Install Xcode and then:"
-  echo "     sudo xcode-select -s /Applications/Xcode-<version>.app"
+  cat >&2 <<EOF
+Error: Neither Xcode nor CLT are installed. Please install one.
+  To install CLT:  sudo xcode-select --install
+  To do Xcode:     Install Xcode and then run:
+     sudo xcode-select -s /Applications/Xcode-<version>.app
+EOF
   exit 1
 fi
 # Check for JDK
 if ! pkgutil --pkgs | grep com.oracle.jdk >/dev/null; then
-  echo "Error: Java JDK is not installed. Please install it."
+  echo >&2 "Error: Java JDK is not installed. Please install it."
   exit 1
 fi
 
@@ -107,4 +144,7 @@ for cask in "${casks[@]}"; do
   _do brew cask install $cask
 done
 
+}
+
+main
 

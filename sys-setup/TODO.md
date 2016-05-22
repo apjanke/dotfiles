@@ -7,7 +7,6 @@
 ##  Core Bugs  ##
 
 - Don't `sudo -v`; let it authenticate lazily, since this script can't run unattended anyway.
-- Support for specific versions of OS X
 
 - Remove spurious plistbuddy diagnostic messages
 ```
@@ -67,13 +66,6 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
  - As arguments
 - Install VMware tools automatically, instead of requiring manual installation and using that to determine whether running inside a VM
 - Research other people's mechanisms for setting this stuff up
-
-##  Core scripts   ##
-
-- Network install
- - On a fresh install, I want to do a `sh -c $(curl ...)` to grab the master installer and have it do the whole shebang from there.
-- Add top-level logging
-- Factor Homebrew stuff out: pull default formula lists
 
 ###  Configurability   ###
 

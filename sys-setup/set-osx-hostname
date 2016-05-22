@@ -1,9 +1,48 @@
 #!/bin/bash
 # set-osx-hostname
 #
+# set-osx-hostname <name>
+#
 # Sets the hostname in all the various ways you need to on OS X.
 # This is intended to be the equivalent of manually setting it in the
 # System Preferences > Sharing control panel.
+
+PROGRAM_NAME="$(basename $0)"
+
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - set the hostname on this machine
+
+Usage:
+  $PROGRAM_NAME [-x] <hostname>
+  $PROGRAM_NAME -h
+
+Options:
+    -x    trace program execution
+    -h    display help
+EOF
+}
+
+while getopts xh opt; do
+  case $opt in
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$1" ]]; then
+  usage
+  exit 1
+fi
 
 function set-osx-hostname() {
   name="$1"
@@ -13,9 +52,12 @@ function set-osx-hostname() {
   sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$name"
 }
 
-if [[ -z "$1" ]]; then
-  echo "Usage: $0 <hostname>" >&2
-  exit 1
+function main() {
+  set-osx-hostname "$1"
+}
+
+if [[ $OPT_TRACE == 1 ]]; then
+  set -x
 fi
 
-set-osx-hostname "$1"
+main
