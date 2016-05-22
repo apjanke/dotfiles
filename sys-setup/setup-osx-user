@@ -85,10 +85,10 @@ function defaults-write() {
   fi
   # This changed-value check is not perfect; it gets false positives for complex types
   if [[ "$current" == "$expected" ]]; then
-    v_echo "defaults $domain $key is already set: $current"
+    v_echo "defaults-write: $domain $key is already set: $current"
   else
     defaults write "$domain" "$key" "$@"
-    v_echo "wrote defaults $domain $key: $value"
+    v_echo "defaults-write: wrote defaults $domain $key: $value"
     changed-something
   fi
 }
@@ -183,7 +183,7 @@ for app in "${unwanted_apps[@]}"; do
 done
 
 if [[ $CHANGED == 1 ]]; then
-  killall dock
+  killall dock 2>/dev/null
 fi
 
 ################################################
