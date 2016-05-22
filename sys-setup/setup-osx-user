@@ -392,7 +392,7 @@ defaults-write NSGlobalDomain com.apple.springing.enabled -bool false
 defaults-write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 
 # Desktop wallpaper
-osascript -e 'tell application "Finder" to set desktop picture to POSIX file "$WALLPAPER_FILE"'
+osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$WALLPAPER_FILE\""
 
 ################################################
 # Finder & Spotlight
@@ -781,9 +781,8 @@ if [[ $DO_KILL == 1 ]]; then
   done
 fi
 
-echo "Done."
 if [[ $ANY_CHANGED == 1 ]]; then 
-  echo "Some of these changes may require a logout/restart to take effect."
+  echo "Done. Some of these changes may require a logout/restart to take effect."
 fi
 
 }

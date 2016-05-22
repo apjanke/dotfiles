@@ -151,4 +151,4 @@ if [[ $OPT_TRACE == 1 ]]; then
   set -x
 fi
 
-main
+main; exit 0
