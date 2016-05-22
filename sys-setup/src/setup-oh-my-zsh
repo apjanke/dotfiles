@@ -4,39 +4,47 @@
 
 set -e
 
-# Prerequisites:
-#  Xcode CLT or git installed
-#  ssh keys
+GITHUB_USER=apjanke
 
-if [[ ! -e ~/.ssh/github_rsa ]]; then
-  echo "You must install GitHub SSH keys first before cloning GitHub repos"
-  exit 1
-fi
+function main() {
+
+# Prerequisites:
+#  git (may be provided by Xcode CLT)
 
 # Install Oh My Zsh
-# (using manual installation)
+# (using manual installation, because their install breaks $PATH)
 
 omz_repos_dir=~/local/opp/oh-my-zsh
 mkdir -p "$omz_repos_dir"
 if [[ ! -e "$omz_repos_dir/oh-my-zsh" ]]; then
   echo "Cloning oh-my-zsh"
-  git clone https://github.com/apjanke/oh-my-zsh.git "$omz_repos_dir/oh-my-zsh"
+  git clone https://github.com/$GITHUB_USER/oh-my-zsh.git "$omz_repos_dir/oh-my-zsh"
   pushd "$omz_repos_dir/oh-my-zsh"
-  git remote add upstream https://github.com/robbyrussell/oh-my-zsh.git
+  git remote add upstream https://github.com/robbyrussell/oh-my-zsh
   git fetch --all
   popd
 fi
 if [[ ! -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
-  echo "Cloning oh-my-zsh-custom"
-  git clone https://github.com/apjanke/oh-my-zsh-custom.git "$omz_repos_dir/oh-my-zsh-custom"
+  local not_found=$(curl -s https://api.github.com/repos/$GITHUB_USER/oh-my-zsh-custom | grep "Not Found")
+  if [[ -z "$not_found" ]]; then
+    echo "Cloning oh-my-zsh-custom"
+    git clone https://github.com/$GITHUB_USER/oh-my-zsh-custom "$omz_repos_dir/oh-my-zsh-custom"
+  else
+    echo "User $GITHUB_USER has no oh-my-zsh-custom repo; skipping"
+  fi
 fi
 if [[ ! -e ~/.oh-my-zsh ]]; then
   echo "Linking .oh-my-zsh"
   ln -s "$omz_repos_dir/oh-my-zsh" ~/.oh-my-zsh
+  echo "Linked ~/.oh-my-zsh. You will need to edit ~/.zshrc to source it."
 fi
 if [[ ! -e ~/.oh-my-zsh-custom ]]; then
-  echo "Linking .oh-my-zsh-custom"
-  ln -s "$omz_repos_dir/oh-my-zsh-custom" ~/.oh-my-zsh-custom
+  if [[ -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
+    echo "Linking .oh-my-zsh-custom"
+    ln -s "$omz_repos_dir/oh-my-zsh-custom" ~/.oh-my-zsh-custom
+  else
+    echo "No oh-my-zsh-custom repo is defined; skipping"
+  fi
 fi
 
 if [[ $(uname) = Darwin ]]; then
@@ -47,3 +55,7 @@ fi
 if [[ $curr_shell != /bin/zsh ]]; then
   chsh -s /bin/zsh
 fi
+
+}
+
+main; exit 0

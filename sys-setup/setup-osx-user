@@ -5,10 +5,6 @@
 # This script is idempotent, so it can be run repeatedly on the same machine
 # and account.
 #
-# Options:
-#    -v    verbose output
-#    -k    kill all affected apps
-#
 # The coding style has a lot of copy-and-paste instead of being factored in to
 # functions. This is intentional, to allow easy interactive copy-and-pasting of
 # individual commands to the terminal. A "defaults-write" call may be replaced with
@@ -224,7 +220,7 @@ for app in "${unwanted_apps[@]}"; do
 done
 
 if [[ $CHANGED == 1 ]]; then
-  killall dock 2>/dev/null
+  killall Dock 2>/dev/null
 fi
 
 ################################################
