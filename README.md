@@ -12,35 +12,28 @@ Symlinks cannot be used within this repo, since it may be stored on Dropbox. Tha
 
 * Clone or sync the repo to its permanent location
  * `git clone https://github.com/apjanke/dotfiles.git`
-* Run `install.sh` from that cloned repo
-* Clone the [apjanke/oh-my-zsh-custom](https://github.com/apjanke/oh-my-zsh-custom) repo and symlink it at `~/.oh-my-zsh-custom`.
+* Run `install-dotfiles` from that cloned repo
 
-`install.sh` will set up the appropriate links in the current user's home directory, overwriting any previous links or files. They will be linked to the location `install.sh` is run from. If you relocate the repo/synced directory, you'll need to re-run it.
+(See [`sys-setup/README.md`](sys-setup/README.md) for info on using the system setup scripts.)
 
-Caution: `install.sh` will clobber any locally-created files if you have them. It's not careful, and it's intended to be run in a newly created account, or one that already has dotfiles managed this way.
+The `install-dotfiles` script will set up the appropriate links in the current user's home directory, overwriting any previous links or files. They will be linked to the location that `install-dotfiles` is run from. This means that you need to keep the repo around indefinitely, not just for installation. And if you relocate the repo/synced directory, you'll need to re-run `install-dotfiles`.
 
-I like to keep both the dotfiles and oh-my-zsh-custom repo clones in my Dropbox and link to them from there so that my commonly used interactive machines pick up changes automatically without having to do a `git pull`, and for testing changes on multiple platforms before committing them.
+Caution: `install-dotfiles` will clobber any locally-created files if you have them. It's not careful, and it's intended to be run in a newly created account, or one that already has dotfiles managed this way.
+
+I like to keep both the `dotfiles` and `oh-my-zsh-custom` repo clones in my Dropbox and link to them from there, so that my commonly used interactive machines pick up changes automatically without having to do a `git pull`, and for testing changes on multiple platforms before committing them.
 
 ##   Organization  ##
 
-Subdirectory organization indicates where the files are applicable.
+The dot file hierarchies are arranged by OS/platform, under the `dotfiles` directory.
 
-Dot file hierarchies are arranged by OS/platform.
+* `dotfiles/` - Configuration files meant to be installed in the user's home directory
+ * `generic/` – Dot files for any OS, platform, or host. They either are portable, or have OS detection tests and only set OS-specific things as appropriate.
+ * `<osname>/` - Dot files specific to an OS. These take precedence over corresponding generic dot files.
+* `sys-setup/` - system and user configuration scripts which can be run to do up-front configuration, but don't need installation
+* `iTerm2/` – Shared data directory for iTerm2's "load settings from folder" preference at.
+* `manual-settings/` – Settings for various programs that need to be manually exported and/or imported.
 
-* `generic` – dot files for any OS, platform, or host. They either are portable, or have OS detection tests and only set OS-specific things as appropriate.
-
-I've cut down to only portable files now, so there are no other platform or host-specific directories.
-
-Within each OS/platform directory, there are the following subdirectories:
-
-* `dots` – Files in here have their name munged for the symlink name. They're stored this way to make them easier to list and edit.
-* `no_dots` – Files in here are linked without any name changes.
-* Any other directories are linked directly under $HOME with no name change.
-
-Miscellaneous stuff:
-
-* `iTerm2` – Dir to point iTerm2's "load settings from folder" preference at.
-* `settings-manual` – Settings for various programs that need to be manually exported/imported.
+##  Dot file design   ##
 
 ###   Shell configuration files  ###
 
@@ -56,7 +49,7 @@ I use both zsh and bash, and in zsh I use Oh My Zsh ("OMZ"). The shell rc files 
 
 The shell rc files are set up to source each other where appropriate, to avoid redundant code.
 
-My OMZ customization files are in a separate [apjanke/oh-my-zsh-custom repo](https://github.com/apjanke/oh-my-zsh-custom).
+My OMZ customization files are in a separate [apjanke/oh-my-zsh-custom repo](https://github.com/apjanke/oh-my-zsh-custom). This can be installed using the `sys-setup/setup-osx-user` script.
 
 ##   Notes   ##
 

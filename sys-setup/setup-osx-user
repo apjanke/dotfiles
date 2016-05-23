@@ -24,7 +24,7 @@ function usage() {
 $PROGRAM_NAME - set up system settings to apjanke's preferred ones
 
 Usage:
-  $PROGRAM_NAME [-x]
+  $PROGRAM_NAME [-x] [-v] [-k]
   $PROGRAM_NAME -h
 
 Options:

@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# install-dotfiles
+#
+# Installs symlinks to dotfiles in this repo into current user's $HOME dir.
+# Blows away existing dotfiles, even if they're not symlinks.
+#
+# This just installs the "generic" (non platform or hardware specific) links.
+# I used to have additional specialized links for different OSes or retina/non-retina,
+# but I've gotten away from that now, so there's no non-generic logic left.
+
+set -e
+
+PROGRAM_NAME="$(basename $0)"
+
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - install dotfile symlinks to the repo this script is in
+
+Usage:
+  $PROGRAM_NAME [-x] [-v]
+  $PROGRAM_NAME -h
+
+Options:
+    -h    display help
+    -v    verbose output
+    -x    trace program execution
+EOF
+}
+
+VERBOSE=0
+OPT_TRACE=0
+while getopts vkxh opt; do
+  case $opt in
+    v)
+      VERBOSE=1
+      ;;
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      exit 1
+      ;;
+  esac
+done
+
+
+function v_echo() {
+  if [[ $VERBOSE == 1 ]]; then
+  	echo "$@"
+  fi
+}
+
+function symlink() {
+  local source="$1"
+  local target="$2"
+  if [[ -s "$target" ]]; then
+    local current_source=$(readlink "$target")
+    if [[ "$current_source" == "$source" ]]; then
+      v_echo "Symlink '$target' is already set up"
+  	  return
+  	fi
+  fi
+  if [[ -d "$target" && ! -s "$target" ]]; then
+  	echo >&2 "Error: '$target' is a non-symlink directory"
+  	exit 1
+  fi
+  ln -sfn "$source" "$target"
+  printf '%-18s -> %s\n' "$source" "$target"
+  CHANGED=1
+}
+
+# Post: $OSNAME is set, or script has exited with an error status
+function detect_os_type() {
+  uname=$(uname)
+  case $uname in
+  	Darwin)
+      if which sw_vers &>/dev/null && [[ $(sw_vers -productName) == "Mac OS X" ]]; then
+      	OSNAME=osx
+      else
+      	OSNAME=darwin
+      fi
+      ;;
+    *)
+      OSNAME="$uname"
+      ;;
+  esac
+}
+
+function main() {
+
+sourcedir=`dirname $0`
+dotdir=$(cd $sourcedir/dotfiles; pwd)
+todir=$HOME
+
+detect_os_type
+
+CHANGED=0
+# Normally I don't use `cd` in shell scripts, but this makes display a lot nicer
+cd $todir
+
+# These files have their names munged to add a leading dot and strip extension.
+# Makes it easier to work with them in shell and editors.
+if [[ -e "$dotdir/$OSNAME" ]]; then
+  dotfiles=( $( (ls $dotdir/generic; ls $dotdir/$OSNAME) | sort | uniq ) )
+else
+  dotfiles=($(ls $dotdir/generic))
+fi
+for file in "${dotfiles[@]}"; do
+  tofile=".${file%\.sh}"
+  if [[ -e "$dotdir/$OSNAME/$file" ]]; then
+  	fromfile="$dotdir/$OSNAME/$file"
+  else
+  	fromfile="$dotdir/generic/$file"
+  fi
+  symlink "$fromfile" "$tofile"
+done
+
+CHANGED=0
+symlink "$sourcedir/bin" "bin"
+if [[ $CHANGED == 1 ]]; then
+  echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
+fi
+
+echo Dotfiles are linked to $dotdir
+
+}
+
+if [[ $OPT_TRACE == 1 ]]; then
+  set -x
+fi
+
+main; exit 0
