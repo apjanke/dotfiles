@@ -71,7 +71,7 @@ function symlink() {
   	exit 1
   fi
   ln -sfn "$source" "$target"
-  printf '%-18s -> %s\n' "$source" "$target"
+  printf '%-18s -> %s\n' "$target" "$source"
   CHANGED=1
 }
 
