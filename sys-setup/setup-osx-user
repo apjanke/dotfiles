@@ -5,6 +5,10 @@
 # This script is idempotent, so it can be run repeatedly on the same machine
 # and account.
 #
+# This should be run from Terminal.app, with iTerm2 not running. If iTerm2 is
+# running, that prevents its preferences from being properly updated.
+# (TODO: See if CFPreferencesAppSynchronize can fix that.)
+#
 # The coding style has a lot of copy-and-paste instead of being factored in to
 # functions. This is intentional, to allow easy interactive copy-and-pasting of
 # individual commands to the terminal. A "defaults-write" call may be replaced with
@@ -14,8 +18,10 @@ set -e
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
+DOTFILES_REPO_PATH="$DROPBOX/#repos/dotfiles"
 SERIALS_DIR="$DROPBOX/records/licenses and serials"
 WALLPAPER_FILE="/Library/Desktop Pictures/Wave.jpg"
+: ${ITERM_PREFERENCES_SET:=12pt}
 
 PROGRAM_NAME="$(basename $0)"
 
@@ -28,10 +34,13 @@ Usage:
   $PROGRAM_NAME -h
 
 Options:
-    -h    display help
-    -v    verbose output
-    -k    kill affected programs after updating settings
-    -x    trace program execution
+  -h    display help
+  -v    verbose output
+  -k    kill affected programs after updating settings
+  -x    trace program execution
+
+Environment:
+  ITERM_PREFERENCES_SET  - name of preferences set (leaf shared preferences dir)
 EOF
 }
 
@@ -581,6 +590,24 @@ defaults-write com.apple.mail NSUserKeyEquivalents -dict-add "Send" -string "@\\
 
 # Don’t display the annoying prompt when quitting iTerm
 defaults-write com.googlecode.iterm2 PromptOnQuit -bool false
+# Load preferences from custom folder
+CHANGED=0
+function update_iterm_prefs() {
+local ITERM_PREFS_DIR="$DOTFILES_REPO_PATH/iTerm2/$ITERM_PREFERENCES_SET"
+if [[ ! -d "$ITERM_PREFS_DIR" ]]; then
+  echo >&2 "Warning: Not updating iTerm2 shared prefs dir because dir does not exist: '$ITERM_PREFS_DIR'"
+  return
+fi
+if ps aux | grep '[i]Term' &>/dev/null; then
+  if [[ $(defaults read com.googlecode.iterm2 PrefsCustomFolder) != "$ITERM_PREFS_DIR" ]]; then
+    echo >&2 "Warning: Cannot change iTerm2 preferences shared folder while iTerm2 is running"
+    echo >&2 "Warning: iTerm2 preferences folder not updated"
+  fi
+else
+  defaults-write com.googlecode.iterm2 PrefsCustomFolder "$ITERM_PREFS_DIR"
+fi
+}
+update_iterm_prefs
 
 ################################################
 # Time Machine
@@ -714,7 +741,7 @@ defaults-write org.m0k.transmission WarningLegal -bool false
 
 ST2_PREFS_DIR="$HOME/Library/Application Support/Sublime Text 2"
 mkdir -p "$ST2_PREFS_DIR/Packages/User"
-cp "$MYDIR/../settings-manual/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS_DIR/Packages/User"
+cp "$MYDIR/../manual-settings/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS_DIR/Packages/User"
 mkdir -p "$ST2_PREFS_DIR/Settings"
 if [[ -e "$SERIALS_DIR/Sublime Text 2 license.txt" ]]; then
   cp "$SERIALS_DIR/Sublime Text 2 license.txt" "$ST2_PREFS_DIR/Settings/License.sublime_license"
