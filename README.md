@@ -2,7 +2,7 @@
 
 My configuration files and system setup scripts.
 
-The idea here is to get as close as possible to being able to sit down at a fresh computer or user account, be able to run just a couple commands, and have it fully set up the way I like it and be able to start working.
+The idea here is to get as close as possible to being able to sit down at a fresh computer or user account, be able to run just a couple commands, and have it fully set up the way I like it and be able to start working, instead of futzing around for hours with GUI preference panels and the like.
 
 ##  Using this repo  ##
 
