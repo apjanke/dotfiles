@@ -1,6 +1,6 @@
 #  Dotfiles   #
 
-My configuration files.
+My configuration files and system setup scripts.
 
 Intended for syncing to multiple machines and platforms, and symlinks used to pull the files in as appropriate. Syncing can be done by Git, Dropbox, or network shares.
 
@@ -8,7 +8,17 @@ This dir is used by being mounted on or synced to multiple machines, and files s
 
 Symlinks cannot be used within this repo, since it may be stored on Dropbox. That'll change if I get off Dropbox and switch to Git-only. But the automatic Dropbox syncing is nice, especially for trying out changes on multiple boxes before committing.
 
-##   Installation / Usage   ##
+##   Overall Installation / Usage   ##
+
+To set up a new computer from scratch:
+
+* Clone this repo locally, to its permanent location
+* Install Xcode and/or the Xcode CLT
+* `setup-osx-homebrew`
+* `setup-osx-system`
+* `setup-osx-user`
+
+##   Dotfile Installation / Usage   ##
 
 * Clone or sync the repo to its permanent location
  * `git clone https://github.com/apjanke/dotfiles.git`
@@ -53,7 +63,9 @@ My OMZ customization files are in a separate [apjanke/oh-my-zsh-custom repo](htt
 
 ##   Notes   ##
 
-The symlinks are only done one level deep. This will be an issue if there end up being multiple platforms with bin/ or other directories that want to be merged somehow. Best approach is probably to just not support that, and require anything in bin/ or another subdir to be generic, or replaced per-platform on the basis of the entire folder.
+The symlinks are only done one level deep. This will be an issue if there end up being multiple platforms with subdirectories that want to be merged somehow, or if I add support for XDG `~/.config` directories.
+
+The same `bin` directory will be linked on all platforms, so it needs to have portability support inside it, instead of defining alternate platform-specific `bin` dirs. This is by design, since it will mostly contain script files.
 
 ##  License  ##
 

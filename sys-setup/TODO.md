@@ -6,16 +6,7 @@
 
 ##  Core Bugs  ##
 
-- Don't `sudo -v`; let it authenticate lazily, since this script can't run unattended anyway.
-
-- Remove spurious plistbuddy diagnostic messages
-```
-$ ./setup-osx-user.sh
-Copy: ":Window Settings:Basic Improved" Entry Already Exists
-Add: ":Window Settings:Basic Improved:shellExitAction" Entry Already Exists
-Add: ":Window Settings:Basic Improved:columnCount" Entry Already Exists
-Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
-```
+- Don't `sudo -v`; let it authenticate lazily, since this script can't run unattended anyway. Or maybe have user sudo it explicitly.
 
 ##  System Setup Bugs  ##
 
@@ -65,7 +56,6 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
  - Dedicated Homebrew user
  - As arguments
 - Install VMware tools automatically, instead of requiring manual installation and using that to determine whether running inside a VM
-- Research other people's mechanisms for setting this stuff up
 
 ###  Configurability   ###
 
@@ -74,7 +64,7 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
 
 ##  System Setup Enhancements ##
 
-- Install iTerm2 somehow
+- Install iTerm2 somehow (probably brew cask)
 - Learn `brew cask` and get stuff installed using it?
 - Consider enabling HFS+ compression on some areas by default
 - Script installation of Xcode, including versioning app name
@@ -87,8 +77,6 @@ Add: ":Window Settings:Basic Improved:rowCount" Entry Already Exists
  - Add new things as persistent items
  - Rearrange item order
 - Install SSH keys from central source or peer
-- Set iTerm2 synced settings location preemptively via CLI, so you don't need to manually set it.
- - May require change in iTerm2; file a request there
 - Can we enable displaying ~/Library for mounted volumes, not just system drive?
 - A way to disable screen savers that display photos from user Aperture/iPhoto library? Maybe point it at a custom library?
 
