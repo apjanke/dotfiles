@@ -1,3 +1,7 @@
+#  Manual setup steps
+
+These are things that still need to be done manually, in addition to what the setup-* scripts can do.
+
 #  Initial setup steps
 
 - In Sharing, enable File Sharing and Remote Login
@@ -10,3 +14,4 @@ mkdir -p ~/local/repos
 cd ~/local/repos
 git clone git@github.com:apjanke/dotfiles.git
 
+- Install fonts
