@@ -19,6 +19,7 @@ set -e
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
 DOTFILES_REPO_PATH="$DROPBOX/#repos/dotfiles"
+MANUAL_SETTINGS_PATH="$DOTFILES_REPO_PATH/manual-settings"
 SERIALS_DIR="$DROPBOX/records/licenses and serials"
 WALLPAPER_FILE="/Library/Desktop Pictures/Wave.jpg"
 : ${ITERM_PREFERENCES_SET:=12pt}
@@ -772,6 +773,17 @@ defaults-write org.herf.Flux steptime -int 40
 defaults-write org.herf.Flux wakeTime -int 600
 
 ################################################
+# Rubymine
+################################################
+
+mkdir -p ~/local/RubymineProjects
+if [[ ! -e "~/local/RubymineProjects/Homebrew-local" ]]; then
+  if [[ -e "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz" ]]; then
+    ( cd ~/local/RubymineProjects; tar xf "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz")
+  fi
+fi
+
+################################################
 # Oh My Zsh
 ################################################
 
@@ -788,6 +800,14 @@ if which duti >/dev/null; then
 else
   echo "duti is not installed. Not setting file associations."
 fi
+
+################################################
+# My conventional directories
+################################################
+
+mkdir -p ~/local/repos
+mkdir -p ~/local/opp
+mkdir -p ~/local/RubymineProjects
 
 ################################################
 # VM Guest specific stuff

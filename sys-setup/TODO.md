@@ -11,7 +11,7 @@
 ##  System Setup Bugs  ##
 
 - Install Dropbox
-- Install selected Mac App Store apps from command line
+- Install selected Mac App Store apps from CLI
 
 - Xcode installation
  - Better way of choosing an Xcode installation or CLT install up front, to get `git`, which is required for installing some of this other stuff, and install it automatically
@@ -22,20 +22,24 @@
 
 ##  User Setup Bugs  ##
 
-- Turning off system UI sound effects doesn't seem to work.
-- Need to disable notifications for various programs.
-- Install Dropbox
-- Configure Dropbox selective sync
+- Turning off system UI sound effects doesn't seem to work
+- Disable notifications for various programs
+- Dropbox
+ - Install Dropbox
+ - Configure Dropbox selective sync
+  - with multiple stages (sync essential files first, and then (almost) everything)
+ - Turn off "Show desktop notifications"
+ - Switch "Dropbox badge" to "Never show"
 
 - Set up accounts in Tweetbot
 - Set up accounts in Slack
 - Set up mail accounts in Thunderbird
+ - Currently doing manual migration of (2GB+) profiles from other machines
 - Firefox user setup
- - Set up Firefox Sync via CLI
- - Get through or bypass initial Ghostery setup/walkthrough
- - Load Ghostery settings from exported settings file
+ - Set up Firefox Sync
 - Set up Moom (run automatically, run as menu bar application)
-- Configure Bartender from CLI (support both v1 (for 10.9) and v2)
+- Configure Bartender
+ - support both v1 (for 10.9) and v2 (10.10 and later)
 - Configure Finder
  - Change items in sidebar (remove some, add some, reorder others)
  - https://discussions.apple.com/thread/3200109?start=15

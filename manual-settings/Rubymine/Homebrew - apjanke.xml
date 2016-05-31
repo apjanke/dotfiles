@@ -1,0 +1,16 @@
+<code_scheme name="Homebrew - apjanke">
+  <MarkdownNavigatorCodeStyleSettings>
+    <option name="RIGHT_MARGIN" value="72" />
+  </MarkdownNavigatorCodeStyleSettings>
+  <XML>
+    <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
+  </XML>
+  <codeStyleSettings language="ruby">
+    <option name="INDENT_WHEN_CASES" value="false" />
+    <option name="SPACE_WITHIN_BRACES" value="true" />
+    <indentOptions>
+      <option name="CONTINUATION_INDENT_SIZE" value="2" />
+      <option name="USE_RELATIVE_INDENTS" value="false" />
+    </indentOptions>
+  </codeStyleSettings>
+</code_scheme>
