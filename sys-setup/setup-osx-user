@@ -606,6 +606,7 @@ if ps aux | grep '[i]Term' &>/dev/null; then
 else
   defaults-write com.googlecode.iterm2 PrefsCustomFolder "$ITERM_PREFS_DIR"
 fi
+defaults-write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
 }
 update_iterm_prefs
 
