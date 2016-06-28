@@ -141,6 +141,7 @@ if [ $uname = "Darwin" ]; then
     local ruby187_prefix=$(brew --prefix ruby187 2>/dev/null)
     if [[ -z "$ruby187_prefix" ]]; then
       echo >&2 "Error: no ruby187 installation found"
+      return 1
     fi
     HOMEBREW_RUBY_PATH="$ruby187_prefix/bin/ruby" brew "$@"
   }
