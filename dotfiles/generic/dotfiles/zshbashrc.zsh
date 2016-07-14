@@ -128,6 +128,7 @@ if [ $uname = "Darwin" ]; then
   export HOMEBREW_DEVELOPER=1
   export HOMEBREW_SANDBOX=1
   export HOMEBREW_EDITOR=subl
+  export HOMEBREW_NO_AUTO_UPDATE=1
   alias bas='brew audit --strict'
   alias baso='brew audit --strict --online'
   alias brew-repo='cd $(brew --repo)'
