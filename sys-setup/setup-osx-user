@@ -759,6 +759,10 @@ if [[ -e "$BBEDIT_SERIAL_FILE" ]]; then
   BBEDIT_SERIAL=$(cat "$BBEDIT_SERIAL_FILE")
   defaults-write com.barebones.bbedit BBEditSerialNumber:11.0 "$BBEDIT_SERIAL"
 fi
+
+# I configure BBEdit for editing prose documents instead of source code.
+# People using BBEdit as a code editor will probably want different settings.
+
 # Do not check spelling as you type
 defaults-write com.barebones.bbedit EditorCheckSpellingAsYouType 0
 # Soft wrap text
@@ -771,12 +775,15 @@ defaults-write com.barebones.bbedit EmulateEmacsKeyBindings 0
 defaults-write com.barebones.bbedit HomeAndEndKeys 2
 # Disable insertion point highlighting
 defaults-write com.barebones.bbedit HighlightInsertionPoint 0
+# Disable page guide
+defaults-write com.barebones.bbedit EditingWindowShowPageGuide 0
 # Do nothing on startup (not open a new document)
 defaults-write com.barebones.bbedit StartupAndResumeAction 1
 # Autocomplete only on manual request (not after pause in typing)
 defaults-write com.barebones.bbedit TextCompletionTrigger 2
 # Ensure trailing line break
 defaults-write com.barebones.bbedit EnsureTrailingLineBreak 1
+
 # Some of the BBEdit preferences are blobs or complex lists. We don't set those,
 # so you'll still need to do some manual configuration of: 
 #  * font  (I like Helvetica Neue)
