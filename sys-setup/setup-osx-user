@@ -759,6 +759,29 @@ if [[ -e "$BBEDIT_SERIAL_FILE" ]]; then
   BBEDIT_SERIAL=$(cat "$BBEDIT_SERIAL_FILE")
   defaults-write com.barebones.bbedit BBEditSerialNumber:11.0 "$BBEDIT_SERIAL"
 fi
+# Do not check spelling as you type
+defaults-write com.barebones.bbedit EditorCheckSpellingAsYouType 0
+# Soft wrap text
+defaults-write com.barebones.bbedit EditorSoftWrap 1
+# Soft wrap at window width (not page guide or fixed column)
+defaults-write com.barebones.bbedit SoftWrapStyle 2
+# Disable Emacs key binding emulation
+defaults-write com.barebones.bbedit EmulateEmacsKeyBindings 0
+# Home and End move to beginning and end of line
+defaults-write com.barebones.bbedit HomeAndEndKeys 2
+# Disable insertion point highlighting
+defaults-write com.barebones.bbedit HighlightInsertionPoint 0
+# Do nothing on startup (not open a new document)
+defaults-write com.barebones.bbedit StartupAndResumeAction 1
+# Autocomplete only on manual request (not after pause in typing)
+defaults-write com.barebones.bbedit TextCompletionTrigger 2
+# Ensure trailing line break
+defaults-write com.barebones.bbedit EnsureTrailingLineBreak 1
+# Some of the BBEdit preferences are blobs or complex lists. We don't set those,
+# so you'll still need to do some manual configuration of: 
+#  * font  (I like Helvetica Neue)
+#  * hidden menus  (I disable all development menus)
+#  * selected color scheme (because it includes a full path) (I like BBEdit Light)
 
 ################################################
 # F.lux
