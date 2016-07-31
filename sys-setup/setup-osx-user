@@ -745,16 +745,18 @@ ST2_PREFS_DIR="$HOME/Library/Application Support/Sublime Text 2"
 mkdir -p "$ST2_PREFS_DIR/Packages/User"
 cp "$MYDIR/../manual-settings/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS_DIR/Packages/User"
 mkdir -p "$ST2_PREFS_DIR/Settings"
-if [[ -e "$SERIALS_DIR/Sublime Text 2 license.txt" ]]; then
-  cp "$SERIALS_DIR/Sublime Text 2 license.txt" "$ST2_PREFS_DIR/Settings/License.sublime_license"
+ST2_LICENSE_FILE="$SERIALS_DIR/Sublime Text 2 license.txt"
+if [[ -e "$ST2_LICENSE_FILE" ]]; then
+  cp "$ST2_LICENSE_FILE" "$ST2_PREFS_DIR/Settings/License.sublime_license"
 fi
 
 ################################################
 # BBEdit
 ################################################
 
-if [[ -e "$SERIALS_DIR/BBEdit license.txt" ]]; then
-  BBEDIT_SERIAL=$(cat "$SERIALS_DIR/BBEdit 11 license.txt")
+BBEDIT_SERIAL_FILE="$SERIALS_DIR/BBEdit 11 license.txt"
+if [[ -e "$BBEDIT_SERIAL_FILE" ]]; then
+  BBEDIT_SERIAL=$(cat "$BBEDIT_SERIAL_FILE")
   defaults-write com.barebones.bbedit BBEditSerialNumber:11.0 "$BBEDIT_SERIAL"
 fi
 
