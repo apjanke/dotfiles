@@ -19,3 +19,7 @@ if [[ -e $HOME/.rvm/bin ]]; then
     source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
   fi
 fi
+
+if [[ -e /anaconda/bin ]]; then
+  export PATH="/anaconda/bin:$PATH"
+fi
