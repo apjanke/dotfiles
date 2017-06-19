@@ -90,7 +90,7 @@ if [[ -e .git/shallow ]]; then
 fi
 ensure_github_user_fork_remote $GITHUB_USERNAME brew
 git fetch --all
-cd "$(brew --prefix)/Library/Taps/homebrew/homebrew-core"
+cd "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core"
 if [[ -e .git/shallow ]]; then
   git fetch --unshallow
 fi
@@ -113,7 +113,8 @@ else
 fi
 
 # Install Homebrew Cask
-_do brew install caskroom/cask/brew-cask
+# (no longer needed since cask was merged in to main Homebrew)
+# _do brew install caskroom/cask/brew-cask
 
 # Special case: do cask-managed dependencies first, because regular `brew install`
 # formulae may need them
@@ -126,7 +127,7 @@ for tap in "${taps[@]}"; do
   tap_base_name=homebrew-$(basename $tap)
   tap_owner_name=$(dirname $tap)
   _do brew tap --full $tap
-  cd $(brew --prefix)/Library/Taps/$tap_owner_name/$tap_base_name
+  cd $(brew --prefix)/Homebrew/Library/Taps/$tap_owner_name/$tap_base_name
   ensure_github_user_fork_remote $GITHUB_USERNAME $tap_base_name
   git fetch --all
 done
