@@ -71,7 +71,7 @@ while getopts vkxh opt; do
 done
 
 function CFPreferencesAppSynchronize() {
-  python - <<END
+  /usr/bin/python - <<END
 from Foundation import CFPreferencesAppSynchronize
 CFPreferencesAppSynchronize('$1')
 END

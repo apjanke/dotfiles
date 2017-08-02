@@ -78,6 +78,7 @@ if ! pkgutil --pkgs | grep com.oracle.jdk >/dev/null; then
 fi
 
 # Install Homebrew
+(
 if [[ -z $(which brew) ]]; then
   INSTALLER_URL=https://raw.githubusercontent.com/Homebrew/install/master/install
   ruby -e "$(curl -fsSL $INSTALLER_URL)"
@@ -96,27 +97,23 @@ if [[ -e .git/shallow ]]; then
 fi
 ensure_github_user_fork_remote $GITHUB_USERNAME homebrew-core
 git fetch --all
+)
 
 # Pick what to install
 if [[ -e "$my_brew_cfg_dir" ]]; then
   echo "Found brew config dir at $my_brew_cfg_dir"
   taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
   formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
-  casks=()
+  casks=($(cat "$my_brew_cfg_dir/brew-casks-standard"))
 else
-  echo "No brew config dir found; Using defaults"
+  echo "No brew config dir found at '$my_brew_cfg_dir'; Using defaults"
   # Common defaults
   taps=( homebrew/versions homebrew/x11 homebrew/science )
-  formulae=( zsh browser wget dos2unix fortune git pstree tree watch )
-  #casks=( iterm2 sublime-text firefox google-chrome thunderbird )
+  formulae=( zsh browser duti wget dos2unix fortune git pstree tree watch )
   casks=()
 fi
 
-# Install Homebrew Cask
-# (no longer needed since cask was merged in to main Homebrew)
-# _do brew install caskroom/cask/brew-cask
-
-# Special case: do cask-managed dependencies first, because regular `brew install`
+# Special case: do some cask-managed dependencies first, because regular `brew install`
 # formulae may need them
 if [ ! -e /Applications/Utilities/XQuartz.app ]; then
   _do brew cask install xquartz

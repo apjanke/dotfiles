@@ -6,7 +6,7 @@
 # integrated into the main setup-osx-user script.
 
 system_profiler SPDisplaysDataType | grep "Retina: Yes" &>/dev/null
-if [[ $? == 0 ]]
+if [[ $? == 0 ]]; then
   IS_RETINA=1
 else
   IS_RETINA=0
