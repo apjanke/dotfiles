@@ -138,6 +138,10 @@ if [[ -e /anaconda/bin ]]; then
   export PATH="/anaconda/bin:$PATH"
 fi
 
+# For exercism.io
+if [[ -f ~/.config/exercism/exercism_completion.zsh ]]; then
+  . ~/.config/exercism/exercism_completion.zsh
+fi
 
 # I don't know where this PERL stuff came from; it must have been added automatically
 # by some installer
