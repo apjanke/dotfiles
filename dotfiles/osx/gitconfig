@@ -37,3 +37,5 @@
 [github]
 	user = apjanke
 [commit]
+[pager]
+	status = false
