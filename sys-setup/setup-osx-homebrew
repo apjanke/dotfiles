@@ -17,10 +17,12 @@ $PROGRAM_NAME - set up Homebrew and some formulae on this machine
 Usage:
   $PROGRAM_NAME [-x]
   $PROGRAM_NAME -h
+  $PROGRAM_NAME -n
 
 Options:
     -x    trace program execution
     -h    display help
+    -n    do not install any Casks
 EOF
 }
 
@@ -28,6 +30,9 @@ while getopts xh opt; do
   case $opt in
     x)
       OPT_TRACE=1
+      ;;
+    n)
+      NO_CASKS=1
       ;;
     h)
       usage
@@ -105,6 +110,9 @@ if [[ -e "$my_brew_cfg_dir" ]]; then
   taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
   formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
   casks=($(cat "$my_brew_cfg_dir/brew-casks-standard"))
+  if [[ $NO_CASKS = 1 ]]; then
+      casks=()
+  fi
 else
   echo "No brew config dir found at '$my_brew_cfg_dir'; Using defaults"
   # Common defaults

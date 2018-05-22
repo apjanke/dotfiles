@@ -4,6 +4,8 @@ These are things that still need to be done manually, in addition to what the se
 
 #  Initial setup steps
 
+- Install Dropbox
+- Install JDK
 - In Sharing, enable File Sharing and Remote Login
 
 ssh localhost to create ~/.ssh
@@ -15,3 +17,5 @@ cd ~/local/repos
 git clone git@github.com:apjanke/dotfiles.git
 
 - Install fonts
+
+
