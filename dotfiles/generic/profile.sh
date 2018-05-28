@@ -12,14 +12,21 @@ if which subl &>/dev/null; then
    export VISUAL='subl -w'
 fi
 
+export PATH
 
 if [[ -e $HOME/.rvm/bin ]]; then
-  export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
+  PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
   if [[ -s "$HOME/.rvm/scripts/rvm" ]]; then
     source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
   fi
 fi
 
 if [[ -e /anaconda/bin ]]; then
-  export PATH="/anaconda/bin:$PATH"
+  PATH="/anaconda/bin:$PATH"
+fi
+if [[ -e /anaconda3/bin ]]; then
+  PATH="/anaconda3/bin:$PATH"
+fi
+if [[ -e "$HOME/anaconda3/bin" ]]; then
+  PATH="$HOME/anaconda3/bin:$PATH"
 fi
