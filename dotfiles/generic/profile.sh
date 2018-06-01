@@ -21,12 +21,12 @@ if [[ -e $HOME/.rvm/bin ]]; then
   fi
 fi
 
-if [[ -e /anaconda/bin ]]; then
-  PATH="/anaconda/bin:$PATH"
-fi
-if [[ -e /anaconda3/bin ]]; then
-  PATH="/anaconda3/bin:$PATH"
-fi
-if [[ -e "$HOME/anaconda3/bin" ]]; then
-  PATH="$HOME/anaconda3/bin:$PATH"
-fi
+#if [[ -e /anaconda/bin ]]; then
+#  PATH="/anaconda/bin:$PATH"
+#fi
+#if [[ -e /anaconda3/bin ]]; then
+#  PATH="/anaconda3/bin:$PATH"
+#fi
+#if [[ -e "$HOME/anaconda3/bin" ]]; then
+#  PATH="$HOME/anaconda3/bin:$PATH"
+#fi

@@ -46,6 +46,8 @@ alias ...='cd ../..'
 alias cd..='cd ..'
 alias cd...='cd ../..'
 alias cd....='cd ../../..'
+alias pd=pushd
+alias ppd=popd
 mkcd() {
   mkdir -p "$1"
   cd "$1"

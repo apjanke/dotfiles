@@ -7,7 +7,7 @@
 #
 
 # Set case-sensitivity for completion, history lookup, etc.
-zstyle ':prezto:*:*' case-sensitive 'yes'
+zstyle ':prezto:*:*' case-sensitive 'no'
 
 # Color output (auto set to 'no' on dumb terminals).
 zstyle ':prezto:*:*' color 'yes'
@@ -30,10 +30,14 @@ pmodules=(
   'directory'
   'spectrum'
   'utility'
+  'ssh'
   'completion'
+  'git'
   'osx'
   'rsync'
-  'apjanke/themes'
+  'history-substring-search'
+  'belak/contrib/contrib-prompt'
+  'apjanke/personal/prompt'
   'prompt'
 )
 zstyle ':prezto:load' pmodule $pmodules
@@ -47,7 +51,7 @@ zstyle ':prezto:load' pmodule $pmodules
 zstyle ':prezto:module:editor' key-bindings 'emacs'
 
 # Auto convert .... to ../..
-# zstyle ':prezto:module:editor' dot-expansion 'yes'
+zstyle ':prezto:module:editor' dot-expansion 'yes'
 
 #
 # Git
@@ -84,8 +88,10 @@ zstyle ':prezto:module:gnu-utility' prefix 'g'
 # Setting it to 'random' loads a random theme.
 # Auto set to 'off' on dumb terminals.
 #zstyle ':prezto:module:prompt' theme 'sorin'
-#zstyle ':prezto:module:prompt' theme 'steeef'
-zstyle ':prezto:module:prompt' theme 'apjanke-01'
+zstyle ':prezto:module:prompt' theme 'steeef'
+#zstyle ':prezto:module:prompt' theme 'cloud'
+#zstyle ':prezto:module:prompt' theme 'agnoster'
+#zstyle ':prezto:module:prompt' theme 'apjanke-01'
 
 #
 # Ruby
