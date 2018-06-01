@@ -52,8 +52,7 @@ fi
 # installed on this system.
 
 # Valid configurators: "oh-my-zsh", "prezto", or "none"
-ZSH_CONFIGURATOR=oh-my-zsh
-#ZSH_CONFIGURATOR=prezto
+ZSH_CONFIGURATOR=prezto
 if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
   #_OMZ_DEBUG=1
   #_OMZ_DEBUG_SMKX=1
@@ -61,9 +60,9 @@ if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
   ZSH_THEME=apjanke-01
   #ZSH_THEME=agnoster
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
-  plugins=( osx themes nyan github )
+  plugins=( osx themes )
   source ~/.dotfiles/zshrc-oh-my-zsh.zsh
-elif [[ $ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.prezto" ]]; then
+elif [[ $ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.zprezto" ]]; then
   source ~/.dotfiles/zshrc-prezto.zsh
 else
   source ~/.dotfiles/zshrc-none.zsh
@@ -134,9 +133,9 @@ function gh-local-pr() {
 
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 
-if [[ -e /anaconda/bin ]]; then
-  export PATH="/anaconda/bin:$PATH"
-fi
+#if [[ -e /anaconda/bin ]]; then
+#  export PATH="/anaconda/bin:$PATH"
+#fi
 
 # For exercism.io
 if [[ -f ~/.config/exercism/exercism_completion.zsh ]]; then
@@ -151,3 +150,5 @@ PERL5LIB="/Users/janke/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LI
 PERL_LOCAL_LIB_ROOT="/Users/janke/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
 PERL_MB_OPT="--install_base \"/Users/janke/perl5\""; export PERL_MB_OPT;
 PERL_MM_OPT="INSTALL_BASE=/Users/janke/perl5"; export PERL_MM_OPT;
+
+true
