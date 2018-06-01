@@ -56,17 +56,23 @@ mkcd() {
 #  Paths and commands  #
 
 function maybe_add_path() {
-  if [ -d "$1" ]; 
-    then PATH="$PATH:$1"; 
+  if [ -d "$1" ]; then
+    if [ "$2" = "prepend" ]; then
+      PATH="$1:$PATH";
+    else
+      PATH="$PATH:$1";
+    fi
   fi
 }
 
 # Prefer local binaries
 PATH="/usr/local/bin:$PATH"
 # Get my local dirs on the path
-if [ -d "$HOME/bin" ]; then PATH="$HOME/bin:$PATH"; fi
+maybe_add_path "$HOME/bin" prepend
 # Hack: unconditionally load the Ruby gem location I've been working with
 maybe_add_path "$HOME/.gem/ruby/2.0.0/bin"
+# Google depot tools
+maybe_add_path "$HOME/local/opt/depot_tools"
 
 export GOPATH=$HOME/local/go-work
 maybe_add_path "$HOME/local/go-work/bin"
