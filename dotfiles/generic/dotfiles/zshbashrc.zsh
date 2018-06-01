@@ -52,6 +52,7 @@ mkcd() {
   mkdir -p "$1"
   cd "$1"
 }
+alias subl-dotfiles="subl $HOME/Dropbox/\#repos/dotfiles/dotfiles"
 
 #  Paths and commands  #
 
