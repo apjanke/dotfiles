@@ -6,6 +6,11 @@
 # General
 #
 
+# Theme to use down below in prompt section
+# Other themes I like:
+#   sorin, steeef, cloud, agnoster, sorin-apj, apjanke-01
+_ZPREZTO_THEME="sorin-apj"
+
 # Set case-sensitivity for completion, history lookup, etc.
 zstyle ':prezto:*:*' case-sensitive 'no'
 
@@ -87,11 +92,7 @@ zstyle ':prezto:module:gnu-utility' prefix 'g'
 # Set the prompt theme to load.
 # Setting it to 'random' loads a random theme.
 # Auto set to 'off' on dumb terminals.
-#zstyle ':prezto:module:prompt' theme 'sorin'
-zstyle ':prezto:module:prompt' theme 'steeef'
-#zstyle ':prezto:module:prompt' theme 'cloud'
-#zstyle ':prezto:module:prompt' theme 'agnoster'
-#zstyle ':prezto:module:prompt' theme 'apjanke-01'
+zstyle ':prezto:module:prompt' theme "$_ZPREZTO_THEME"
 
 #
 # Ruby
