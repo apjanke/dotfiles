@@ -100,10 +100,10 @@ sudo systemsetup -settimezone "America/New_York" > /dev/null
 sudo systemsetup -setremotelogin on
 
 # Power management settings
-sudo pmset -b sleep 30
-sudo pmset -c sleep 0
 sudo pmset -b displaysleep 15
 sudo pmset -c displaysleep 15
+sudo pmset -b sleep 30
+sudo pmset -c sleep 0
 sudo pmset -b lessbright 0
 
 # Show system info on login screen
