@@ -9,3 +9,5 @@
 if [[ -f "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
+
+zstyle ':prezto:module:prompt' pwd-length 'long'
