@@ -11,3 +11,6 @@ if [[ -f "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 fi
 
 zstyle ':prezto:module:prompt' pwd-length 'long'
+
+unalias rm
+unalias gs
