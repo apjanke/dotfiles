@@ -50,3 +50,9 @@ nb-configuration.xml
 *.log
 *.sbr
 
+# IntelliJ IDEA
+\.idea
+
+# VS Code
+/.vscode
+
