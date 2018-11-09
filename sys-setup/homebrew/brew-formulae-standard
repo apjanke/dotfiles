@@ -1,6 +1,7 @@
 gcc
 ant
 asciidoc
+asciidoctor
 browser
 ccache
 cmake
