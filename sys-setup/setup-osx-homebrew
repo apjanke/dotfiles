@@ -131,13 +131,7 @@ for tap in "${taps[@]}"; do
   git fetch --all
 done
 
-# Install formulae
-# Hack: do gcc first, since :recommended dependencies might not pick it up,
-# due to a Homebrew dependency resolution bug
-if [ ! -e $(brew --prefix)/bin/cc ]; then
-  brew install gcc
-  _do brew install gcc
-fi
+# Install formulae and casks
 _do brew install "${formulae[@]}"
 
 for cask in "${casks[@]}"; do
