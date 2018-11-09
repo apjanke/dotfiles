@@ -114,9 +114,10 @@ maybe_bindkey "kcud1" down-line-or-beginning-search    # [Down-Arrow]
 maybe_bindkey "khome" beginning-of-line
 maybe_bindkey "kend" end-of-line
 
-#  Git and GitHub stuff  #
+#  Git and GitHub stuff
 
 # Check out a PR locally
+# (This is probably superseded by hub now)
 function _apj_print_and_do() {
   echo -E "==>" "$@"
   "$@"
@@ -133,22 +134,9 @@ function gh-local-pr() {
 
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
 
-#if [[ -e /anaconda/bin ]]; then
-#  export PATH="/anaconda/bin:$PATH"
-#fi
 
 # For exercism.io
 if [[ -f ~/.config/exercism/exercism_completion.zsh ]]; then
   . ~/.config/exercism/exercism_completion.zsh
 fi
 
-# I don't know where this PERL stuff came from; it must have been added automatically
-# by some installer
-
-PATH="/Users/janke/perl5/bin${PATH:+:${PATH}}"; export PATH;
-PERL5LIB="/Users/janke/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
-PERL_LOCAL_LIB_ROOT="/Users/janke/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
-PERL_MB_OPT="--install_base \"/Users/janke/perl5\""; export PERL_MB_OPT;
-PERL_MM_OPT="INSTALL_BASE=/Users/janke/perl5"; export PERL_MM_OPT;
-
-true

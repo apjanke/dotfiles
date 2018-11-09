@@ -123,14 +123,22 @@ if which gls &>/dev/null; then
   alias gls="gls --color --quoting-style=literal"
 fi
 
-#  Command configuration  #
+function wwhich() {
+  if which $1 &>/dev/null; then
+    ls -loG $(which $1)
+  else
+    which $1
+  fi
+}
+
+#  Command configuration
 
 export PAGER="less"
 export LESS="-R"
 export CLICOLOR=1
 export EDITOR=vi
 
-#  Mac OS X specifics  #
+#  MacOS specifics
 
 if [ $uname = "Darwin" ]; then
 
