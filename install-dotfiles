@@ -59,16 +59,20 @@ function v_echo() {
 function symlink() {
   local source="$1"
   local target="$2"
-  if [[ -s "$target" ]]; then
+  if [[ -L "$target" ]]; then
     local current_source=$(readlink "$target")
     if [[ "$current_source" == "$source" ]]; then
       v_echo "Symlink '$target' is already set up"
   	  return
   	fi
   fi
-  if [[ -d "$target" && ! -s "$target" ]]; then
+  if [[ -d "$target" && ! -L "$target" ]]; then
   	echo >&2 "Error: '$target' is a non-symlink directory"
   	exit 1
+  fi
+  if [[ -f "$target" ]]; then
+    echo "File '$target' is a regular file"
+    return
   fi
   ln -sfn "$source" "$target"
   printf '%-18s -> %s\n' "$target" "$source"
