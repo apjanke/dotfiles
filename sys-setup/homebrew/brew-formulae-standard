@@ -48,7 +48,9 @@ rsync
 sphinx-doc
 subversion
 rxvt-unicode
+tmux
 tree
+utf8proc
 vim
 v8
 wget
