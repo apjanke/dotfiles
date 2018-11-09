@@ -1,6 +1,6 @@
 [user]
 	name = Andrew Janke
-	email = andrew@apjanke.net
+	email = floss@apjanke.net
 [credential]
 	helper = osxkeychain
 [merge]
@@ -11,7 +11,7 @@
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
 [mergetool "sourcetree"]
-	cmd = /Applications/SourceTree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 [filter "media"]
 	required = true
@@ -33,7 +33,9 @@
 	co = checkout
 	br = branch
 	ci = commit
+	diffc = diff --cached
 	authors = dummy-command
+	who = shortlog -sn --
 [github]
 	user = apjanke
 [commit]

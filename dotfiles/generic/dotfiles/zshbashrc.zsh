@@ -13,14 +13,23 @@
 
 # Misc stuff
 alias cls="clear"
+
+alias l="ls -oG"
 alias la="ls -a"
 alias ll="ls -lh"
 alias lla="ls -lha"
 alias lsa='ls -lah'
 alias lso="ls -og"
+# Order by last modified, long form no user group, color
+alias lt="ls -toG"
+# List all except . and ..., color, mark file types, long form no user group, file size
+alias laa="ls -AGFoh"
+
 alias tree="tree -I '.git|.svn|*.swp'"
 alias duh="du -csh"
+
 # Git stuff
+alias g="git"
 alias gst='git status'
 alias gc='git commit -v'
 alias gco='git checkout'
@@ -34,13 +43,23 @@ gpom() {
   echo git pull origin master
   git pull origin master
 }
+# Reset previous commit, but keep all the associated changes.
+alias goddammit="git reset --soft HEAD^"
+# Welp.
+alias heckit="git reset --hard HEAD"
+# Open any files marked as “modified” in your default editor.
+alias gchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
+
+
 # Hacks around default behavior that I dislike
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
 alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
+
 # Directory navigation
-# (Same as OMZ lib/completion)
+# (Based on OMZ's lib/completion)
 alias -- -='cd -'
+alias ~="cd ~"
 alias ..='cd ..'
 alias ...='cd ../..'
 alias cd..='cd ..'
@@ -53,6 +72,16 @@ mkcd() {
   cd "$1"
 }
 alias subl-dotfiles="subl $HOME/Dropbox/\#repos/dotfiles/dotfiles"
+
+# Fancycat™
+alias c="pygmentize -O style=solarized -f console256 -g"
+
+# IP addresses
+alias ip='IP=`dig +short myip.opendns.com @resolver1.opendns.com`; echo "${IP}"; echo "${IP}" | pbcopy'
+alias lip='IP=`ipconfig getifaddr en0`; echo "${IP}"; echo "${IP}" | pbcopy'
+
+# Copy my public key to the pasteboard
+alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | printf '=> Public key copied to pasteboard.\n'"
 
 #  Paths and commands  #
 
@@ -109,9 +138,9 @@ if [ $uname = "Darwin" ]; then
   PATH="/usr/local/sbin:$PATH"
 
   # Detect installed JDK 
-  if [ -z $JAVA_HOME ] && /usr/libexec/java_home &> /dev/null; then
-    export JAVA_HOME=$(/usr/libexec/java_home)
-  fi
+  #if [ -z $JAVA_HOME ] && /usr/libexec/java_home &> /dev/null; then
+    #export JAVA_HOME=$(/usr/libexec/java_home)
+  #fi
 
   # Set up Sublime Text command line support
   if whence subl &>/dev/null; then
@@ -130,6 +159,10 @@ if [ $uname = "Darwin" ]; then
     man "$*" | man2html -title "man $*" | browser
   }
 
+  # Empty the Trash on all mounted volumes and the main HDD
+  # Also, clear Apple’s System Logs to improve shell startup speed
+  alias emptytrash="sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl"
+  
   # Homebrew stuff
 
   export HOMEBREW_DEVELOPER=1

@@ -14,6 +14,8 @@
 	<integer>0</integer>
 	<key>AppleSmoothFixedFontsSizeThreshold</key>
 	<integer>1</integer>
+	<key>AppleWindowTabbingMode</key>
+	<string>manual</string>
 	<key>AutoHideTmuxClientSession</key>
 	<false/>
 	<key>CheckTestRelease</key>
@@ -1505,11 +1507,13 @@
 	<key>HotKeyTogglesWindow</key>
 	<true/>
 	<key>Hotkey</key>
-	<true/>
+	<false/>
 	<key>HotkeyChar</key>
-	<integer>47</integer>
+	<integer>0</integer>
 	<key>HotkeyCode</key>
-	<integer>44</integer>
+	<integer>0</integer>
+	<key>HotkeyMigratedFromSingleToMulti</key>
+	<true/>
 	<key>HotkeyModifiers</key>
 	<integer>262401</integer>
 	<key>IRMemory</key>
@@ -2222,12 +2226,6 @@
 	<true/>
 	<key>MaxVertically</key>
 	<true/>
-	<key>NSColorPanelMode</key>
-	<string>6</string>
-	<key>NSFontPanelAttributes</key>
-	<string>1, 4</string>
-	<key>NSNavLastRootDirectory</key>
-	<string>~/Dropbox/#repos/dotfiles/iTerm2/retina</string>
 	<key>NSQuotedKeystrokeBinding</key>
 	<string></string>
 	<key>NSRepeatCountBinding</key>
@@ -2236,70 +2234,22 @@
 	<false/>
 	<key>NSScrollViewShouldScrollUnderTitlebar</key>
 	<false/>
-	<key>NSTableView Columns KeyBingingTable</key>
-	<array>
-		<data>
-		BAtzdHJlYW10eXBlZIHoA4QBQISEhAhOU1N0cmluZwGEhAhOU09iamVjdACF
-		hAErATCG
-		</data>
-		<string>198</string>
-		<data>
-		BAtzdHJlYW10eXBlZIHoA4QBQISEhAhOU1N0cmluZwGEhAhOU09iamVjdACF
-		hAErATGG
-		</data>
-		<string>307</string>
-	</array>
-	<key>NSTableView Hidden Columns KeyBingingTable</key>
-	<array/>
-	<key>NSTableView Sort Ordering KeyBingingTable</key>
-	<array/>
-	<key>NSToolbar Configuration Terminal Toolbar</key>
-	<dict>
-		<key>TB Display Mode</key>
-		<integer>1</integer>
-		<key>TB Icon Size Mode</key>
-		<integer>1</integer>
-		<key>TB Is Shown</key>
-		<integer>0</integer>
-		<key>TB Size Mode</key>
-		<integer>1</integer>
-	</dict>
-	<key>NSWindow Frame NSColorPanel</key>
-	<string>307 274 214 309 0 0 1440 878 </string>
-	<key>NSWindow Frame Preferences</key>
-	<string>489 94 924 485 0 0 1440 878 </string>
+	<key>NSWindow Frame SUUpdateAlert</key>
+	<string>970 768 620 392 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 0</key>
-	<string>5 422 585 456 0 0 1440 878 </string>
+	<string>1780 2 746 781 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 1</key>
-	<string>729 65 711 813 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 10</key>
-	<string>607 272 833 606 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 11</key>
-	<string>724 446 665 426 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 12</key>
-	<string>751 65 665 506 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 13</key>
-	<string>477 237 665 506 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 14</key>
-	<string>24 45 817 546 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 15</key>
-	<string>519 191 665 506 0 0 1440 878 </string>
+	<string>1906 642 585 458 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 2</key>
-	<string>555 64 585 456 0 0 1440 878 </string>
+	<string>946 6 585 458 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 3</key>
-	<string>16 392 585 456 0 0 1440 878 </string>
+	<string>588 7 1131 730 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 4</key>
-	<string>20 9 725 757 0 0 1440 878 </string>
+	<string>1464 716 928 577 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 5</key>
-	<string>847 444 585 434 0 0 1440 878 </string>
+	<string>1482 534 1075 883 0 0 2560 1417 </string>
 	<key>NSWindow Frame iTerm Window 6</key>
-	<string>11 432 585 434 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 7</key>
-	<string>844 429 585 434 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 8</key>
-	<string>773 120 655 757 0 0 1440 878 </string>
-	<key>NSWindow Frame iTerm Window 9</key>
-	<string>17 73 998 451 0 0 1440 878 </string>
+	<string>259 696 585 458 0 0 2560 1417 </string>
 	<key>NeverWarnAboutMeta</key>
 	<true/>
 	<key>NeverWarnAboutShortLivedSessions_57C20FBC-FAED-49F2-96E0-3B58EF8D09AF</key>
@@ -5021,10 +4971,30 @@
 			</dict>
 			<key>Guid</key>
 			<string>BB21DCF9-16BA-481A-9096-45803EE19FB6</string>
+			<key>Has Hotkey</key>
+			<true/>
 			<key>Hide After Opening</key>
 			<false/>
 			<key>Horizontal Spacing</key>
 			<real>1</real>
+			<key>HotKey Characters</key>
+			<string>/</string>
+			<key>HotKey Characters Ignoring Modifiers</key>
+			<string>/</string>
+			<key>HotKey Key Code</key>
+			<integer>44</integer>
+			<key>HotKey Modifier Flags</key>
+			<integer>262401</integer>
+			<key>HotKey Window Animates</key>
+			<true/>
+			<key>HotKey Window AutoHides</key>
+			<true/>
+			<key>HotKey Window Dock Click Action</key>
+			<integer>0</integer>
+			<key>HotKey Window Floats</key>
+			<false/>
+			<key>HotKey Window Reopens On Activation</key>
+			<false/>
 			<key>Idle Code</key>
 			<integer>0</integer>
 			<key>Initial Text</key>
@@ -7079,16 +7049,14 @@
 			<string>/Users/janke</string>
 		</dict>
 	</array>
-	<key>NoSyncDisablePromotions</key>
+	<key>NoSyncHaveWarnedAboutPasteConfirmationChange</key>
 	<true/>
-	<key>NoSyncHaveShownPromoWithId_4</key>
-	<true/>
-	<key>NoSyncNeverRemindPrefsChangesCopy</key>
-	<true/>
-	<key>NoSyncTimeOfLastPromo</key>
-	<real>477594275.72690803</real>
-	<key>NoSyncTimeOfLastPromoDownload</key>
-	<real>477760044.71098399</real>
+	<key>NoSyncInstallationId</key>
+	<string>4D1316EE-20EC-4601-A104-D494A07762B6</string>
+	<key>NoSyncPermissionToShowTip</key>
+	<false/>
+	<key>NoSyncTimeOfFirstLaunchOfVersionWithTip</key>
+	<real>523396434.77247602</real>
 	<key>OnlyWhenMoreTabs</key>
 	<true/>
 	<key>OpenArrangementAtStartup</key>
@@ -7153,11 +7121,13 @@
 	<key>SUFeedAlternateAppNameKey</key>
 	<string>iTerm</string>
 	<key>SUFeedURL</key>
-	<string>https://iterm2.com/appcasts/final.xml</string>
+	<string>https://iterm2.com/appcasts/final.xml?shard=95</string>
 	<key>SUHasLaunchedBefore</key>
 	<true/>
 	<key>SULastCheckTime</key>
-	<date>2016-05-22T23:53:15Z</date>
+	<date>2018-08-08T18:24:06Z</date>
+	<key>SUSendProfileInfo</key>
+	<false/>
 	<key>SavePasteHistory</key>
 	<false/>
 	<key>Show Toolbelt</key>
@@ -7231,6 +7201,6 @@
 	<key>findRegex_iTerm</key>
 	<false/>
 	<key>iTerm Version</key>
-	<string>2.1.4</string>
+	<string>3.1.7</string>
 </dict>
 </plist>

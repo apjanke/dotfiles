@@ -13,6 +13,12 @@ unset maybe_add_path
 
 history_control=ignoredups
 export HISTIGNORE="&:ls:ls -la:[bf]g:exit"
+# Larger bash history (allow 32^3 entries; default is 500)
+export HISTSIZE=32768
+export HISTFILESIZE=$HISTSIZE
+export HISTCONTROL=ignoredups
+export HISTIGNORE="ls:ls *:cd:cd -:pwd:exit:date:* --help"
+shopt -s histappend
 
 set -o ignoreeof
 set -o vi
