@@ -43,6 +43,7 @@ p7zip
 pkg-config
 pstree
 python3
+rsync
 sphinx-doc
 subversion
 rxvt-unicode
