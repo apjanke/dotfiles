@@ -5,11 +5,11 @@
 # Pull in common bash/zsh configuration
 if [ -f $HOME/.dotfiles/zshbashrc.zsh ]; then source $HOME/.dotfiles/zshbashrc.zsh; fi
 
-# bash-specific settings  #
+# bash-specific settings
 
 unset maybe_add_path
 
-#  History and interaction  #
+#  History and interaction
 
 history_control=ignoredups
 export HISTIGNORE="&:ls:ls -la:[bf]g:exit"
@@ -25,7 +25,7 @@ set -o vi
 shopt -s cdspell
 shopt -s checkwinsize
 
-#  Appearance  #
+#  Appearance
 
 if [ "$USER" = "janke" ]; then
   export PS1="[\W] \$ "
@@ -33,7 +33,7 @@ else
   export PS1="[\h: \W] \$ "
 fi
 
-#  Homebrew  #
+#  Homebrew
 
 if type brew 2&>/dev/null; then
   for completion_file in $(brew --prefix)/etc/bash_completion.d/*; do
@@ -41,6 +41,6 @@ if type brew 2&>/dev/null; then
   done
 fi
 
-#  Miscellaneous  #
+#  Miscellaneous
 
 export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting

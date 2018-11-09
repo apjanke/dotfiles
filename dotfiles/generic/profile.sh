@@ -4,7 +4,7 @@
 # (non-bash-specific login shell configuration)
 
 
-#   Non-platform-specifc stuff   #
+#  Non-platform-specifc stuff
 
 if which subl &>/dev/null; then
     # Let's try using Sublime Text for shell-invoked editor, too
@@ -20,6 +20,10 @@ if [[ -e $HOME/.rvm/bin ]]; then
     source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
   fi
 fi
+
+#  Anaconda
+
+# Currently all commented out because I'm trying to work with system pythons
 
 #if [[ -e /anaconda/bin ]]; then
 #  PATH="/anaconda/bin:$PATH"
