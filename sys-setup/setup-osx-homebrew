@@ -116,15 +116,9 @@ if [[ -e "$my_brew_cfg_dir" ]]; then
 else
   echo "No brew config dir found at '$my_brew_cfg_dir'; Using defaults"
   # Common defaults
-  taps=( homebrew/versions homebrew/x11 homebrew/science )
-  formulae=( zsh browser duti wget dos2unix fortune git pstree tree watch )
+  taps=( apjanke/personal )
+  formulae=( bash zsh browser duti wget dos2unix fortune git pstree tree watch )
   casks=()
-fi
-
-# Special case: do some cask-managed dependencies first, because regular `brew install`
-# formulae may need them
-if [ ! -e /Applications/Utilities/XQuartz.app ]; then
-  _do brew cask install xquartz
 fi
 
 # Install taps
