@@ -2,6 +2,7 @@ gcc
 ant
 asciidoc
 asciidoctor
+bash-completion
 browser
 ccache
 cmake
@@ -49,6 +50,7 @@ sphinx-doc
 subversion
 rxvt-unicode
 tmux
+trash
 tree
 utf8proc
 vim
