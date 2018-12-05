@@ -29,6 +29,14 @@ To set up a new computer from scratch:
 ** `./setup-osx-user`
 * `./install-dotfiles`
 
+Optional Dropbox setup:
+
+* Install Dropbox
+** Have it sync at least `computer/`
+** Wait for sync to complete
+* `./setup-iterm2`
+* `./sync-desktop-folder-osx`
+
 ##  Design and implementation notes  ##
 
 Symlinks cannot be used within this repo, since it may be stored on Dropbox. That'll change if I get off Dropbox and switch to Git-only. But the automatic Dropbox syncing is nice, especially for trying out changes on multiple boxes before committing.

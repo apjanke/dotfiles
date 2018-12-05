@@ -1,11 +1,13 @@
 #!/bin/bash
 # set-osx-hostname
 #
-# set-osx-hostname <name>
+# sudo set-osx-hostname <name>
 #
 # Sets the hostname in all the various ways you need to on OS X.
 # This is intended to be the equivalent of manually setting it in the
 # System Preferences > Sharing control panel.
+#
+# I'm not sure if it actually works
 
 PROGRAM_NAME="$(basename $0)"
 
