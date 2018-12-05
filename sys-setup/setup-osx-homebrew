@@ -76,13 +76,6 @@ Error: Neither Xcode nor CLT are installed. Please install one.
 EOF
   exit 1
 fi
-# Check for JDK
-# Require this because I don't trust brew cask to install it (yet)
-# In progress: I'm trying out casks now. If this works, then this section can be removed
-#if ! pkgutil --pkgs | grep com.oracle.jdk >/dev/null; then
-#  echo >&2 "Error: Java JDK is not installed. Please install it."
-#  exit 1
-#fi
 
 # Install Homebrew
 (
