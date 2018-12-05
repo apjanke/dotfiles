@@ -41,6 +41,8 @@ Optional Dropbox setup:
 
 Symlinks cannot be used within this repo, since it may be stored on Dropbox. That'll change if I get off Dropbox and switch to Git-only. But the automatic Dropbox syncing is nice, especially for trying out changes on multiple boxes before committing.
 
+The `setup-osx-system` and `setup-osx-user` scripts can only have soft dependencies on `setup-osx-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation.
+
 ##  License  ##
 
 All material in this project is licensed under the MIT License unless otherwise noted. See [LICENSE.md](LICENSE.md).
