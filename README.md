@@ -23,9 +23,11 @@ To set up a new computer from scratch:
 
 * Clone this repo locally, to its permanent location
 * Install Xcode and/or the Xcode CLT
-* `setup-osx-homebrew`
-* `setup-osx-system`
-* `setup-osx-user`
+* In `sys-setup`:
+** `./setup-osx-homebrew`
+** `sudo ./setup-osx-system`
+** `./setup-osx-user`
+* `./install-dotfiles`
 
 ##  Design and implementation notes  ##
 
