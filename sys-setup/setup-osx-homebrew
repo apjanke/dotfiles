@@ -134,11 +134,14 @@ for tap in "${taps[@]}"; do
 done
 
 # Install formulae and casks
-_do brew install "${formulae[@]}"
 
+# Do casks first so Java gets picked up; it is a dependency of some formulae
 for cask in "${casks[@]}"; do
   _do brew cask install $cask
 done
+
+_do brew install "${formulae[@]}"
+
 
 }
 
