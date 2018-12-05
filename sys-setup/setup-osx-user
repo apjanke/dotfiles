@@ -14,7 +14,8 @@
 # individual commands to the terminal. A "defaults-write" call may be replaced with
 # "defaults write" at the command line.
 
-set -e
+# Disable exit-on-error because some of these defaults-writes will fail on Mojave
+#set -e
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
