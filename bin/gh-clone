@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# gh-clone: clone a forked repo from GitHub
+#
+# gh-clone <user> <repo>
+#
+
+user="$1"
+repo="$2"
+
+git clone https://github.com/apjanke/$repo
+(
+  cd $repo
+  git remote add upstream https://github.com/$user/$repo
+  git fetch --all
+)
