@@ -109,7 +109,7 @@ maybe_add_path "/usr/local/lib/ruby/gems/2.5.0/bin" prepend
 maybe_add_path "$HOME/local/opt/depot_tools"
 
 export GOPATH=$HOME/local/go-work
-maybe_add_path "$HOME/local/go-work/bin"
+maybe_add_path "$GOPATH/bin"
 
 # ls customization
 uname=`uname`
