@@ -1,0 +1,7 @@
+# apjanke's common octaverc
+
+# Dropbox-synced Octave working dir
+addpath([getenv('HOME') '/Dropbox/computer/data/Documents/octave'])
+
+format compact
+format long

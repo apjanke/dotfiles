@@ -30,6 +30,9 @@ nbdist/
 nbactions.xml
 nb-configuration.xml
 
+# IntelliJ IDEA working files
+.idea
+
 # Visual Studio artifacts
 *.obj
 *.pdb
