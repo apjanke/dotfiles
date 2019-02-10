@@ -35,12 +35,7 @@ markdown
 maven
 md5sha1sum
 mercurial
-mongodb
-mono
-mycli
-mysql
 neofetch
-node
 p7zip
 pkg-config
 pstree
@@ -52,7 +47,6 @@ tmux
 trash
 tree
 utf8proc
-v8
 wget
 zsh
 zsh-completions
