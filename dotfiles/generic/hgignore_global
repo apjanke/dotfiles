@@ -51,7 +51,13 @@ nb-configuration.xml
 *.sbr
 
 # IntelliJ IDEA
-\.idea
+.idea
+cmake-build-debug
+CMakeLists.txt
+
+# Octave build artifacts
+*.lo
+*.la
 
 # VS Code
 /.vscode

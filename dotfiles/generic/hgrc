@@ -1,6 +1,7 @@
 [ui]
 username = Andrew Janke <andrew@apjanke.net>
 merge = internal:merge
+ignore = ~/.hgignore_global
 
 [diff]
 git = 1
@@ -24,4 +25,7 @@ qnew = -U
 
 [mq]
 plain = True
+
+[extensions]
+histedit =
 
