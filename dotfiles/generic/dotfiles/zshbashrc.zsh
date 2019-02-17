@@ -234,6 +234,8 @@ if [ $uname = "Darwin" ]; then
   # AsciiDoc / DocBook installation
   export XML_CATALOG_FILES=/usr/local/etc/xml/catalog
 
+  # Enable core dumps
+  ulimit -c unlimited
 fi
 
 #  Appearance  #
