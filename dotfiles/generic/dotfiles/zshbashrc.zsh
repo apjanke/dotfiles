@@ -202,11 +202,11 @@ if [ $uname = "Darwin" ]; then
 
   # brew-gist-logs - brew gist-logs wrapper, with login support
   function brew-gist-logs() {
-    if [[ -e ~/.github-token ]]; then
+    if [[ -e ~/.ssh/github-token ]]; then
       # Use a subshell so the secret isn't left in main shell's environment
-      ( export HOMEBREW_GITHUB_API_TOKEN=$(cat ~/.github-token); brew gist-logs $* )
+      ( export HOMEBREW_GITHUB_API_TOKEN=$(cat ~/.ssh/github-token); brew gist-logs $* )
     else
-      echo "~/.github-token not found" >&2
+      echo "~/.ssh/github-token not found" >&2
       return 1
     fi
   }
