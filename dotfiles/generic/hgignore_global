@@ -53,7 +53,6 @@ nb-configuration.xml
 # IntelliJ IDEA
 .idea
 cmake-build-debug
-CMakeLists.txt
 
 # Octave build artifacts
 *.lo
