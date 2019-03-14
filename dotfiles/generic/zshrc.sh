@@ -114,7 +114,10 @@ maybe_bindkey "kcud1" down-line-or-beginning-search    # [Down-Arrow]
 maybe_bindkey "khome" beginning-of-line
 maybe_bindkey "kend" end-of-line
 
-#  Git and GitHub stuff
+# Miscellaneous options
+setopt clobber
+
+# Git and GitHub stuff
 
 # Check out a PR locally
 # (This is probably superseded by hub now)
