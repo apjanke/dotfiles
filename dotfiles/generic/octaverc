@@ -9,7 +9,7 @@ warning off Octave:shadowed-function
 my_octave_doc_dir = [getenv('HOME') '/Dropbox/computer/data/Documents/octave'];
 if exist(my_octave_doc_dir, 'file')
   addpath(my_octave_doc_dir);
-  cd(my_octave_doc_dir);
+# cd(my_octave_doc_dir);
 end
 clear my_octave_doc_dir
 
