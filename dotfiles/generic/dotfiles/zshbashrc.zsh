@@ -50,11 +50,11 @@ alias heckit="git reset --hard HEAD"
 # Open any files marked as “modified” in your default editor.
 alias gchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
 
-
 # Hacks around default behavior that I dislike
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
 alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
+alias octave="octave -q"  # suppress banner
 
 # Directory navigation
 # (Based on OMZ's lib/completion)
