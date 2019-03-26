@@ -57,6 +57,7 @@ alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
 alias octave="octave -q"  # suppress banner
 alias octave-default="octave-default -q"  # suppress banner
 alias octave-stable="octave-stable -q"  # suppress banner
+alias octaveapp5="$(brew --prefix octave-octave-app@5.1.0)/bin/octave -q"
 
 # Directory navigation
 # (Based on OMZ's lib/completion)
