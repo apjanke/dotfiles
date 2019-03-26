@@ -55,6 +55,8 @@ alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
 alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
 alias octave="octave -q"  # suppress banner
+alias octave-default="octave-default -q"  # suppress banner
+alias octave-stable="octave-stable -q"  # suppress banner
 
 # Directory navigation
 # (Based on OMZ's lib/completion)
