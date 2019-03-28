@@ -50,7 +50,6 @@ alias heckit="git reset --hard HEAD"
 # Open any files marked as “modified” in your default editor.
 alias gchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
 # Get rid of Prezto's alias and replace it with my preferred one
-unalias gbc
 alias gbc="git branch | cat"
 
 # Hacks around default behavior that I dislike
