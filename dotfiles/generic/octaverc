@@ -3,7 +3,7 @@
 # This happens a lot in my development environment.
 # And it's currently broken anyway, because it warns about object
 # methods as well as plain functions.
-warning off Octave:shadowed-function
+#warning off Octave:shadowed-function
 
 # Dropbox-synced Octave working dir
 my_octave_doc_dir = [getenv('HOME') '/Dropbox/computer/data/Documents/octave'];
