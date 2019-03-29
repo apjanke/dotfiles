@@ -27,6 +27,8 @@ alias laa="ls -AGFoh"
 
 alias tree="tree -I '.git|.svn|*.swp'"
 alias duh="du -csh"
+alias grin="grep -r -i -n"
+alias fn='find . -iname'
 
 # Git stuff
 alias g="git"
