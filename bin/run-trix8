@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#disk='/Volumes/Sidecar/VMs/QEMU VMs/trix8.img'
+disk='/Users-local/janke/Documents/QEMU VMs/trix8.img'
+
+qemu-system-x86_64 -m 4G -hda "$disk"
+
