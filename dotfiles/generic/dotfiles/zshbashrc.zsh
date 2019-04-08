@@ -93,8 +93,11 @@ alias c="pygmentize -O style=solarized -f console256 -g"
 alias ip='IP=`dig +short myip.opendns.com @resolver1.opendns.com`; echo "${IP}"; echo "${IP}" | pbcopy'
 alias lip='IP=`ipconfig getifaddr en0`; echo "${IP}"; echo "${IP}" | pbcopy'
 
-# Copy my public key to the pasteboard
+# Copy my public SSH key to the pasteboard
 alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | printf '=> Public key copied to pasteboard.\n'"
+
+# Miscellaneous
+alias qemu=qemu-system-x86_64
 
 #  Paths and commands  #
 
