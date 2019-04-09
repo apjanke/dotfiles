@@ -84,7 +84,7 @@ alias subl-dotfiles="subl $HOME/Dropbox/\#repos/dotfiles/dotfiles"
 
 # OMZ & Prezto sometimes alias these for "safety" to versions that prompt
 # on clobber, etc. I don't want that.
-unalias mv
+unalias mv 2>/dev/null
 
 # Fancycat™
 alias c="pygmentize -O style=solarized -f console256 -g"
