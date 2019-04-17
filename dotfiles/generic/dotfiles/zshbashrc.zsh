@@ -63,7 +63,9 @@ alias octave-default="octave-default -q"  # suppress banner
 alias octave-stable="octave-stable -q"  # suppress banner
 alias octave@5.1.0="octave@5.1.0 -q"  # suppress banner
 alias octave4="octave@4.4.1 -q"  # suppress banner
-alias octaveapp5="$(brew --prefix octave-octave-app@5.1.0)/bin/octave -q"
+if which brew &>/dev/null; then
+  alias octaveapp5='$(brew --prefix octave-octave-app@5.1.0)/bin/octave -q'
+fi
 
 # Directory navigation
 # (Based on OMZ's lib/completion)
