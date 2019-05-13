@@ -1,23 +1,33 @@
 # apjanke's common octaverc
 
 # This happens a lot in my development environment.
+# But I'm turning it off because I'm hitting some actual cases where
+# it matters while doing development.
 # And it's currently broken anyway, because it warns about object
 # methods as well as plain functions.
-#warning off Octave:shadowed-function
 
-# Dropbox-synced Octave working dir
-my_octave_doc_dir = [getenv('HOME') '/Dropbox/computer/data/Documents/octave'];
+# warning off Octave:shadowed-function
+
+# My Dropbox-synced Octave working dir
+
+my_octave_doc_dir = [getenv('HOME') '/Documents/octave'];
 if exist(my_octave_doc_dir, 'file')
   addpath(my_octave_doc_dir);
-# cd(my_octave_doc_dir);
+  # cd(my_octave_doc_dir);
 end
 clear my_octave_doc_dir
 
-# Pre-4.4 stuff
-more off;
+# My preferred cosmetic stuff
 
 format compact
 format long
 
+# Pre-4.4 stuff
 
+more off;
+
+# An attempt to get more scrollback in my Command Window
+
+page_output_immediately(1)
+page_screen_output(0)
 
