@@ -1,6 +1,6 @@
 [user]
 	name = Andrew Janke
-	email = floss@apjanke.net
+	email = andrew@apjanke.net
 [credential]
 	helper = osxkeychain
 [merge]
