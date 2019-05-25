@@ -75,7 +75,7 @@ use Encode;
 
 my $progname0 = $0;
 my $progname = $0; $progname =~ s@.*/@@g;
-my ($version) = ('$Revision: 1.1293 $' =~ m/\s(\d[.\d]+)\s/s);
+my ($version) = ('$Revision: 1.1341 $' =~ m/\s(\d[.\d]+)\s/s);
 
 # Without this, [:alnum:] doesn't work on non-ASCII.
 use locale;
@@ -116,11 +116,11 @@ my $html_tail = " </BODY>\n</HTML>\n";
 # script exits, even if abnormally.  This is how CGI-mode cleans up
 # after itself.
 #
-my @rm_f = ();
+my %rm_f;
 END {
-  if (@rm_f) {
-    print STDERR "$progname: rm @rm_f\n" if ($verbose > 1);
-    unlink @rm_f;
+  foreach my $f (sort keys %rm_f) {
+    print STDERR "$progname: rm $f\n" if ($verbose > 1);
+    unlink $f;
   }
 }
 
@@ -259,10 +259,8 @@ sub draw_progress($;$$$) {
   return if ($progress_time == $now && !$eof);
 
   if ($cgi_p) {			# See comment on "X-Heartbeat" in do_cgi().
-    while ($ticks > $progress_ticks) {
-      print STDOUT ".";
-      $progress_ticks++;
-    }
+    print STDOUT ".";
+    $ticks = $progress_ticks;
     $progress_time = $now;
     $progress_ticks = 0 if ($eof);
     return;
@@ -486,6 +484,7 @@ sub get_url_1($;$$$$$$$) {
   $hdrs .= "\r\n";
 
   if ($verbose > 3) {
+    print STDERR "\n";
     foreach (split('\r?\n', $hdrs)) {
       print STDERR "  ==> $_\n";
     }
@@ -591,14 +590,17 @@ sub get_url_1($;$$$$$$$) {
     } elsif (! $ok_p) {
       # Don't touch the output file on error or redirect.
     } elsif ($start_byte) {
+      $rm_f{$to_file} = 1;
       open ($out, '>>:raw', $to_file) || error ("append $to_file: $!");
       print STDERR "$progname: open \"$to_file\" @ $start_byte\n"
         if ($verbose > 2);
     } elsif ($append_p) {
+      $rm_f{$to_file} = 1;
       open ($out, '>>:raw', $to_file) || error ("append $to_file: $!");
       print STDERR "$progname: append \"$to_file\"\n"
         if ($verbose > 2);
     } else {
+      $rm_f{$to_file} = 1;
       open ($out, '>:raw',  $to_file) || error ("open $to_file: $!");
       print STDERR "$progname: open \"$to_file\"\n" if ($verbose > 2);
     }
@@ -803,7 +805,10 @@ sub get_url($;$$$$$$$) {
     # even with the extra connect() latency because we get the setup burst
     # on each one.
     #
-    my $burst_size = 1024*1024*16;
+    # Update, Apr 2019: burst size seems to be 10MB now.
+    #
+    my $burst_size = 1024*1024*10;
+
     my $max_bytes_2 = (($force_ranges_p &&
                         (!defined($max_bytes) || $max_bytes > $burst_size))
                        ? $burst_size
@@ -813,7 +818,7 @@ sub get_url($;$$$$$$$) {
                  ($max_bytes_2
                   ? " $start_byte-" . ($start_byte + $max_bytes_2)
                   : '') . "\n"
-      if ($verbose > 2);
+      if ($verbose == 3);
 
     my ($http, $head, $body, $bytes, $cl, $cl2) =
       get_url_1 ($url, $referer, $to_file, $bwlimit,
@@ -871,6 +876,8 @@ sub get_url($;$$$$$$$) {
 
       $start_byte = $total_bytes;
       $append_p = 1;
+
+      $error_count++ if ($bytes <= 0);  # Null response counts as error.
 
       error ("too many retries ($max_errors) attempting to resume $orig_url")
         if ($error_count++ > $max_errors);
@@ -1157,11 +1164,6 @@ sub video_url_size($$;$$$) {
   my $tmp = $ENV{TMPDIR} || "/tmp";
   my $ext = content_type_ext ($ct || '');
   my $file = sprintf("$tmp/$progname-%08x.$ext", rand(0xFFFFFFFF));
-  if (-f $file) {
-    print STDERR "$progname: rm \"$file\"\n" if ($verbose > 1);
-    unlink $file;
-  }
-  push @rm_f, $file;
 
   # Need a lot of data to get size from 1080p.
   #
@@ -2124,6 +2126,46 @@ my %ciphers = (
   'player_ias-vflYv1bWD/en_US/base' => '17933 s3 r w23 s1 w9 r w35 w45 s1',# 06 Feb 2019
   'player_ias-vflP40QgO/en_US/base' => '17936 r s1 w50 w1',       # 09 Feb 2019
   'player_ias-vflRtzyEV/en_US/base' => '17940 r s2 r s1 r',       # 13 Feb 2019
+  'player_ias-vfl9fQPE9/en_US/base' => '17947 w53 w17 r w42 w19 w3',# 20 Feb 2019
+  'player_ias-vflq4d8Te/en_US/base' => '17949 r s3 w22 r w58 s3', # 22 Feb 2019
+  'player_ias-vflkaDufl/en_US/base' => '17952 r w36 r w3 s1 r s2',# 25 Feb 2019
+  'player_ias-vflfI-Uux/en_US/base' => '17953 w12 s3 w15 r s3',   # 26 Feb 2019
+  'player_ias-vflX2rhq7/en_US/base' => '17954 w54 w25 s1 r w62 w35 w17',# 27 Feb 2019
+  'player_ias-vflpVg286/en_US/base' => '17957 w27 s1 r s1 r w27 s3 w24',# 02 Mar 2019
+  'player_ias-vflwK9E86/en_US/base' => '17960 w36 s1 r w48 w23 w66 s2',# 05 Mar 2019
+  'player_ias-vfl0Xjrhe/en_US/base' => '17960 w36 s1 r w48 w23 w66 s2',# 05 Mar 2019
+  'player_ias-vflca9-f7/en_US/base' => '17962 s2 r s3 r s1',      # 07 Mar 2019
+  'player_ias-vflgQJQnf/en_US/base' => '17967 w18 w39 r w65',     # 12 Mar 2019
+  'player_ias-vflkyt12p/en_US/base' => '17968 s2 w12 r w62 s1',   # 13 Mar 2019
+  'player_ias-vflhRp6T6/en_US/base' => '17969 w23 r s3 r w16 w61 w48 w47',# 14 Mar 2019
+  'player_ias-vfljLzLcF/en_US/base' => '17971 w8 s3 r s3',        # 16 Mar 2019
+  'player_ias-vfl0mwZa0/en_US/base' => '17974 s3 w61 s2 r s1 w48 s2 r',# 19 Mar 2019
+  'player_ias-vflELyWbw/en_US/base' => '17974 s3 w61 s2 r s1 w48 s2 r',# 19 Mar 2019
+  'player_ias-vflGPko2h/en_US/base' => '17976 w23 s1 r s2 r s1 r w23 s2',# 21 Mar 2019
+  'player_ias-vflrQPnxT/en_US/base' => '17981 w41 w33 w28 w18 w31 w23',# 26 Mar 2019
+  'player_ias-vflUi8DdH/en_US/base' => '17984 w53 s2 r s3 r s2 w60 s2 w27',# 29 Mar 2019
+  'player_ias-vflx77j21/en_US/base' => '17984 w53 s2 r s3 r s2 w60 s2 w27',# 29 Mar 2019
+  'player_ias-vflh3Ltot/en_US/base' => '17989 s1 w44 w68 r w59 w35 s3 w7',# 03 Apr 2019
+  'player_ias-vflo38I3N/en_US/base' => '17989 s1 w44 w68 r w59 w35 s3 w7',# 03 Apr 2019
+  'player_ias-vflNoyOhW/en_US/base' => '17990 w19 w16 r s2',      # 04 Apr 2019
+  'player_ias-vflLXg1wb/en_US/base' => '17992 w55 s1 w4 r',       # 06 Apr 2019
+  'player_ias-vflQXSOCw/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
+  'player_ias-vflptN-I_/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
+  'player_ias_remote_ux-vflu5jbVI/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
+  'player_ias-vflCpof0M/en_US/base' => '18002 w11 r s1 w65',      # 16 Apr 2019
+  'player_ias-vfloNowYZ/en_US/base' => '18003 w7 r s2 r s3 r s1 r s3',# 17 Apr 2019
+  'player_ias-vflYEQ3rp/en_US/base' => '18005 r s2 w26 r s2 w70 r',# 19 Apr 2019
+  'player_ias-vflox1iTd/en_US/base' => '18009 w57 w32 s3 r',      # 23 Apr 2019
+  'player_ias-vflzZ-uwH/en_US/base' => '18010 w12 w24 r s2 w34 w62 s2 w70 s2',# 24 Apr 2019
+  'player_ias-vflU6l_su/en_US/base' => '18011 s1 r w56 s2 r s2 r',# 25 Apr 2019
+  'player_ias-vfl9qGq_O/en_US/base' => '18012 s3 r w4 r s2 w6 r', # 26 Apr 2019
+  'player_ias-vflXZ59b4/en_US/base' => '18016 w29 s2 r s2 r',     # 30 Apr 2019
+  'player_ias-vflOwsp3q/en_US/base' => '18017 s2 r w68 r s3',     # 01 May 2019
+  'player_ias-vfl61X81T/en_US/base' => '18019 r w58 s2 r s3 r s1 w70 r',# 03 May 2019
+  'player_ias-vflisCO7O/en_US/base' => '18022 s2 w36 s2',         # 06 May 2019
+  'player_ias-vflmRtaf6/en_US/base' => '18023 s3 w30 r s1 r s1 r s3',# 07 May 2019
+  'player_ias-vflQTyJbT/en_US/base' => '18024 w15 r w33 w28 s3 w11 s3 r',# 08 May 2019
+  'player_ias-vflHkKkEW/en_US/base' => '18025 w70 w67 w2 w19 r w45 w56 s3 r',# 09 May 2019
 );
 
 
@@ -2423,7 +2465,7 @@ sub guess_cipher($;$$) {
 sub auto_update($) {
   my ($cipher_line) = @_;
 
-  open (my $in, '<', $progname0) || error ("$progname0: $!");
+  open (my $in, '<:raw', $progname0) || error ("$progname0: $!");
   local $/ = undef;  # read entire file
   my ($body) = <$in>;
   close $in;
@@ -2436,7 +2478,7 @@ sub auto_update($) {
              { $1 . ($2 + 1) . $3 }@sexi ||
     error ("auto-update: unable to tick version");
 
-  open (my $out, '>', $progname0) || error ("$progname0: $!");
+  open (my $out, '>:raw', $progname0) || error ("$progname0: $!");
   syswrite ($out, $body) || error ("auto-update: $!");
   close $out;
   print STDERR "$progname: auto-updated $progname0\n";
@@ -2752,8 +2794,11 @@ my $blocked_re = join ('|',
                         'removed by the user',
                         'account.*has been terminated',
                         'has been removed',
+                        'has not made this video available',
+                        'has closed their YouTube account',
                         'is not available',
                         'is not embeddable',
+                        'can\'t download rental videos',
                         'livestream videos',
                         'invalid parameters',
                         'RTMPE DRM',
@@ -3719,8 +3764,17 @@ sub pick_download_format($$$$$) {
    139 => { v => undef,                        a => 'm4a', abr =>  48   },
    140 => { v => undef,                        a => 'm4a', abr => 128   },
    141 => { v => undef,                        a => 'm4a', abr => 256   },
+   142 => { v => 'mp4',  w =>  426, h =>  240, a => undef               },
+   143 => { v => 'mp4',  w =>  640, h =>  360, a => undef               },
+   144 => { v => 'mp4',  w =>  854, h =>  480, a => undef               },
+   145 => { v => 'mp4',  w => 1280, h =>  720, a => undef               },
+   146 => { v => 'mp4',  w => 1920, h => 1080, a => undef               },
+   148 => { v => undef,                        a => 'aac', abr => 51    },
+   149 => { v => undef,                        a => 'aac', abr => 132   },
+   150 => { v => undef,                        a => 'aac', abr => 260   },
    151 => { v => 'mp4',  w =>   72, h =>   32, a => undef               },
    160 => { v => 'mp4',  w =>  256, h =>  144, a => undef               },
+   161 => { v => 'mp4',  w =>  256, h =>  144, a => undef               },
    167 => { v => 'webm', w =>  640, h =>  360, a => undef               },
    168 => { v => 'webm', w =>  854, h =>  480, a => undef               },
    169 => { v => 'webm', w => 1280, h =>  720, a => undef               },
@@ -3729,6 +3783,12 @@ sub pick_download_format($$$$$) {
    172 => { v => undef,                        a => 'vor', abr => 256   },
    218 => { v => 'webm', w =>  854, h =>  480, a => undef               },
    219 => { v => 'webm', w =>  854, h =>  480, a => undef               },
+   222 => { v => 'mp4',  w =>  854, h =>  480, a => undef               },
+   223 => { v => 'mp4',  w =>  854, h =>  480, a => undef               },
+   224 => { v => 'mp4',  w => 1280, h =>  720, a => undef               },
+   225 => { v => 'mp4',  w => 1280, h =>  720, a => undef               },
+   226 => { v => 'mp4',  w => 1920, h => 1080, a => undef               },
+   227 => { v => 'mp4',  w => 1920, h => 1080, a => undef               },
    242 => { v => 'webm', w =>  426, h =>  240, a => undef               },
    243 => { v => 'webm', w =>  640, h =>  360, a => undef               },
    244 => { v => 'webm', w =>  854, h =>  480, a => undef               },
@@ -3745,29 +3805,59 @@ sub pick_download_format($$$$$) {
    266 => { v => 'mp4',  w => 3840, h => 2160, a => undef               },
    271 => { v => 'webm', w => 2560, h => 1440, a => undef               },
    272 => { v => 'webm', w => 3840, h => 2160, a => undef               },
-   278 => { v => 'mp4',  w =>  256, h =>  144, a => undef               },
+   273 => { v => 'webm', w =>  854, h =>  480, a => undef               },
+   274 => { v => 'webm', w => 1280, h =>  720, a => undef               },
+   275 => { v => 'webm', w => 1920, h => 1080, a => undef               },
+   278 => { v => 'webm', w =>  256, h =>  144, a => undef               },
+   279 => { v => 'webm', w =>  426, h =>  240, a => undef               },
+   280 => { v => 'webm', w =>  640, h =>  360, a => undef               },
    298 => { v => 'mp4',  w => 1280, h =>  720, a => undef               },
    299 => { v => 'mp4',  w => 1920, h => 1080, a => undef               },
    302 => { v => 'webm', w => 1280, h =>  720, a => undef               },
    303 => { v => 'webm', w => 1920, h => 1080, a => undef               },
+   304 => { v => 'mp4',  w => 2560, h => 1440, a => undef               },
+   305 => { v => 'mp4',  w => 3840, h => 1920, a => undef               },
 #  308 => { v => 'mp4',  w => 2560, h => 1440, a => undef               },
    308 => { v => 'webm', w => 2560, h => 1440, a => undef               },
    313 => { v => 'webm', w => 3840, h => 2160, a => undef               },
    315 => { v => 'webm', w => 3840, h => 2160, a => undef               },
+   317 => { v => 'webm', w =>  854, h =>  480, a => undef               },
+   318 => { v => 'webm', w =>  854, h =>  480, a => undef               },
    327 => { v => undef,                        a => 'm4a', abr => 128, c=>5.1 },
+   330 => { v => 'webm', w => 256,  h =>  144, a => undef               },
+   331 => { v => 'webm', w => 426,  h =>  240, a => undef               },
+   332 => { v => 'webm', w => 640,  h =>  360, a => undef               },
+   333 => { v => 'webm', w => 854,  h =>  480, a => undef               },
+   334 => { v => 'webm', w => 1280, h =>  720, a => undef               },
+   335 => { v => 'webm', w => 1920, h => 1080, a => undef               },
+   336 => { v => 'webm', w => 2560, h => 1440, a => undef               },
+   337 => { v => 'webm', w => 3840, h => 2160, a => undef               },
+   338 => { v => undef,                        a => 'vor', abr =>   4   },
    339 => { v => undef,                        a => 'vor', abr => 170, c=>5.1 },
+   350 => { v => undef,                        a => 'vor', abr =>  50   },
+   351 => { v => undef,                        a => 'vor', abr =>  49   },
+   352 => { v => undef,                        a => 'vor', abr =>   3   },
+   357 => { v => 'webm', w => 1280, h =>  720, a => undef               },
+   358 => { v => 'webm', w => 1280, h =>  720, a => undef               },
+   359 => { v => 'webm', w => 1920, h => 1080, a => undef               },
+   360 => { v => 'webm', w => 1920, h => 1080, a => undef               },
    394 => { v => 'av1',  w =>  256, h =>  144, a => undef               },
    395 => { v => 'av1',  w =>  426, h =>  240, a => undef               },
    396 => { v => 'av1',  w =>  640, h =>  360, a => undef               },
    397 => { v => 'av1',  w =>  854, h =>  480, a => undef               },
    398 => { v => 'av1',  w => 1280, h =>  720, a => undef               },
    399 => { v => 'av1',  w => 1920, h => 1080, a => undef               },
+   400 => { v => 'av1',  w => 2560, h => 1440, a => undef               },
+   401 => { v => 'av1',  w => 3840, h => 2160, a => undef               },
+   402 => { v => 'av1',  w => 3840, h => 2160, a => undef               },
+   403 => { v => 'av1',  w => 5888, h => 2160, a => undef               },
   );
   #
   # The table on https://en.wikipedia.org/wiki/YouTube#Quality_and_formats
   # disagrees with the above to some extent.  Which is more accurate?
   # (Oh great, they deleted that table from Wikipedia. Lovely.)
   # (Ah great, they added the table back to Wikipedia Mar 2016.)
+  # (Aaaand it's gone again, some time before Mar 2019.)
   #
   # fmt=38/37/22 are only available if upload was that exact resolution.
   #
@@ -4827,8 +4917,8 @@ sub canonical_url($;) {
 # Having downloaded a video file and an audio file, combine them and delete
 # the two originals.
 #
-sub mux_downloaded_files($$$$$$) {
-  my ($id, $url, $title, $v1, $v2, $muxed_file) = @_;
+sub mux_downloaded_files($$$$$$$$) {
+  my ($id, $url, $title, $v1, $v2, $muxed_file, $progress_p, $cgi_p) = @_;
 
   my $video_file = $v1->{file};
   my $audio_file = $v2->{file};
@@ -4874,6 +4964,7 @@ sub mux_downloaded_files($$$$$$) {
                 '-acodec', 'copy');
   }
   push @cmd, $muxed_file;
+  $rm_f{$muxed_file} = 1;
 
   if ($verbose == 1) {
     print STDERR "$progname: $id: $desc audio and video...\n";
@@ -4892,21 +4983,71 @@ sub mux_downloaded_files($$$$$$) {
     } else {
       close ($in);
       close ($out);
-      local $/ = undef;  # read entire file
-      while (<$err>) {
-        $result .= $_;
+
+      my ($dur, $input_bytes);
+      my $start_time = time();
+
+      if ($progress_p) {
+        my $s1 = (stat($audio_file))[7] || 0;
+        my $s2 = (stat($video_file))[7] || 0;
+        $input_bytes = $s1 + $s2;
       }
+
+      # The stderr output from ffmpeg sometimes uses \n and sometimes \r
+      # so we have to use sysread here and split manually instead of
+      # while (<$err>) or the whole stderr buffers.
+      #
+      my $bufsiz = 16384;
+      while (1) {
+        my ($rin, $win, $ein, $rout, $wout, $eout);
+        $rin = $win = $ein = '';
+        vec ($rin, fileno($err), 1) = 1;
+        $ein = $rin | $win;
+        my $nfound = select ($rout = $rin, $wout = $win, $eout = $ein, undef);
+        my $chunk = '';
+        my $size = sysread ($err, $chunk, $bufsiz);
+        last if ($nfound && !$size);   # closed
+        $result .= $chunk;
+        print STDOUT "." if ($cgi_p);  # For the "X-Heartbeat" header
+        if ($progress_p || $verbose > 2) {
+          # Let's just assume ffmpeg never splits writes mid-line.
+          # (Actually "rarely" is as good as "never")
+          $chunk =~ s/\r\n?/\n/gs;
+          foreach my $line (split(/\n/, $chunk)) {
+            print STDERR "  <== $line\n" if ($verbose > 2);
+
+            # ffmpeg doesn't provide the total number of frames anywhere,
+            # so we have to go by timestamp instead:
+            #
+            # Input #0, ...
+            #   Duration: 00:03:26.99, start: 0.000000, bitrate: 3005 kb/s
+            # ...
+            #  frame= 3378 fps= 88 q=30.0 size=    7680kB time=00:00:55.21 ...
+            #
+            if (!$dur &&
+                $line =~ m/^\s*Duration:\s+(\d+):(\d\d):(\d\d(\.\d+)?)\b/s) {
+              $dur = $1*60*60 + $2*60 + $3;
+            } elsif ($dur && $progress_p &&
+                     $line =~ m/^\s* frame= .* \b
+                                time= \s* (\d+):(\d\d):(\d\d(\.\d+)?)/sx) {
+              my $cur = $1*60*60 + $2*60 + $3;
+              my $elapsed = time() - $start_time;
+              my $bps = $elapsed ? ($input_bytes * 8 / $elapsed) : 0;
+              draw_progress ($cur / $dur, $bps, 0, $cgi_p);
+            }
+          }
+        }
+      }
+
+      draw_progress (1, 0, 1, $cgi_p) if ($dur && $progress_p);
+
+      # The stderr from the subprocess has hit EOF, so the pid should be
+      # dead momentarily.
 
       waitpid ($pid, 0);
       my $exit_value  = $? >> 8;
       my $signal_num  = $? & 127;
       my $dumped_core = $? & 128;
-
-      if ($verbose > 2) {
-        $_ = $result;
-        s/^/$cmd[0]: /gm;
-        print STDERR "$_\n";
-      }
 
       $err = undef;
       $err = "$id: $cmd[0]: core dumped!" if ($dumped_core);
@@ -4919,11 +5060,10 @@ sub mux_downloaded_files($$$$$$) {
         print STDERR "$progname: rm \"$muxed_file\"\n" if ($verbose > 1);
         unlink ($muxed_file);  # It's not a download, and it's broken.
       }
-      if ($verbose < 2) {
-        my @L = split(/(?:\r?\n)+/, $result);
-        $result = join ("\n", @L[-5 .. -1])     # only last 5 lines
-          if (@L > 5);
-      }
+
+      my @L = split(/(?:\r?\n)+/, $result);
+      $result = join ("\n", @L[-5 .. -1])     # only last 5 lines
+        if (@L > 5);
       if ($result) {
         $result =~ s/^/$cmd[0]: /gm;
         $err .= "\n\n$result\n";
@@ -4944,7 +5084,6 @@ sub mux_downloaded_files($$$$$$) {
         ($s3 > ($s1 + $diff))))) {  # muxed is more than audio+video + N%
     my $s1b = fmt_size ($s1);
     my $s3b = fmt_size ($s3);
-    # push @rm_f, ($audio_file, $video_file, $muxed_file) if ($verbose < 3);
     print STDERR "$progname: WARNING: " .
            "$id: $cmd[0] wrote a short file! Got $s3b, expected $s1b" .
            " ($s1 - $s3 = $diff)\n";
@@ -4958,6 +5097,8 @@ sub mux_downloaded_files($$$$$$) {
       }
     }
   }
+
+  delete $rm_f{$muxed_file};  # Succeeded, keep file.
 
   write_file_metadata_url ($muxed_file, $id, $url);
 
@@ -5188,9 +5329,9 @@ sub download_video_url($$$$$$$$$$$$) {
   my @outfiles = ();
   if (defined($outfile) && @pair) {
     foreach (@pair) {
-      push @outfiles, sprintf("%s-%08x", $outfile, rand(0xFFFFFFFF));
+      my $f = sprintf("%s-%08x", $outfile, rand(0xFFFFFFFF));
+      push @outfiles, $f;
     }
-    push @rm_f, @outfiles;
   }
 
   foreach my $target (@targets) {
@@ -5229,7 +5370,9 @@ sub download_video_url($$$$$$$$$$$$) {
 
       $suf = ($append_suffix_p
               ? (" [" . $id .
-                 (@targets == 1 ? '' : " $target") .
+                 ((@targets == 1 &&
+                   !(defined($force_fmt) && $force_fmt eq 'all'))
+                  ? '' : " $target") .
                  "]")
               : (@pair
                  ? ($target == $pair[0] ? '.video-only' : '.audio-only')
@@ -5237,12 +5380,6 @@ sub download_video_url($$$$$$$$$$$$) {
 
       my $file = ($prefix ? "$prefix $title" : $title) . $suf;
       $file .= '.' . content_type_ext($ct);
-
-      # If the de-muxed audio or video files are somehow still around
-      # when we exit, just delete them. We never resume those on the
-      # next run, so they're useless.
-      #
-      push @rm_f, $file if (@pair);
 
       my $ftitle = $file;
 
@@ -5264,7 +5401,11 @@ sub download_video_url($$$$$$$$$$$$) {
           # Allow the temporary files used in muxing to be overwritten.
         } else {
           exit (1) if ($verbose <= 0); # Skip silently if --quiet.
-          error ("$id: exists: $file (6)");
+          error ("$id: exists: $file (6)")
+            unless (($force_fmt || '') eq 'all');
+          # Nobody uses --fmt all except for debugging; allow partial files.
+          print STDERR "$progname: $id: exists: $file (6)\n";
+          next;
         }
       }
 
@@ -5365,6 +5506,9 @@ sub download_video_url($$$$$$$$$$$$) {
 
         print STDERR "$progname: wrote   \"$file\"\n";
         print STDERR "$progname:         $ss\n";
+
+        # If we're not muxing, this is the final file.
+        delete $rm_f{$file} unless @pair;
       }
     }
   }
@@ -5377,7 +5521,8 @@ sub download_video_url($$$$$$$$$$$$) {
     mux_downloaded_files ($id, $url, $title,
                           $fmts->{$pair[0]},
                           $fmts->{$pair[1]},
-                          $outfile);
+                          $outfile,
+                          $progress_p, $cgi_p);
   } elsif ($size_p && !@targets) {
     print STDERR "$id\tsize unknown (live stream?)\n";
   }
@@ -5406,7 +5551,8 @@ sub download_video_url_retry($$$$$$$$$$$$) {
                           $bwlimit, $progress_p, $cgi_p, $force_fmt);
     };
     $noerror = $ono;
-    last unless $@;				# Done if no error.
+
+    last unless ($@);					# Done if no error.
    #last unless ($@ =~ m@\b403 Forbidden@);	# Done if error but not 403.
     last if ($@ =~ m/$blocked_re/sio);		# These errors don't go away.
 
@@ -5424,7 +5570,8 @@ sub download_video_url_retry($$$$$$$$$$$$) {
     if ($err && $verbose <= 0 &&
         ($err =~ m/$blocked_re/sio ||
          $err =~ m@\b403 Forbidden@s ||
-         $err =~ m@\b404 Not Found@s)) {
+         $err =~ m@\b404 Not Found@s ||
+         $err =~ m@\bno video in @s)) {
       # With --quiet, just silently ignore private videos and 404s
       # for "youtubefeed".
       exit (1);
@@ -5613,7 +5760,6 @@ sub do_cgi($$) {
             unlink $f;
           }
         }
-        push @rm_f, ($video_file, $audio_file, $muxed_file);
 
         # So we're downloading two files and muxing them before we have any
         # bytes we can send to the client.  That means that several minutes
@@ -5626,19 +5772,21 @@ sub do_cgi($$) {
         # technically not fallen fully idle.  Let's hope Apache and the
         # client fall for that trick.
 
-        my $hdr = "X-Heartbeat: ";
-        print STDOUT $hdr;
-        get_url ($proxy, undef, $video_file, $bwlimit, undef, 'cgi');
-        print STDOUT "\n$hdr";
-        get_url ($audio, undef, $audio_file, $bwlimit, undef, 'cgi');
-        print STDOUT "\n";  # close $hdr
+        my $hdr = "X-Heartbeat:";
+        print STDOUT "$hdr video ";
+        get_url ($proxy, undef, $video_file, $bwlimit, undef, 0, 'cgi');
+        print STDOUT "\n$hdr audio ";
+        get_url ($audio, undef, $audio_file, $bwlimit, undef, 0, 'cgi');
+        print STDOUT "\n$hdr muxing ";
 
         my %v1 = ( file => $video_file );
         my %v2 = ( file => $audio_file );
 
         $verbose = -1;
         mux_downloaded_files ($orig_url, $orig_url, $title,
-                              \%v1, \%v2, $muxed_file);
+                              \%v1, \%v2, $muxed_file,
+                              0, 1);  # $progress_p, $cgi_p
+        print STDOUT "\n";  # close $hdr
 
         foreach my $f ($video_file, $audio_file) {
           if (-f $f) {
@@ -5679,7 +5827,6 @@ sub do_cgi($$) {
         my $ext = content_type_ext ($ct);
         $progname =~ s/\..*?$//s;
         my $muxed_file = sprintf("$tmp/$progname-%08x.$ext",rand(0xFFFFFFFF));
-        push @rm_f, $muxed_file;
         
         # See muxing comment above.
         my $hdr = "X-Heartbeat: ";
@@ -5758,7 +5905,6 @@ sub main() {
   binmode (STDERR, ':utf8');
 
   $progname =~ s/\..*?$//s;    # remove .cgi
-  srand(time ^ $$);            # for tmp files
 
   # historical suckage: the environment variable name is lower case.
   $http_proxy = ($ENV{http_proxy}  || $ENV{HTTP_PROXY} ||
@@ -5792,7 +5938,9 @@ sub main() {
     elsif (m/^-v+$/)         { $verbose += length($_)-1; }
     elsif (m/^--?q(uiet)?$/) { $verbose--; }
     elsif (m/^--?progress$/) { $progress_p++; }
+    elsif (m/^--?no-progress$/) { $progress_p = 0; }
     elsif (m/^--?suffix$/)   { $append_suffix_p = 1; }
+    elsif (m/^--?no-suffix$/)   { $append_suffix_p = 0; }
     elsif (m/^--?prefix$/)   { $expect = $_; $prefix = shift @ARGV; }
     elsif (m/^--?title$/)    { $expect = $_; $title = shift @ARGV; }
     elsif (m/^--?out$/)      { $expect = $_; $out = shift @ARGV; }
