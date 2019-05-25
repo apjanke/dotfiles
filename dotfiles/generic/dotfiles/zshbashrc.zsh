@@ -120,9 +120,11 @@ maybe_add_path "$HOME/bin" prepend
 maybe_add_path "$HOME/bin-local" prepend
 # Hack: unconditionally load the Ruby gem location I've been working with
 maybe_add_path "$HOME/.gem/ruby/2.0.0/bin" prepend
-# Get the Homebrew-installed Ruby
+# Get the Homebrew-installed Ruby, including its gems
 maybe_add_path "/usr/local/opt/ruby/bin" prepend
 maybe_add_path "/usr/local/lib/ruby/gems/2.5.0/bin" prepend
+maybe_add_path "/usr/local/lib/ruby/gems/2.6.0/bin" prepend
+maybe_add_path "/usr/local/lib/ruby/gems/2.7.0/bin" prepend
 # Google depot tools
 maybe_add_path "$HOME/local/opt/depot_tools"
 
