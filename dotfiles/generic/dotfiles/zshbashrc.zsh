@@ -118,6 +118,7 @@ PATH="/usr/local/bin:$PATH"
 # Get my local dirs on the path
 maybe_add_path "$HOME/bin" prepend
 maybe_add_path "$HOME/bin-local" prepend
+maybe_add_path "$HOME/local/bin" prepend
 # Hack: unconditionally load the Ruby gem location I've been working with
 maybe_add_path "$HOME/.gem/ruby/2.0.0/bin" prepend
 # Get the Homebrew-installed Ruby, including its gems
