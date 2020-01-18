@@ -54,6 +54,9 @@ alias gchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
 # Get rid of Prezto's alias and replace it with my preferred one
 alias gbc="git branch | cat"
 
+# I often mis-type "code" as "cod"
+alias cod=code
+
 # Hacks around default behavior that I dislike
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
