@@ -9,7 +9,7 @@
 # software for any purpose.  It is provided "as is" without express or
 # implied warranty.
 #
-# Given a YouTube, Vimeo, Tumblr, Vine, Instagram or Twitter video URL,
+# Given a YouTube, Vimeo, Instagram or Tumblr video URL,
 # downloads the corresponding MP4 file.  The name of the file will be derived
 # from the title of the video.
 #
@@ -75,7 +75,7 @@ use Encode;
 
 my $progname0 = $0;
 my $progname = $0; $progname =~ s@.*/@@g;
-my ($version) = ('$Revision: 1.1341 $' =~ m/\s(\d[.\d]+)\s/s);
+my ($version) = ('$Revision: 1.1395 $' =~ m/\s(\d[.\d]+)\s/s);
 
 # Without this, [:alnum:] doesn't work on non-ASCII.
 use locale;
@@ -117,11 +117,14 @@ my $html_tail = " </BODY>\n</HTML>\n";
 # after itself.
 #
 my %rm_f;
-END {
+END { rmf(); }
+
+sub rmf() {
   foreach my $f (sort keys %rm_f) {
     print STDERR "$progname: rm $f\n" if ($verbose > 1);
     unlink $f;
   }
+  %rm_f = ();
 }
 
 sub signal_cleanup($) {
@@ -247,7 +250,7 @@ my $progress_time = 0;
 my $progress_rubout = '';
 my $progress_last = 0;
 
-sub draw_progress($;$$$) {
+sub draw_progress($$$$) {
   my ($ratio, $bps, $eof, $cgi_p) = @_;   # bits per sec, not bytes
 
   my $cols = ($cgi_p ? 100 : 64);
@@ -860,6 +863,11 @@ sub get_url($;$$$$$$$) {
 
       if ($body =~ m@([^<>.:]*verify that you are a human[^<>.:]*)@si) {
         # Vimeo: there's no coming back from this, don't retry.
+        $max_errors = $error_count+1;
+      }
+
+      if ($http =~ m@\b429\b@si) {
+        # "Too many requests". There's no coming back from this, don't retry.
         $max_errors = $error_count+1;
       }
 
@@ -2097,75 +2105,119 @@ my %ciphers = (
 # 'player-vfl-6ni-d/en_US/base' => '17863 w66 r s1 r',            # 28 Nov 2018
 # 'player-vflBGiA6J/en_US/base' => '17864 w15 s3 w19 s3 r',       # 29 Nov 2018
 # 'player-vflooFjaN/en_US/base' => '17865 w49 r w24 r',           # 30 Nov 2018
-  'player-vflRjqq_w/en_US/base' => '17869 w18 s2 w6 s2 r',        # 04 Dec 2018
-  'player-vflrVSewe/en_US/base' => '17871 w33 w18 s1 w34 r s2 r s2',# 06 Dec 2018
-  'player-vflf5K4kk/en_US/base' => '17871 w33 w18 s1 w34 r s2 r s2',# 06 Dec 2018
-  'player_ias-vflA8SWf9/en_US/base' => '17872 s1 w51 r s1 w67 s1 w16 r s1',# 07 Dec 2018
-  'player_ias-vflsBa1u2/en_US/base' => '17876 r w48 r w65',       # 11 Dec 2018
-  'player_ias-vflXas3a_/en_US/base' => '17877 s1 r w15 w8 r w12', # 12 Dec 2018
-  'player_ias-vfl4UMq4Z/en_US/base' => '17880 w22 w43 s1 w10 w8 r s3 r s3',# 15 Dec 2018
-  'player_ias-vflNodBFa/en_US/base' => '17882 s3 w57 r s1',       # 17 Dec 2018
-  'player_ias-vflztg6e0/en_US/base' => '17884 w59 w12 s2 r s1 w10 r',# 19 Dec 2018
-  'player_ias-vflSzU_20/en_US/base' => '17885 w34 r w68 s1 w38 r',# 20 Dec 2018
-  'player-vflpOZkP0/en_US/base' => '17885 w34 r w68 s1 w38 r',    # 20 Dec 2018
-  'player_ias-vflWb9AD2/en_US/base' => '17886 s3 w70 r w54 r w26 w43 r s1',# 21 Dec 2018
-  'player_ias-vflNriX6t/en_US/base' => '17903 w50 r w62 s1 w16 s1',# 07 Jan 2019
-  'player_ias-vfls55OIb/en_US/base' => '17905 w24 w56 r w5',      # 09 Jan 2019
-  'player_ias-vfl_235rs/en_US/base' => '17906 w15 w53 s3 r',      # 10 Jan 2019
-  'player_ias-vflsx9jEl/en_US/base' => '17908 s2 w63 s1 r s2 r w69 w47 w8',# 12 Jan 2019
-  'player_ias-vflzJWmZN/en_US/base' => '17910 s1 r w44',          # 14 Jan 2019
-  'player_ias-vfl-jbnrr/en_US/base' => '17913 w69 r w55 s1 r s2 r s3',# 17 Jan 2019
-  'player_ias-vflH-Ze7P/en_US/base' => '17915 r s2 r w61 s2 w42', # 19 Jan 2019
-  'player_ias-vflSfmvrF/en_US/base' => '17919 r w18 r',           # 23 Jan 2019
-  'player_ias-vflLIeur2/en_US/base' => '17920 w62 r w6 w2 w39 w2',# 24 Jan 2019
-  'player_ias-vflok_OV_/en_US/base' => '17921 w59 s3 w41 s1',     # 25 Jan 2019
-  'player_ias-vflemibiK/en_US/base' => '17922 w4 w1 w27 r s1 r s1 w11',# 26 Jan 2019
-  'player_ias-vflehrYuM/en_US/base' => '17926 s1 w63 w25',        # 30 Jan 2019
-  'player_ias-vfl71PH-c/en_US/base' => '17931 s2 r w55 s1 r w41 w24 r',# 04 Feb 2019
-  'player_ias-vflcS3GOw/en_US/base' => '17932 s1 w55 w49',        # 05 Feb 2019
-  'player_ias-vflYv1bWD/en_US/base' => '17933 s3 r w23 s1 w9 r w35 w45 s1',# 06 Feb 2019
-  'player_ias-vflP40QgO/en_US/base' => '17936 r s1 w50 w1',       # 09 Feb 2019
-  'player_ias-vflRtzyEV/en_US/base' => '17940 r s2 r s1 r',       # 13 Feb 2019
-  'player_ias-vfl9fQPE9/en_US/base' => '17947 w53 w17 r w42 w19 w3',# 20 Feb 2019
-  'player_ias-vflq4d8Te/en_US/base' => '17949 r s3 w22 r w58 s3', # 22 Feb 2019
-  'player_ias-vflkaDufl/en_US/base' => '17952 r w36 r w3 s1 r s2',# 25 Feb 2019
-  'player_ias-vflfI-Uux/en_US/base' => '17953 w12 s3 w15 r s3',   # 26 Feb 2019
-  'player_ias-vflX2rhq7/en_US/base' => '17954 w54 w25 s1 r w62 w35 w17',# 27 Feb 2019
-  'player_ias-vflpVg286/en_US/base' => '17957 w27 s1 r s1 r w27 s3 w24',# 02 Mar 2019
-  'player_ias-vflwK9E86/en_US/base' => '17960 w36 s1 r w48 w23 w66 s2',# 05 Mar 2019
-  'player_ias-vfl0Xjrhe/en_US/base' => '17960 w36 s1 r w48 w23 w66 s2',# 05 Mar 2019
-  'player_ias-vflca9-f7/en_US/base' => '17962 s2 r s3 r s1',      # 07 Mar 2019
-  'player_ias-vflgQJQnf/en_US/base' => '17967 w18 w39 r w65',     # 12 Mar 2019
-  'player_ias-vflkyt12p/en_US/base' => '17968 s2 w12 r w62 s1',   # 13 Mar 2019
-  'player_ias-vflhRp6T6/en_US/base' => '17969 w23 r s3 r w16 w61 w48 w47',# 14 Mar 2019
-  'player_ias-vfljLzLcF/en_US/base' => '17971 w8 s3 r s3',        # 16 Mar 2019
-  'player_ias-vfl0mwZa0/en_US/base' => '17974 s3 w61 s2 r s1 w48 s2 r',# 19 Mar 2019
-  'player_ias-vflELyWbw/en_US/base' => '17974 s3 w61 s2 r s1 w48 s2 r',# 19 Mar 2019
-  'player_ias-vflGPko2h/en_US/base' => '17976 w23 s1 r s2 r s1 r w23 s2',# 21 Mar 2019
-  'player_ias-vflrQPnxT/en_US/base' => '17981 w41 w33 w28 w18 w31 w23',# 26 Mar 2019
-  'player_ias-vflUi8DdH/en_US/base' => '17984 w53 s2 r s3 r s2 w60 s2 w27',# 29 Mar 2019
-  'player_ias-vflx77j21/en_US/base' => '17984 w53 s2 r s3 r s2 w60 s2 w27',# 29 Mar 2019
-  'player_ias-vflh3Ltot/en_US/base' => '17989 s1 w44 w68 r w59 w35 s3 w7',# 03 Apr 2019
-  'player_ias-vflo38I3N/en_US/base' => '17989 s1 w44 w68 r w59 w35 s3 w7',# 03 Apr 2019
-  'player_ias-vflNoyOhW/en_US/base' => '17990 w19 w16 r s2',      # 04 Apr 2019
-  'player_ias-vflLXg1wb/en_US/base' => '17992 w55 s1 w4 r',       # 06 Apr 2019
-  'player_ias-vflQXSOCw/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
-  'player_ias-vflptN-I_/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
-  'player_ias_remote_ux-vflu5jbVI/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
-  'player_ias-vflCpof0M/en_US/base' => '18002 w11 r s1 w65',      # 16 Apr 2019
-  'player_ias-vfloNowYZ/en_US/base' => '18003 w7 r s2 r s3 r s1 r s3',# 17 Apr 2019
-  'player_ias-vflYEQ3rp/en_US/base' => '18005 r s2 w26 r s2 w70 r',# 19 Apr 2019
-  'player_ias-vflox1iTd/en_US/base' => '18009 w57 w32 s3 r',      # 23 Apr 2019
-  'player_ias-vflzZ-uwH/en_US/base' => '18010 w12 w24 r s2 w34 w62 s2 w70 s2',# 24 Apr 2019
-  'player_ias-vflU6l_su/en_US/base' => '18011 s1 r w56 s2 r s2 r',# 25 Apr 2019
-  'player_ias-vfl9qGq_O/en_US/base' => '18012 s3 r w4 r s2 w6 r', # 26 Apr 2019
-  'player_ias-vflXZ59b4/en_US/base' => '18016 w29 s2 r s2 r',     # 30 Apr 2019
-  'player_ias-vflOwsp3q/en_US/base' => '18017 s2 r w68 r s3',     # 01 May 2019
-  'player_ias-vfl61X81T/en_US/base' => '18019 r w58 s2 r s3 r s1 w70 r',# 03 May 2019
-  'player_ias-vflisCO7O/en_US/base' => '18022 s2 w36 s2',         # 06 May 2019
-  'player_ias-vflmRtaf6/en_US/base' => '18023 s3 w30 r s1 r s1 r s3',# 07 May 2019
-  'player_ias-vflQTyJbT/en_US/base' => '18024 w15 r w33 w28 s3 w11 s3 r',# 08 May 2019
-  'player_ias-vflHkKkEW/en_US/base' => '18025 w70 w67 w2 w19 r w45 w56 s3 r',# 09 May 2019
+# 'player-vflRjqq_w/en_US/base' => '17869 w18 s2 w6 s2 r',        # 04 Dec 2018
+# 'player-vflrVSewe/en_US/base' => '17871 w33 w18 s1 w34 r s2 r s2',# 06 Dec 2018
+# 'player-vflf5K4kk/en_US/base' => '17871 w33 w18 s1 w34 r s2 r s2',# 06 Dec 2018
+# 'player_ias-vflA8SWf9/en_US/base' => '17872 s1 w51 r s1 w67 s1 w16 r s1',# 07 Dec 2018
+# 'player_ias-vflsBa1u2/en_US/base' => '17876 r w48 r w65',       # 11 Dec 2018
+# 'player_ias-vflXas3a_/en_US/base' => '17877 s1 r w15 w8 r w12', # 12 Dec 2018
+# 'player_ias-vfl4UMq4Z/en_US/base' => '17880 w22 w43 s1 w10 w8 r s3 r s3',# 15 Dec 2018
+# 'player_ias-vflNodBFa/en_US/base' => '17882 s3 w57 r s1',       # 17 Dec 2018
+# 'player_ias-vflztg6e0/en_US/base' => '17884 w59 w12 s2 r s1 w10 r',# 19 Dec 2018
+# 'player_ias-vflSzU_20/en_US/base' => '17885 w34 r w68 s1 w38 r',# 20 Dec 2018
+# 'player-vflpOZkP0/en_US/base' => '17885 w34 r w68 s1 w38 r',    # 20 Dec 2018
+# 'player_ias-vflWb9AD2/en_US/base' => '17886 s3 w70 r w54 r w26 w43 r s1',# 21 Dec 2018
+# 'player_ias-vflNriX6t/en_US/base' => '17903 w50 r w62 s1 w16 s1',# 07 Jan 2019
+# 'player_ias-vfls55OIb/en_US/base' => '17905 w24 w56 r w5',      # 09 Jan 2019
+# 'player_ias-vfl_235rs/en_US/base' => '17906 w15 w53 s3 r',      # 10 Jan 2019
+# 'player_ias-vflsx9jEl/en_US/base' => '17908 s2 w63 s1 r s2 r w69 w47 w8',# 12 Jan 2019
+# 'player_ias-vflzJWmZN/en_US/base' => '17910 s1 r w44',          # 14 Jan 2019
+# 'player_ias-vfl-jbnrr/en_US/base' => '17913 w69 r w55 s1 r s2 r s3',# 17 Jan 2019
+# 'player_ias-vflH-Ze7P/en_US/base' => '17915 r s2 r w61 s2 w42', # 19 Jan 2019
+# 'player_ias-vflSfmvrF/en_US/base' => '17919 r w18 r',           # 23 Jan 2019
+# 'player_ias-vflLIeur2/en_US/base' => '17920 w62 r w6 w2 w39 w2',# 24 Jan 2019
+# 'player_ias-vflok_OV_/en_US/base' => '17921 w59 s3 w41 s1',     # 25 Jan 2019
+# 'player_ias-vflemibiK/en_US/base' => '17922 w4 w1 w27 r s1 r s1 w11',# 26 Jan 2019
+# 'player_ias-vflehrYuM/en_US/base' => '17926 s1 w63 w25',        # 30 Jan 2019
+# 'player_ias-vfl71PH-c/en_US/base' => '17931 s2 r w55 s1 r w41 w24 r',# 04 Feb 2019
+# 'player_ias-vflcS3GOw/en_US/base' => '17932 s1 w55 w49',        # 05 Feb 2019
+# 'player_ias-vflYv1bWD/en_US/base' => '17933 s3 r w23 s1 w9 r w35 w45 s1',# 06 Feb 2019
+# 'player_ias-vflP40QgO/en_US/base' => '17936 r s1 w50 w1',       # 09 Feb 2019
+# 'player_ias-vflRtzyEV/en_US/base' => '17940 r s2 r s1 r',       # 13 Feb 2019
+# 'player_ias-vfl9fQPE9/en_US/base' => '17947 w53 w17 r w42 w19 w3',# 20 Feb 2019
+# 'player_ias-vflq4d8Te/en_US/base' => '17949 r s3 w22 r w58 s3', # 22 Feb 2019
+# 'player_ias-vflkaDufl/en_US/base' => '17952 r w36 r w3 s1 r s2',# 25 Feb 2019
+# 'player_ias-vflfI-Uux/en_US/base' => '17953 w12 s3 w15 r s3',   # 26 Feb 2019
+# 'player_ias-vflX2rhq7/en_US/base' => '17954 w54 w25 s1 r w62 w35 w17',# 27 Feb 2019
+# 'player_ias-vflpVg286/en_US/base' => '17957 w27 s1 r s1 r w27 s3 w24',# 02 Mar 2019
+# 'player_ias-vflwK9E86/en_US/base' => '17960 w36 s1 r w48 w23 w66 s2',# 05 Mar 2019
+# 'player_ias-vfl0Xjrhe/en_US/base' => '17960 w36 s1 r w48 w23 w66 s2',# 05 Mar 2019
+# 'player_ias-vflca9-f7/en_US/base' => '17962 s2 r s3 r s1',      # 07 Mar 2019
+# 'player_ias-vflgQJQnf/en_US/base' => '17967 w18 w39 r w65',     # 12 Mar 2019
+# 'player_ias-vflkyt12p/en_US/base' => '17968 s2 w12 r w62 s1',   # 13 Mar 2019
+# 'player_ias-vflhRp6T6/en_US/base' => '17969 w23 r s3 r w16 w61 w48 w47',# 14 Mar 2019
+# 'player_ias-vfljLzLcF/en_US/base' => '17971 w8 s3 r s3',        # 16 Mar 2019
+# 'player_ias-vfl0mwZa0/en_US/base' => '17974 s3 w61 s2 r s1 w48 s2 r',# 19 Mar 2019
+# 'player_ias-vflELyWbw/en_US/base' => '17974 s3 w61 s2 r s1 w48 s2 r',# 19 Mar 2019
+# 'player_ias-vflGPko2h/en_US/base' => '17976 w23 s1 r s2 r s1 r w23 s2',# 21 Mar 2019
+# 'player_ias-vflrQPnxT/en_US/base' => '17981 w41 w33 w28 w18 w31 w23',# 26 Mar 2019
+# 'player_ias-vflUi8DdH/en_US/base' => '17984 w53 s2 r s3 r s2 w60 s2 w27',# 29 Mar 2019
+# 'player_ias-vflx77j21/en_US/base' => '17984 w53 s2 r s3 r s2 w60 s2 w27',# 29 Mar 2019
+# 'player_ias-vflh3Ltot/en_US/base' => '17989 s1 w44 w68 r w59 w35 s3 w7',# 03 Apr 2019
+# 'player_ias-vflo38I3N/en_US/base' => '17989 s1 w44 w68 r w59 w35 s3 w7',# 03 Apr 2019
+# 'player_ias-vflNoyOhW/en_US/base' => '17990 w19 w16 r s2',      # 04 Apr 2019
+# 'player_ias-vflLXg1wb/en_US/base' => '17992 w55 s1 w4 r',       # 06 Apr 2019
+# 'player_ias-vflQXSOCw/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
+# 'player_ias-vflptN-I_/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
+# 'player_ias_remote_ux-vflu5jbVI/en_US/base' => '17995 r w11 s3 r w12 r s3 r s3',# 09 Apr 2019
+# 'player_ias-vflCpof0M/en_US/base' => '18002 w11 r s1 w65',      # 16 Apr 2019
+# 'player_ias-vfloNowYZ/en_US/base' => '18003 w7 r s2 r s3 r s1 r s3',# 17 Apr 2019
+# 'player_ias-vflYEQ3rp/en_US/base' => '18005 r s2 w26 r s2 w70 r',# 19 Apr 2019
+# 'player_ias-vflox1iTd/en_US/base' => '18009 w57 w32 s3 r',      # 23 Apr 2019
+# 'player_ias-vflzZ-uwH/en_US/base' => '18010 w12 w24 r s2 w34 w62 s2 w70 s2',# 24 Apr 2019
+# 'player_ias-vflU6l_su/en_US/base' => '18011 s1 r w56 s2 r s2 r',# 25 Apr 2019
+# 'player_ias-vfl9qGq_O/en_US/base' => '18012 s3 r w4 r s2 w6 r', # 26 Apr 2019
+# 'player_ias-vflXZ59b4/en_US/base' => '18016 w29 s2 r s2 r',     # 30 Apr 2019
+# 'player_ias-vflOwsp3q/en_US/base' => '18017 s2 r w68 r s3',     # 01 May 2019
+# 'player_ias-vfl61X81T/en_US/base' => '18019 r w58 s2 r s3 r s1 w70 r',# 03 May 2019
+# 'player_ias-vflisCO7O/en_US/base' => '18022 s2 w36 s2',         # 06 May 2019
+# 'player_ias-vflmRtaf6/en_US/base' => '18023 s3 w30 r s1 r s1 r s3',# 07 May 2019
+# 'player_ias-vflQTyJbT/en_US/base' => '18024 w15 r w33 w28 s3 w11 s3 r',# 08 May 2019
+# 'player_ias-vflHkKkEW/en_US/base' => '18025 w70 w67 w2 w19 r w45 w56 s3 r',# 09 May 2019
+# 'player_ias-vfl5CuSGB/en_US/base' => '18030 r w42 w15 r',       # 14 May 2019
+# 'player_ias-vflOR94oD/en_US/base' => '18031 s1 w41 s2',         # 15 May 2019
+# 'player_ias-vflFo4HCs/en_US/base' => '18033 r s3 w4 w65 r w45 w50 s2',# 17 May 2019
+# 'player_ias-vflj9IN-5/en_US/base' => '18037 r s1 w41 r w37 s3 r w27 r',# 21 May 2019
+# 'player_ias-vfld3bR7p/en_US/base' => '18038 r w45 w33 r s2 r w36 w20 r',# 22 May 2019
+# 'player_ias-vflusCuE1/en_US/base' => '18039 w35 s3 r w37 w1 w65',# 23 May 2019
+# 'player_ias-vflS2RkAM/en_US/base' => '18040 w56 w48 s3 w64 s1 r s2 w43',# 24 May 2019
+# 'player_ias-vfl1T0cVh/en_US/base' => '18041 s2 w62 r s3 w21 r w52',# 25 May 2019
+# 'player_ias-vflVstpzG/en_US/base' => '18045 s2 r s2 r s2 r w51 r',# 29 May 2019
+# 'player_ias-vfl6QiMWf/en_US/base' => '18045 s2 r s2 r s2 r w51 r',# 29 May 2019
+# 'player_ias-vfl5VAqDi/en_US/base' => '18046 r w41 r w62 s2 r',  # 30 May 2019
+  'player_ias_remote_ux-vfldk63YK/en_US/base' => '18048 w64 w62 w66 r w29 r s3 r s1',# 01 Jun 2019
+  'player_ias-vfl-SOYuS/en_US/base' => '18051 s3 r s3 w61 r',     # 04 Jun 2019
+  'player_ias-vflo4i8HU/en_US/base' => '18052 s1 r s2',           # 05 Jun 2019
+  'player_ias-vfl25EWhw/en_US/base' => '18053 w38 r w7 w18 r w21',# 06 Jun 2019
+  'player_ias-vfldhBbts/en_US/base' => '18055 w12 w59 s2 w24 r',  # 08 Jun 2019
+  'player_ias-vflzbi_R5/en_US/base' => '18060 w40 w67 r w7 s1',   # 13 Jun 2019
+  'player_ias-vfltBCqwT/en_US/base' => '18065 r s3 r w65 r s1 r w20',# 18 Jun 2019
+  'player_ias-vfloOZja_/en_US/base' => '18066 w20 r w17',         # 19 Jun 2019
+  'player_ias-vfl49f_g4/en_US/base' => '18066 w20 r w17',         # 19 Jun 2019
+  'player_ias-vflnDDQuY/en_US/base' => '18071 w51 r w20 r s1 r s3 r',# 24 Jun 2019
+  'player_ias-vflIucxJp/en_US/base' => '18072 s2 r w54 s1',       # 25 Jun 2019
+  'player_ias-vflv00tk0/en_US/base' => '18072 s2 r w54 s1',       # 25 Jun 2019
+  'player_ias-vflxACNZ2/en_US/base' => '18074 w8 r w61 r s3 r w47 s2 w11',# 27 Jun 2019
+  'player_ias-vfliSA6ma/en_US/base' => '18079 s2 w5 s2 r',        # 02 Jul 2019
+  'player_ias-vfl7A4uZG/en_US/base' => '18081 s1 w24 s3',         # 04 Jul 2019
+  'player_ias-vflojvMjn/en_US/base' => '18086 r s3 r s2 r w42 r w14 w4',# 09 Jul 2019
+  'player_ias-vfladvVLE/en_US/base' => '18087 r w60 r s3 r w46',  # 10 Jul 2019
+  'player_ias-vflK6rDhN/en_US/base' => '18088 w70 s2 w47 s2 w31 s1',# 11 Jul 2019
+  'player_ias-vfl_2S9FT/en_US/base' => '18092 s2 w58 s3',         # 15 Jul 2019
+  'player_ias-vflH7QZGl/en_US/base' => '18092 s2 w58 s3',         # 15 Jul 2019
+  'player_ias-vflFxFa3y/en_US/base' => '18095 r s3 r w12 r',      # 18 Jul 2019
+  'player_ias-vfl_rJBTq/en_US/base' => '18101 w67 r s1 w61 r',    # 24 Jul 2019
+  'player_ias-vfl7A19HM/en_US/base' => '18102 r s1 r s1 r s1',    # 25 Jul 2019
+  'player_ias-vflan9mDf/en_US/base' => '18104 s3 w34 s1 w24 r w45',# 27 Jul 2019
+  'player_ias-vflPI0brM/en_US/base' => '18106 s2 w23 w22 r s3 w1 s1 r s2',# 29 Jul 2019
+  'player_ias-vfl3cxFuT/en_US/base' => '18114 s2 r s2 r s1 r',    # 06 Aug 2019
+  'player_ias-vfliz8bvh/en_US/base' => '18114 s2 r s2 r s1 r',    # 06 Aug 2019
+  'player_ias-vflazKpcG/en_US/base' => '18117 w3 r w59 s3 r w14 w14 s2',# 09 Aug 2019
+  'player_ias-vfl0ft1-Z/en_US/base' => '18117 w3 r w59 s3 r w14 w14 s2',# 09 Aug 2019
+  'player_ias-vflOQSPfo/en_US/base' => '18120 r w24 r w41 r w2',  # 12 Aug 2019
+  'player_ias-vfluLgj-p/en_US/base' => '18120 r w24 r w41 r w2',  # 12 Aug 2019
+  'player_ias-vfl4ZkW5S/en_US/base' => '18121 s2 r w45 r w23',    # 13 Aug 2019
+  'player_ias-vflLAbfAI/en_US/base' => '18122 w9 s3 r s3 r w27 r s1 w64',# 14 Aug 2019
 );
 
 
@@ -2526,8 +2578,13 @@ sub apply_signature($$$$$$) {
     if ($url =~ m@^(.*)/s/[^/]+(.*)$@s) {
       $url = "$1/signature/$sig$2";  # DASH /s/ => /signature/
     } elsif ($url =~ m/\?/s) {
-      $url =~ s@&signature=[^&]+@@gs;
-      $url .= '&signature=' . $sig;
+      # Default is to do "signature=SIG" but if there is "sp=XXX"
+      # in the url_map, that means it goes in "XXX=SIG" instead
+      # in the video URL.
+      my ($sig_tag) = ($via =~ m/&sp=([^&]+)/s);
+      $sig_tag = 'signature' unless defined($sig_tag);
+      $url =~ s@ & ( signature | sig | \Q$sig_tag\E ) = [^&]+ @@gsx;
+      $url .= '&' . $sig_tag . '=' . $sig;
     } else {
       errorI ("unable to splice signature: $url");
     }
@@ -2740,12 +2797,12 @@ sub youtube_parse_dashmpd($$$$) {
   foreach my $rep (@reps) {
     my ($k)    = ($rep =~ m@id=[\'\"](\d+)@si);
     my ($url)  = ($rep =~ m@<BaseURL\b[^<>]*>([^<>]+)@si);
-    my ($type) = ($rep =~ m@codecs="(.*?)"@si);
-    my ($w)    = ($rep =~ m@width="(\d+)"@si);
-    my ($h)    = ($rep =~ m@height="(\d+)"@si);
+    my ($type) = ($rep =~ m@\bcodecs="(.*?)"@si);
+    my ($w)    = ($rep =~ m@\bwidth="(\d+)"@si);
+    my ($h)    = ($rep =~ m@\bheight="(\d+)"@si);
     my ($segs) = ($rep =~ m@<SegmentList[^<>]*>(.*?)</SegmentList>@si);
     my $size;
-    $type = "video/mp4;+codecs=\"$type\"";
+    $type = ($w && $h ? "video/mp4" : "audio/mp4") . ";+codecs=\"$type\"";
 
     if ($segs) {
       my ($url0) = ($segs =~ m@<Initialization\s+sourceURL="(.*?)"@si);
@@ -2797,14 +2854,17 @@ my $blocked_re = join ('|',
                         'has not made this video available',
                         'has closed their YouTube account',
                         'is not available',
+                        'is unavailable',
                         'is not embeddable',
                         'can\'t download rental videos',
                         'livestream videos',
                         'invalid parameters',
                         'RTMPE DRM',
+                        'Private video\?',
                         'piece of shit',
                         'you are a human',
                         '^[^:]+: exists: ',
+                        '\b429 Too Many Requests',
                        ));
 
 
@@ -3225,7 +3285,7 @@ sub load_vimeo_formats($$$) {
   my $files    = ($files0 || '') . ($files1 || '') . ($files2 || '');
 
   # Sometimes we get empty-ish data for "Private Video", but HTTP 200.
-  $err = "No video info (Private?)"
+  $err = "No video info (Private video?)"
     if (!$err && !$title && !$files);
 
   if ($err) {
@@ -3308,7 +3368,7 @@ sub load_tumblr_formats($$$) {
     # Incestuous
     if ($body =~ m@ <IFRAME [^<>]*? \b SRC="
                      ( https?:// [^<>\"/]*? \b 
-                       ( vine\.co | vimeo\.com | youtube\.com | 
+                       ( vimeo\.com | youtube\.com | 
                          instagram\.com )
                        [^<>\"]+ )
                   @six) {
@@ -3399,60 +3459,6 @@ sub load_tumblr_formats($$$) {
     $fmts->{$i} = \%v;
     $i++;
   }
-
-  $fmts->{title} = $title;
-  $fmts->{year}  = $year;
-
-  return $fmts;
-}
-
-
-# Returns a hash of:
-#  [ title: "T",
-#    year: "Y",
-#    0: [ ...video info... ],
-# Since Vine only offers one resolution.
-#
-sub load_vine_formats($$$) {
-  my ($id, $url, $size_p) = @_;
-
-  my ($http, $head, $body) = get_url ($url);
-  check_http_status ($id, $url, $http, 1);
-
-  my ($user)  = ($body =~ m@<meta \s+ property="twitter:author" \s+
-			   content="([^<>]*?)"@six);
-  my ($title) = ($body =~ m@<meta \s+ property="twitter:title" \s+
-			   content="([^<>]*?)"@six);
-  my ($src)   = ($body =~ m@<meta \s+ property="twitter:player:stream" \s+
-			   content="([^<>]*?)"@six);
-  my ($w)     = ($body =~ m@<meta \s+ property="twitter:image:width" \s+
-			   content="([^<>]*?)"@six);
-  my ($h)     = ($body =~ m@<meta \s+ property="twitter:image:height" \s+
-			   content="([^<>]*?)"@six);
-  my ($ct)    = ($body =~ m@<meta \s+
-                           property="twitter:player:stream:content_type" \s+
-			   content="([^<>]*n?)"@six);
-  my ($year) = ($body =~ m@ "datePublished": \s* \" (\d{4})- @six);
-
-  errorI ("$id: no video in $url")
-    unless ($src && $w && $h && $ct && $user && $title);
-
-  $title = "$user: $title";
-  $title = munge_title (html_unquote ($title || ''));
-  $ct =~ s/;.*//s;
-
-  my $fmts = {};
-
-  my $i = 0;
-  my %v = ( fmt  => $i,
-            url  => $src,
-            content_type => $ct,
-            w    => $w,
-            h    => $h,
-            # size => undef,
-            # abr  => undef,
-          );
-  $fmts->{$i} = \%v;
 
   $fmts->{title} = $title;
   $fmts->{year}  = $year;
@@ -3655,6 +3661,8 @@ sub get_vimeo_year($) {
 }
 
 
+my $ffmpeg_warned_p = 0;
+
 # Given a list of available underlying videos, pick the ones we want.
 #
 sub pick_download_format($$$$$) {
@@ -3671,7 +3679,6 @@ sub pick_download_format($$$$$) {
 
   if ($site eq 'vimeo' ||
       $site eq 'tumblr' ||
-      $site eq 'vine' ||
       $site eq 'instagram' ||
       $site eq 'twitter') {
     # On these sites, just pick the entry with the largest size
@@ -4015,6 +4022,9 @@ sub pick_download_format($$$$$) {
   #
   #   https://www.youtube.com/watch?v=6od76UNHt-M
   #   13-Jan-2019, only one format, 18
+  #
+  #   https://www.youtube.com/watch?v=jy0Q75xCwDU
+  #   26-May-2019, no pre-muxed formats, can't be downloaded without ffmpeg.
 
   # Divide %known_formats into muxed, video-only and audio-only lists.
   #
@@ -4158,11 +4168,15 @@ sub pick_download_format($$$$$) {
 
     # At this point, we're definitely intending to mux.
     # But maybe we can't because there's no ffmpeg -- if so, print
-    # a warning, then fall back to a lower resolution stream.
+    # a warning, then fall back to a lower resolution stream, if possible.
     #
     if ($vfmt && $afmt && !which ("ffmpeg")) {
-      print STDERR "$progname: WARNING: $id: \"ffmpeg\" not installed.\n";
-      print STDERR "$progname:          $id: downloading lower resolution.\n";
+      if (!$ffmpeg_warned_p) {
+        print STDERR "$progname: WARNING: $id: \"ffmpeg\" not installed.\n";
+        print STDERR "$progname: $id: downloading lower resolution.\n"
+          if ($mfmt);
+        $ffmpeg_warned_p = 1;
+      }
       $vfmt = undef;
       $afmt = undef;
     }
@@ -4211,7 +4225,7 @@ sub pick_download_format($$$$$) {
       print STDERR "$progname: $id: picked $vfmt + $afmt ($d1 + $d2)\n";
     }
     return ($vfmt, $afmt);
-  } else {
+  } elsif ($mfmt) {
     # Either not muxing, or muxing not available/necessary.
     my $why = 'picked';
     if (defined($force_fmt) && $force_fmt ne 'mux') {
@@ -4225,6 +4239,8 @@ sub pick_download_format($$$$$) {
       if ($verbose > 1);
 
     return ($mfmt);
+  } else {
+    error ("$id: No pre-muxed formats; \"ffmpeg\" required for download");
   }
 }
 
@@ -4776,6 +4792,11 @@ sub canonical_url($;) {
   # Rewrite youtu.be URL shortener.
   $url =~ s@^https?://([a-z]+\.)?youtu\.be/@https://youtube.com/v/@si;
 
+  # Youtube's "attribution links" don't encode the second URL:
+  # there are two question marks. FFS.
+  # https://www.youtube.com/attribution_link?u=/watch?v=...&feature=...
+  $url =~ s@^(https?://[^/]*\byoutube\.com/)attribution_link\?u=/@$1@gsi;
+
   # Rewrite Vimeo URLs so that we get a page with the proper video title:
   # "/...#NNNNN" => "/NNNNN"
   $url =~ s@^(https?://([a-z]+\.)?vimeo\.com/)[^\d].*\#(\d+)$@$1$3@s;
@@ -4884,12 +4905,6 @@ sub canonical_url($;) {
     $site = lc($site);
     $url = "https://$user.$site.com/post/$id";
 
-  # Vine /v/NNNNN
-  } elsif ($url =~ m@^https?://([-_a-z\d]+\.)?(vine)\.co/v/([^/?&]+)@si) {
-    (undef, $site, $id) = ($1, $2, $3);
-    $site = lc($site);
-    $url = "https://$site.co/v/$id";
-
   # Instagram /p/NNNNN
   } elsif ($url =~ m@^https?://([-_a-z\d]+\.)?(instagram)\.com/p/([^/?&]+)@si) {
     (undef, $site, $id) = ($1, $2, $3);
@@ -4917,9 +4932,10 @@ sub canonical_url($;) {
 # Having downloaded a video file and an audio file, combine them and delete
 # the two originals.
 #
-sub mux_downloaded_files($$$$$$$$) {
-  my ($id, $url, $title, $v1, $v2, $muxed_file, $progress_p, $cgi_p) = @_;
+sub mux_downloaded_files($$$$$$$) {
+  my ($id, $url, $title, $v1, $v2, $muxed_file, $progress_p) = @_;
 
+  my $cgi_p = ($progress_p && $progress_p eq 'cgi');
   my $video_file = $v1->{file};
   my $audio_file = $v2->{file};
 
@@ -5130,7 +5146,6 @@ sub load_formats($$) {
   return ($site eq 'youtube'   ? load_youtube_formats   ($id, $url, $size_p):
           $site eq 'vimeo'     ? load_vimeo_formats     ($id, $url, $size_p) :
           $site eq 'tumblr'    ? load_tumblr_formats    ($id, $url, $size_p) :
-          $site eq 'vine'      ? load_vine_formats      ($id, $url, $size_p) :
           $site eq 'instagram' ? load_instagram_formats ($id, $url, $size_p) :
           $site eq 'twitter'   ? load_twitter_formats   ($id, $url, $size_p) :
           error ("$id: unknown site: $site"));
@@ -5379,6 +5394,7 @@ sub download_video_url($$$$$$$$$$$$) {
                  : ''));
 
       my $file = ($prefix ? "$prefix $title" : $title) . $suf;
+      $ct =~ s/;.*$//s;
       $file .= '.' . content_type_ext($ct);
 
       my $ftitle = $file;
@@ -5506,10 +5522,10 @@ sub download_video_url($$$$$$$$$$$$) {
 
         print STDERR "$progname: wrote   \"$file\"\n";
         print STDERR "$progname:         $ss\n";
-
-        # If we're not muxing, this is the final file.
-        delete $rm_f{$file} unless @pair;
       }
+
+      # If we're not muxing, this is the final file.
+      delete $rm_f{$file} unless @pair;
     }
   }
 
@@ -5522,7 +5538,7 @@ sub download_video_url($$$$$$$$$$$$) {
                           $fmts->{$pair[0]},
                           $fmts->{$pair[1]},
                           $outfile,
-                          $progress_p, $cgi_p);
+                          $progress_p);
   } elsif ($size_p && !@targets) {
     print STDERR "$id\tsize unknown (live stream?)\n";
   }
@@ -5559,6 +5575,7 @@ sub download_video_url_retry($$$$$$$$$$$$) {
     print STDERR "$progname: failed, retrying $url\n" if ($verbose == 2);
     print STDERR "$progname: RETRYING $url\n\n$@\n\n" if ($verbose > 2);
     $error_whiteboard .= "retrying $url\n";
+    rmf();
     sleep (1);
   }
 
@@ -5582,25 +5599,32 @@ sub download_video_url_retry($$$$$$$$$$$$) {
 }
 
 
-sub download_youtube_playlist($$$$$$$$$$) {
-  my ($id, $url, $title, $prefix, $size_p, $list_p,
-      $bwlimit, $progress_p, $cgi_p,
-      $force_fmt) = @_;
+# Returns the title and URLs of every video in the playlist.
+#
+sub youtube_playlist_urls($$;$) {
+  my ($id, $url, $first_only_p) = @_;
 
   my @playlist = ();
-
   my $start = 0;
 
   my ($http, $head, $body) = get_url ($url);
   check_http_status ($id, $url, $http, 1);
 
-  ($title) = ($body =~ m@<title>\s*([^<>]+?)\s*</title>@si)
-    unless $title;
+  my ($title) = ($body =~ m@<title>\s*([^<>]+?)\s*</title>@si);
+
   $title = munge_title($title);
   $title = 'Untitled Playlist' unless $title;
 
   ($body =~ s/^.*?<div \s+ id="pl-video-list"//six) ||
+  ($body =~ s/^.*?<\/ytd-playlist-sidebar-renderer//six) ||
     errorI ("unparsable playlist HTML: $url");
+
+  my ($more) = ($body =~ m@href=[\"\']([^\"\']*/browse_ajax[^\"\']+)@si);
+
+  if ($first_only_p) {
+    @playlist = ( $playlist[0] );
+    $more = undef;
+  }
 
   my $i = 0;
   $body =~ s@<A \b (.*?) > \s* ([^<>]*?) \s* </A> @{
@@ -5609,11 +5633,7 @@ sub download_youtube_playlist($$$$$$$$$$) {
     if ($href && $t2) {
       $href = html_unquote($href);
       if ($href =~ m%[?&]v=([^?&]+)%si) {
-        $href = $1;
-        $t2 = munge_title (html_unquote ($t2));
-        $t2 = sprintf("%s: %02d: %s", $title, ++$i, $t2);
-        $href = 'https://www.youtube.com/watch?v=' . $href;
-        push \@playlist, [ $t2, $href ];
+        push \@playlist, [ $t2, 'https://www.youtube.com/watch?v=' . $1 ];
       }
     }
     "";
@@ -5621,20 +5641,62 @@ sub download_youtube_playlist($$$$$$$$$$) {
 
   errorI ("$id: no playlist entries?") unless @playlist;
 
-  # With "--size", only get the size of the first video.
-  # With "--size --size", get them all.
-  if ($size_p == 1) {
-    @playlist = ( $playlist[0] );
+  # Scraping the HTML only gives us the first hundred videos if the
+  # playlist has more than that. To get the rest requires more work.
+  #
+  my $page = 2;
+  while ($more) {
+    $more = html_unquote ($more);
+    $more = 'https:' if ($more =~ m@^//@s);
+    $more = 'https://www.youtube.com' . $more if ($more =~ m@^/@s);
+
+    print STDERR "$progname: loading playlist page $page...\n"
+      if ($verbose > 1);
+    ($http, $head, $body) = get_url ($more);
+    check_http_status ($id, $more, $http, 1);
+
+    $body =~ s/ \\[ux] ([a-z0-9]{4}) / chr(hex($1)) /gsexi; # \uXXXX
+    $body =~ s@\\@@gs;
+    foreach my $tag ($body =~ m@<[^<>]+>@gsi) {
+      my (undef, $t2) = ($tag =~ m@data-title=([\"\"])(.*?)\1@si);
+      my (undef, $id) = ($tag =~ m@data-video-id=([\"\"])(.*?)\1@si);
+      push @playlist, [ $t2, 'https://www.youtube.com/watch?v=' . $id ]
+        if ($id);
+    }
+
+    ($more) = ($body =~ m@href=[\"\']([^\"\']*/browse_ajax[^\"\']+)@si);
+    $page++;
   }
 
-  # Scraping the HTML only gives us the first hundred videos if the
-  # playlist has more than that.  I don't yet know how to get the
-  # rest.  The "Show More" button at the bottom does AJAX bullshit.
+  # Prefix each video's title with the playlist's title and its index.
   #
-  my $max = 100;
-  print STDERR "$progname: WARNING: $id: " .
-               "only able to download the first $max videos!\n"
-    if (@playlist == $max);
+  $i = 0;
+  my $count = @playlist;
+  foreach my $P (@playlist) {
+    $i++;
+    my $t2 = $P->[0];
+    $t2 = munge_title (html_unquote ($t2));
+    my $ii = ($count > 999 ? sprintf("%04d", $i) :
+              $count >  99 ? sprintf("%03d", $i) :
+                             sprintf("%02d", $i));
+    $t2 = "$title: $ii: $t2";
+    $P->[0] = $t2;
+  }
+
+  return ($title, @playlist);
+}
+
+
+sub download_youtube_playlist($$$$$$$$$$) {
+  my ($id, $url, $title, $prefix, $size_p, $list_p,
+      $bwlimit, $progress_p, $cgi_p,
+      $force_fmt) = @_;
+
+  # With "--size", only get the size of the first video.
+  # With "--size --size", get them all.
+
+  my ($title2, @playlist) = youtube_playlist_urls($id, $url, ($size_p == 1));
+  $title = $title2 unless $title;
 
   print STDERR "$progname: playlist \"$title\" (" . scalar (@playlist) .
                  " entries)\n"
@@ -5785,7 +5847,7 @@ sub do_cgi($$) {
         $verbose = -1;
         mux_downloaded_files ($orig_url, $orig_url, $title,
                               \%v1, \%v2, $muxed_file,
-                              0, 1);  # $progress_p, $cgi_p
+                              'cgi');
         print STDOUT "\n";  # close $hdr
 
         foreach my $f ($video_file, $audio_file) {
@@ -5991,8 +6053,8 @@ sub main() {
     } elsif (m/^-./)           { usage; }
     else {
       s@^//@https://@s;
-      error ("not a Youtube, Vimeo, Tumblr, Vine," .
-             " Instagram or Twitter URL: $_")
+      error ("not a Youtube, Vimeo, Instagram, Tumblr," .
+             " or Twitter URL: $_")
         unless (m@^(https?://)?
                    ([a-z]+\.)?
                    ( youtube(-nocookie)?\.com/ |
@@ -6001,7 +6063,6 @@ sub main() {
                      google\.com/ .* service=youtube |
                      youtube\.googleapis\.com
                      tumblr\.com/ |
-                     vine\.co/ |
                      instagram\.com/ |
                      twitter\.com/ |
                    )@six);
