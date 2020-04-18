@@ -52,13 +52,29 @@ fi
 # installed on this system.
 
 # Valid configurators: "oh-my-zsh", "prezto", or "none"
-ZSH_CONFIGURATOR=prezto
+ZSH_CONFIGURATOR=oh-my-zsh
 if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
   #_OMZ_DEBUG=1
   #_OMZ_DEBUG_SMKX=1
   #DISABLE_OH_MY_ZSH_CUSTOM=1
-  ZSH_THEME=apjanke-01
-  #ZSH_THEME=agnoster
+  #ZSH_THEME=apjanke-01
+  DEFAULT_USER=janke
+  AGNOSTER_PATH_STYLE=shrink
+  AGNOSTER_RANDOM_EMOJI_REALLY_RANDOM=1
+  AGNOSTER_RANDOM_EMOJI_EACH_PROMPT=1
+  AGNOSTER_PROMPT_SEGMENTS=(
+    random_emoji
+    git
+    context
+    virtualenv
+    vaulted
+    dir
+    kubecontext
+    newline
+    status
+    blank
+  )
+  ZSH_THEME=agnosterj
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
   plugins=( osx themes )
   source ~/.dotfiles/zshrc-oh-my-zsh.zsh
