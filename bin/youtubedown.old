@@ -62,7 +62,7 @@ use Encode;
 
 my $progname0 = $0;
 my $progname = $0; $progname =~ s@.*/@@g;
-my ($version) = ('$Revision: 1.1540 $' =~ m/\s(\d[.\d]+)\s/s);
+my ($version) = ('$Revision: 1.1521 $' =~ m/\s(\d[.\d]+)\s/s);
 
 # Without this, [:alnum:] doesn't work on non-ASCII.
 use locale;
@@ -355,7 +355,7 @@ sub get_url_1($;$$$$$$$) {
         foreach (@ha) { print STDERR "  ==> $_\n"; }
         print STDERR "  ==>\n";
       }
-      syswrite ($S, $hd) || error ("syswrite proxy: $url: $!");
+      syswrite ($S, $hd) || error ("$url: $!");
 
       my $bufsiz = 1024;
       my $buf = '';
@@ -443,7 +443,7 @@ sub get_url_1($;$$$$$$$) {
       print STDERR "  ==> $_\n";
     }
   }
-  syswrite ($S, $hdrs) || error ("syswrite: $url: $!");
+  syswrite ($S, $hdrs) || error ("$url: $!");
 
   # Using max SSL frame sized (16384) chunks improves performance by
   # avoiding SSL frame splitting on sysread() of IO::Socket::SSL.
@@ -569,7 +569,7 @@ sub get_url_1($;$$$$$$$) {
       # Ok, maybe if we mark it as an attachment?  Answer: still nope.
       #  $head = "Content-Disposition: attachment\r\n" . $head;
 
-      syswrite ($out, $head . "\n\n") || error ("syswrite stdout: $url: $!");
+      syswrite ($out, $head . "\n\n") || error ("$url: $!");
     }
   }
 
@@ -593,7 +593,7 @@ sub get_url_1($;$$$$$$$) {
 
       if ($to_file && ($to_file eq '-' || $ok_p)) {
         my $n = syswrite ($out, $buf);
-        error ("file $to_file: $!") if (($n || 0) <= 0);
+        error ("$to_file: $!") if (($n || 0) <= 0);
        #print STDERR "  wrote  $n\n" if ($verbose > 5);
       } else {
         $body .= $buf;
@@ -653,7 +653,7 @@ sub get_url_1($;$$$$$$$) {
   if ($to_file && !$ok_p) {
     error ("\"$to_file\" unexpectedly vanished!") unless (-f $to_file);
     print STDERR "$progname: close \"$to_file\"\n" if ($verbose > 2);
-    close $out || error ("close $to_file: $!");
+    close $out || error ("$to_file: $!");
   }
 
   if ($verbose > 3) {
@@ -2137,116 +2137,116 @@ my %ciphers = (
 # 'player_ias-vflVstpzG/en_US/base' => '18045 s2 r s2 r s2 r w51 r',# 29 May 2019
 # 'player_ias-vfl6QiMWf/en_US/base' => '18045 s2 r s2 r s2 r w51 r',# 29 May 2019
 # 'player_ias-vfl5VAqDi/en_US/base' => '18046 r w41 r w62 s2 r',  # 30 May 2019
-# 'player_ias_remote_ux-vfldk63YK/en_US/base' => '18048 w64 w62 w66 r w29 r s3 r s1',# 01 Jun 2019
-# 'player_ias-vfl-SOYuS/en_US/base' => '18051 s3 r s3 w61 r',     # 04 Jun 2019
-# 'player_ias-vflo4i8HU/en_US/base' => '18052 s1 r s2',           # 05 Jun 2019
-# 'player_ias-vfl25EWhw/en_US/base' => '18053 w38 r w7 w18 r w21',# 06 Jun 2019
-# 'player_ias-vfldhBbts/en_US/base' => '18055 w12 w59 s2 w24 r',  # 08 Jun 2019
-# 'player_ias-vflzbi_R5/en_US/base' => '18060 w40 w67 r w7 s1',   # 13 Jun 2019
-# 'player_ias-vfltBCqwT/en_US/base' => '18065 r s3 r w65 r s1 r w20',# 18 Jun 2019
-# 'player_ias-vfloOZja_/en_US/base' => '18066 w20 r w17',         # 19 Jun 2019
-# 'player_ias-vfl49f_g4/en_US/base' => '18066 w20 r w17',         # 19 Jun 2019
-# 'player_ias-vflnDDQuY/en_US/base' => '18071 w51 r w20 r s1 r s3 r',# 24 Jun 2019
-# 'player_ias-vflIucxJp/en_US/base' => '18072 s2 r w54 s1',       # 25 Jun 2019
-# 'player_ias-vflv00tk0/en_US/base' => '18072 s2 r w54 s1',       # 25 Jun 2019
-# 'player_ias-vflxACNZ2/en_US/base' => '18074 w8 r w61 r s3 r w47 s2 w11',# 27 Jun 2019
-# 'player_ias-vfliSA6ma/en_US/base' => '18079 s2 w5 s2 r',        # 02 Jul 2019
-# 'player_ias-vfl7A4uZG/en_US/base' => '18081 s1 w24 s3',         # 04 Jul 2019
-# 'player_ias-vflojvMjn/en_US/base' => '18086 r s3 r s2 r w42 r w14 w4',# 09 Jul 2019
-# 'player_ias-vfladvVLE/en_US/base' => '18087 r w60 r s3 r w46',  # 10 Jul 2019
-# 'player_ias-vflK6rDhN/en_US/base' => '18088 w70 s2 w47 s2 w31 s1',# 11 Jul 2019
-# 'player_ias-vfl_2S9FT/en_US/base' => '18092 s2 w58 s3',         # 15 Jul 2019
-# 'player_ias-vflH7QZGl/en_US/base' => '18092 s2 w58 s3',         # 15 Jul 2019
-# 'player_ias-vflFxFa3y/en_US/base' => '18095 r s3 r w12 r',      # 18 Jul 2019
-# 'player_ias-vfl_rJBTq/en_US/base' => '18101 w67 r s1 w61 r',    # 24 Jul 2019
-# 'player_ias-vfl7A19HM/en_US/base' => '18102 r s1 r s1 r s1',    # 25 Jul 2019
-# 'player_ias-vflan9mDf/en_US/base' => '18104 s3 w34 s1 w24 r w45',# 27 Jul 2019
-# 'player_ias-vflPI0brM/en_US/base' => '18106 s2 w23 w22 r s3 w1 s1 r s2',# 29 Jul 2019
-# 'player_ias-vfl3cxFuT/en_US/base' => '18114 s2 r s2 r s1 r',    # 06 Aug 2019
-# 'player_ias-vfliz8bvh/en_US/base' => '18114 s2 r s2 r s1 r',    # 06 Aug 2019
-# 'player_ias-vflazKpcG/en_US/base' => '18117 w3 r w59 s3 r w14 w14 s2',# 09 Aug 2019
-# 'player_ias-vfl0ft1-Z/en_US/base' => '18117 w3 r w59 s3 r w14 w14 s2',# 09 Aug 2019
-# 'player_ias-vflOQSPfo/en_US/base' => '18120 r w24 r w41 r w2',  # 12 Aug 2019
-# 'player_ias-vfluLgj-p/en_US/base' => '18120 r w24 r w41 r w2',  # 12 Aug 2019
-# 'player_ias-vfl4ZkW5S/en_US/base' => '18121 s2 r w45 r w23',    # 13 Aug 2019
-# 'player_ias-vflLAbfAI/en_US/base' => '18122 w9 s3 r s3 r w27 r s1 w64',# 14 Aug 2019
-# 'player_ias-vfl4WD7HR/en_US/base' => '18123 r w23 w30 r w40 r w65 w38',# 15 Aug 2019
-# 'player_ias-vflubst9M/en_US/base' => '18123 r w23 w30 r w40 r w65 w38',# 15 Aug 2019
-# 'player_ias-vflshR-OW/en_US/base' => '18127 r s1 w19',          # 19 Aug 2019
-# 'player_ias-vflR4bDhL/en_US/base' => '18128 r w34 w50 s1 r w68',# 20 Aug 2019
-# 'player_ias-vflRCamp0/en_US/base' => '18128 r w34 w50 s1 r w68',# 20 Aug 2019
-# 'player_ias-vfle9vlRm/en_US/base' => '18130 w20 s1 r s3 w35',   # 22 Aug 2019
-# 'player_ias-vflQ3KR0i/en_US/base' => '18130 w20 s1 r s3 w35',   # 22 Aug 2019
-# 'player_ias-vflRUnhQH/en_US/base' => '18134 r s2 r w37 s1 w9 s1 r',# 26 Aug 2019
-# 'player_ias-vflxmW2zg/en_US/base' => '18135 r s3 w56 r s3 w11 s2 w57',# 27 Aug 2019
-# 'player_ias-vflkpoWE6/en_US/base' => '18135 r s3 w56 r s3 w11 s2 w57',# 27 Aug 2019
-# 'player_ias-vflB-cY7Z/en_US/base' => '18137 s2 r s2 r w37 s2 r s1',# 29 Aug 2019
-# 'player_ias-vflt4leIo/en_US/base' => '18138 w35 w30 r w2 s3 r w8 s2',# 30 Aug 2019
-# 'player_ias-vflL8qGmP/en_US/base' => '18142 r s3 r w36 w42',    # 03 Sep 2019
-# 'player_ias-vfl-_sce4/en_US/base' => '18143 r w52 r s1 w20 r',  # 04 Sep 2019
-# 'player_ias-vfl9X5OgR/en_US/base' => '18143 r w52 r s1 w20 r',  # 04 Sep 2019
-# 'player_ias-vflpfvoVH/en_US/base' => '18149 r w52 r w11 s2 r s2',# 10 Sep 2019
-# 'player_ias-vfl2pEEGH/en_US/base' => '18151 w25 s3 w11 s1 w25 w29 r w28 s2',# 12 Sep 2019
-# 'player_ias-vflbxHFzR/en_US/base' => '18152 r s2 w48 r',        # 13 Sep 2019
-# 'player_ias-vfl8E5RS_/en_US/base' => '18154 r s2 r w14 w70 w51',# 15 Sep 2019
-# 'player_ias-vflBg-eSP/en_US/base' => '18156 w15 r s1 w60 s2 w47 s3 r',# 17 Sep 2019
-# 'player_ias-vflFWJS6F/en_US/base' => '18159 w67 s1 r s3',       # 20 Sep 2019
-# 'player_ias-vfleGIwAA/en_US/base' => '18159 w67 s1 r s3',       # 20 Sep 2019
-# 'player_ias-vflf1C3PW/en_US/base' => '18163 r w30 s3 w48 w54 s2',# 24 Sep 2019
-# 'player_ias-vflSXUoF7/en_US/base' => '18164 w59 s3 w31 s2 w3 s3 r s1 r',# 25 Sep 2019
-# 'player_ias-vfl-Yp-48/en_US/base' => '18166 r w69 w9 r w58 s3 r w8 s2',# 27 Sep 2019
-# 'player_ias-vflKkjtvu/en_US/base' => '18169 w51 r s2',          # 30 Sep 2019
-# 'player_ias-vflhIMmpR/en_US/base' => '18170 w24 w7 r w54 s1 r w65',# 01 Oct 2019
-# 'player_ias-vflHafnhm/en_US/base' => '18171 s2 w36 w34',        # 02 Oct 2019
-# 'player_ias-vflgyMPMy/en_US/base' => '18172 w15 r s1 w33 w44 w39 w38 r s1',# 03 Oct 2019
-# 'player_ias-vflaagmZn/en_US/base' => '18174 w67 r w21 r s1',    # 05 Oct 2019
-# 'player_ias-vflLF-qe_/en_US/base' => '18174 w67 r w21 r s1',    # 05 Oct 2019
-# 'player_ias-vflm8XufX/en_US/base' => '18177 r w22 s3 w42 r',    # 08 Oct 2019
-# 'player_ias-vflp-7p2p/en_US/base' => '18177 r w22 s3 w42 r',    # 08 Oct 2019
-# 'player_ias-vflMzJYzW/en_US/base' => '18179 w68 s1 w57 r s1 w23 s1',# 10 Oct 2019
-# 'player_ias-vflNSW9LL/en_US/base' => '18180 s2 r s3 w65 s3 r s1',# 11 Oct 2019
-# 'player_ias-vflZy72vV/en_US/base' => '18183 w33 w37 w16 r s3',  # 14 Oct 2019
-# 'player_ias-vflCPQUIL/en_US/base' => '18184 r w17 s1 w36 w37 s2',# 15 Oct 2019
-# 'player_ias-vflqs_iv4/en_US/base' => '18185 w8 w43 r s1 w40 s1',# 16 Oct 2019
-# 'player_ias-vflzOmLM_/en_US/base' => '18185 w8 w43 r s1 w40 s1',# 16 Oct 2019
-# 'player_ias-vflrnurMS/en_US/base' => '18188 w26 s3 w15 w26 s2 r',# 19 Oct 2019
-# 'player_ias-vflYUXieR/en_US/base' => '18190 w4 r w31 s1 r s1 r',# 21 Oct 2019
-# 'player_ias-vflfmpDLj/en_US/base' => '18192 r w5 r s2 r w34 r w16 r',# 23 Oct 2019
-# 'player_ias-vflID-9v_/en_US/base' => '18192 r w5 r s2 r w34 r w16 r',# 23 Oct 2019
-# 'player_ias-vflsEMaQv/en_US/base' => '18193 r w18 w7 w12 s3 r', # 24 Oct 2019
-# 'player_ias-vflje5zha/en_US/base' => '18194 s2 w31 s3 w32 w2 s1 r',# 25 Oct 2019
-# 'player_ias-vflLT_S1E/en_US/base' => '18198 r w65 r',           # 29 Oct 2019
-# 'player_ias-vflGnuoiU/en_US/base' => '18199 w1 r s1 r',         # 30 Oct 2019
-# 'player_ias-vflO1GesB/en_US/base' => '18200 w13 w56 s2 r s2',   # 31 Oct 2019
-# 'player_ias-vflaGJCFN/en_US/base' => '18211 s3 w64 w35 r',      # 11 Nov 2019
-# 'player_ias-vflu-qpOO/en_US/base' => '18211 s3 w64 w35 r',      # 11 Nov 2019
-# 'player_ias-vflFlp-mq/en_US/base' => '18214 w70 r w67 w34',     # 14 Nov 2019
-# 'player_ias-vflhctYB3/en_US/base' => '18216 w6 r s2',           # 16 Nov 2019
-# 'player_ias-vfl3Ub7Lu/en_US/base' => '18218 r s2 r s3',         # 18 Nov 2019
-# 'player_ias-vflss95Jx/en_US/base' => '18219 s3 r w58 s1 w18',   # 19 Nov 2019
-# 'player_ias-vfl8EyRMW/en_US/base' => '18219 s3 r w58 s1 w18',   # 19 Nov 2019
-# 'player_ias-vflHWPv1o/en_US/base' => '18220 w68 r s1',          # 20 Nov 2019
-# 'player_ias-vflaU3CuL/en_US/base' => '18222 r s3 r w15 w33 w26 w29 w4 s2',# 22 Nov 2019
-# 'player_ias-vfly7X4ko/en_US/base' => '18225 s1 w24 r w23 w32',  # 25 Nov 2019
-# 'player_ias-vflGkJskG/en_US/base' => '18227 r w24 r w25 s3 r',  # 27 Nov 2019
-# 'player_ias-vflVQDSr2/en_US/base' => '18229 s1 r s2 r s3 w16 w1',# 29 Nov 2019
-# 'player_ias-vfl5RP2xB/en_US/base' => '18233 w28 s3 w15 w58 w54 r s1',# 03 Dec 2019
-# 'player_ias-vflvcmhHb/en_US/base' => '18234 w38 s1 w37 s3 r w65 w36 r s1',# 04 Dec 2019
-# 'player_ias-vfliASpvT/en_US/base' => '18235 w52 s1 w68 w44 w57 s2 r',# 05 Dec 2019
-# 'player_ias-vflYr569U/en_US/base' => '18235 w52 s1 w68 w44 w57 s2 r',# 05 Dec 2019
-# 'player_ias-vflhdSMEK/en_US/base' => '18236 r w44 s3',          # 06 Dec 2019
-# 'player_ias-vflDT4YKf/en_US/base' => '18240 w4 s3 r s3 w47',    # 10 Dec 2019
-# 'player_ias-vflZn7_Zv/en_US/base' => '18240 w4 s3 r s3 w47',    # 10 Dec 2019
-# 'player_ias-vfl7Ksmll/en_US/base' => '18242 w70 s2 w19 s3',     # 12 Dec 2019
-# 'player_ias-vfl22ubNH/en_US/base' => '18249 w26 s1 r s2 r s1 w45 r',# 19 Dec 2019
-# 'player_ias-vflMn34bn/en_US/base' => '18268 s1 r s1 w5',        # 07 Jan 2020
-# 'player_ias-vflY-95hF/en_US/base' => '18269 w58 s2 r s1 r',     # 08 Jan 2020
-# 'player_ias-vflDLieI-/en_US/base' => '18269 w58 s2 r s1 r',     # 08 Jan 2020
-# 'player_ias-vflJiqSE7/en_US/base' => '18272 w32 w13 s2 r',      # 11 Jan 2020
-# 'player_ias-vflO3yVXL/en_US/base' => '18281 w42 w65 s1 r',      # 20 Jan 2020
-# 'player_ias-vflwruZYD/en_US/base' => '18282 s2 r w36',          # 21 Jan 2020
-# 'player_ias-vfl7lL1_p/en_US/base' => '18284 w8 r s2 r s1 r w59 s2',# 23 Jan 2020
-# 'player_ias-vfl1GpCbm/en_US/base' => '18290 w46 r s2 r',        # 29 Jan 2020
+  'player_ias_remote_ux-vfldk63YK/en_US/base' => '18048 w64 w62 w66 r w29 r s3 r s1',# 01 Jun 2019
+  'player_ias-vfl-SOYuS/en_US/base' => '18051 s3 r s3 w61 r',     # 04 Jun 2019
+  'player_ias-vflo4i8HU/en_US/base' => '18052 s1 r s2',           # 05 Jun 2019
+  'player_ias-vfl25EWhw/en_US/base' => '18053 w38 r w7 w18 r w21',# 06 Jun 2019
+  'player_ias-vfldhBbts/en_US/base' => '18055 w12 w59 s2 w24 r',  # 08 Jun 2019
+  'player_ias-vflzbi_R5/en_US/base' => '18060 w40 w67 r w7 s1',   # 13 Jun 2019
+  'player_ias-vfltBCqwT/en_US/base' => '18065 r s3 r w65 r s1 r w20',# 18 Jun 2019
+  'player_ias-vfloOZja_/en_US/base' => '18066 w20 r w17',         # 19 Jun 2019
+  'player_ias-vfl49f_g4/en_US/base' => '18066 w20 r w17',         # 19 Jun 2019
+  'player_ias-vflnDDQuY/en_US/base' => '18071 w51 r w20 r s1 r s3 r',# 24 Jun 2019
+  'player_ias-vflIucxJp/en_US/base' => '18072 s2 r w54 s1',       # 25 Jun 2019
+  'player_ias-vflv00tk0/en_US/base' => '18072 s2 r w54 s1',       # 25 Jun 2019
+  'player_ias-vflxACNZ2/en_US/base' => '18074 w8 r w61 r s3 r w47 s2 w11',# 27 Jun 2019
+  'player_ias-vfliSA6ma/en_US/base' => '18079 s2 w5 s2 r',        # 02 Jul 2019
+  'player_ias-vfl7A4uZG/en_US/base' => '18081 s1 w24 s3',         # 04 Jul 2019
+  'player_ias-vflojvMjn/en_US/base' => '18086 r s3 r s2 r w42 r w14 w4',# 09 Jul 2019
+  'player_ias-vfladvVLE/en_US/base' => '18087 r w60 r s3 r w46',  # 10 Jul 2019
+  'player_ias-vflK6rDhN/en_US/base' => '18088 w70 s2 w47 s2 w31 s1',# 11 Jul 2019
+  'player_ias-vfl_2S9FT/en_US/base' => '18092 s2 w58 s3',         # 15 Jul 2019
+  'player_ias-vflH7QZGl/en_US/base' => '18092 s2 w58 s3',         # 15 Jul 2019
+  'player_ias-vflFxFa3y/en_US/base' => '18095 r s3 r w12 r',      # 18 Jul 2019
+  'player_ias-vfl_rJBTq/en_US/base' => '18101 w67 r s1 w61 r',    # 24 Jul 2019
+  'player_ias-vfl7A19HM/en_US/base' => '18102 r s1 r s1 r s1',    # 25 Jul 2019
+  'player_ias-vflan9mDf/en_US/base' => '18104 s3 w34 s1 w24 r w45',# 27 Jul 2019
+  'player_ias-vflPI0brM/en_US/base' => '18106 s2 w23 w22 r s3 w1 s1 r s2',# 29 Jul 2019
+  'player_ias-vfl3cxFuT/en_US/base' => '18114 s2 r s2 r s1 r',    # 06 Aug 2019
+  'player_ias-vfliz8bvh/en_US/base' => '18114 s2 r s2 r s1 r',    # 06 Aug 2019
+  'player_ias-vflazKpcG/en_US/base' => '18117 w3 r w59 s3 r w14 w14 s2',# 09 Aug 2019
+  'player_ias-vfl0ft1-Z/en_US/base' => '18117 w3 r w59 s3 r w14 w14 s2',# 09 Aug 2019
+  'player_ias-vflOQSPfo/en_US/base' => '18120 r w24 r w41 r w2',  # 12 Aug 2019
+  'player_ias-vfluLgj-p/en_US/base' => '18120 r w24 r w41 r w2',  # 12 Aug 2019
+  'player_ias-vfl4ZkW5S/en_US/base' => '18121 s2 r w45 r w23',    # 13 Aug 2019
+  'player_ias-vflLAbfAI/en_US/base' => '18122 w9 s3 r s3 r w27 r s1 w64',# 14 Aug 2019
+  'player_ias-vfl4WD7HR/en_US/base' => '18123 r w23 w30 r w40 r w65 w38',# 15 Aug 2019
+  'player_ias-vflubst9M/en_US/base' => '18123 r w23 w30 r w40 r w65 w38',# 15 Aug 2019
+  'player_ias-vflshR-OW/en_US/base' => '18127 r s1 w19',          # 19 Aug 2019
+  'player_ias-vflR4bDhL/en_US/base' => '18128 r w34 w50 s1 r w68',# 20 Aug 2019
+  'player_ias-vflRCamp0/en_US/base' => '18128 r w34 w50 s1 r w68',# 20 Aug 2019
+  'player_ias-vfle9vlRm/en_US/base' => '18130 w20 s1 r s3 w35',   # 22 Aug 2019
+  'player_ias-vflQ3KR0i/en_US/base' => '18130 w20 s1 r s3 w35',   # 22 Aug 2019
+  'player_ias-vflRUnhQH/en_US/base' => '18134 r s2 r w37 s1 w9 s1 r',# 26 Aug 2019
+  'player_ias-vflxmW2zg/en_US/base' => '18135 r s3 w56 r s3 w11 s2 w57',# 27 Aug 2019
+  'player_ias-vflkpoWE6/en_US/base' => '18135 r s3 w56 r s3 w11 s2 w57',# 27 Aug 2019
+  'player_ias-vflB-cY7Z/en_US/base' => '18137 s2 r s2 r w37 s2 r s1',# 29 Aug 2019
+  'player_ias-vflt4leIo/en_US/base' => '18138 w35 w30 r w2 s3 r w8 s2',# 30 Aug 2019
+  'player_ias-vflL8qGmP/en_US/base' => '18142 r s3 r w36 w42',    # 03 Sep 2019
+  'player_ias-vfl-_sce4/en_US/base' => '18143 r w52 r s1 w20 r',  # 04 Sep 2019
+  'player_ias-vfl9X5OgR/en_US/base' => '18143 r w52 r s1 w20 r',  # 04 Sep 2019
+  'player_ias-vflpfvoVH/en_US/base' => '18149 r w52 r w11 s2 r s2',# 10 Sep 2019
+  'player_ias-vfl2pEEGH/en_US/base' => '18151 w25 s3 w11 s1 w25 w29 r w28 s2',# 12 Sep 2019
+  'player_ias-vflbxHFzR/en_US/base' => '18152 r s2 w48 r',        # 13 Sep 2019
+  'player_ias-vfl8E5RS_/en_US/base' => '18154 r s2 r w14 w70 w51',# 15 Sep 2019
+  'player_ias-vflBg-eSP/en_US/base' => '18156 w15 r s1 w60 s2 w47 s3 r',# 17 Sep 2019
+  'player_ias-vflFWJS6F/en_US/base' => '18159 w67 s1 r s3',       # 20 Sep 2019
+  'player_ias-vfleGIwAA/en_US/base' => '18159 w67 s1 r s3',       # 20 Sep 2019
+  'player_ias-vflf1C3PW/en_US/base' => '18163 r w30 s3 w48 w54 s2',# 24 Sep 2019
+  'player_ias-vflSXUoF7/en_US/base' => '18164 w59 s3 w31 s2 w3 s3 r s1 r',# 25 Sep 2019
+  'player_ias-vfl-Yp-48/en_US/base' => '18166 r w69 w9 r w58 s3 r w8 s2',# 27 Sep 2019
+  'player_ias-vflKkjtvu/en_US/base' => '18169 w51 r s2',          # 30 Sep 2019
+  'player_ias-vflhIMmpR/en_US/base' => '18170 w24 w7 r w54 s1 r w65',# 01 Oct 2019
+  'player_ias-vflHafnhm/en_US/base' => '18171 s2 w36 w34',        # 02 Oct 2019
+  'player_ias-vflgyMPMy/en_US/base' => '18172 w15 r s1 w33 w44 w39 w38 r s1',# 03 Oct 2019
+  'player_ias-vflaagmZn/en_US/base' => '18174 w67 r w21 r s1',    # 05 Oct 2019
+  'player_ias-vflLF-qe_/en_US/base' => '18174 w67 r w21 r s1',    # 05 Oct 2019
+  'player_ias-vflm8XufX/en_US/base' => '18177 r w22 s3 w42 r',    # 08 Oct 2019
+  'player_ias-vflp-7p2p/en_US/base' => '18177 r w22 s3 w42 r',    # 08 Oct 2019
+  'player_ias-vflMzJYzW/en_US/base' => '18179 w68 s1 w57 r s1 w23 s1',# 10 Oct 2019
+  'player_ias-vflNSW9LL/en_US/base' => '18180 s2 r s3 w65 s3 r s1',# 11 Oct 2019
+  'player_ias-vflZy72vV/en_US/base' => '18183 w33 w37 w16 r s3',  # 14 Oct 2019
+  'player_ias-vflCPQUIL/en_US/base' => '18184 r w17 s1 w36 w37 s2',# 15 Oct 2019
+  'player_ias-vflqs_iv4/en_US/base' => '18185 w8 w43 r s1 w40 s1',# 16 Oct 2019
+  'player_ias-vflzOmLM_/en_US/base' => '18185 w8 w43 r s1 w40 s1',# 16 Oct 2019
+  'player_ias-vflrnurMS/en_US/base' => '18188 w26 s3 w15 w26 s2 r',# 19 Oct 2019
+  'player_ias-vflYUXieR/en_US/base' => '18190 w4 r w31 s1 r s1 r',# 21 Oct 2019
+  'player_ias-vflfmpDLj/en_US/base' => '18192 r w5 r s2 r w34 r w16 r',# 23 Oct 2019
+  'player_ias-vflID-9v_/en_US/base' => '18192 r w5 r s2 r w34 r w16 r',# 23 Oct 2019
+  'player_ias-vflsEMaQv/en_US/base' => '18193 r w18 w7 w12 s3 r', # 24 Oct 2019
+  'player_ias-vflje5zha/en_US/base' => '18194 s2 w31 s3 w32 w2 s1 r',# 25 Oct 2019
+  'player_ias-vflLT_S1E/en_US/base' => '18198 r w65 r',           # 29 Oct 2019
+  'player_ias-vflGnuoiU/en_US/base' => '18199 w1 r s1 r',         # 30 Oct 2019
+  'player_ias-vflO1GesB/en_US/base' => '18200 w13 w56 s2 r s2',   # 31 Oct 2019
+  'player_ias-vflaGJCFN/en_US/base' => '18211 s3 w64 w35 r',      # 11 Nov 2019
+  'player_ias-vflu-qpOO/en_US/base' => '18211 s3 w64 w35 r',      # 11 Nov 2019
+  'player_ias-vflFlp-mq/en_US/base' => '18214 w70 r w67 w34',     # 14 Nov 2019
+  'player_ias-vflhctYB3/en_US/base' => '18216 w6 r s2',           # 16 Nov 2019
+  'player_ias-vfl3Ub7Lu/en_US/base' => '18218 r s2 r s3',         # 18 Nov 2019
+  'player_ias-vflss95Jx/en_US/base' => '18219 s3 r w58 s1 w18',   # 19 Nov 2019
+  'player_ias-vfl8EyRMW/en_US/base' => '18219 s3 r w58 s1 w18',   # 19 Nov 2019
+  'player_ias-vflHWPv1o/en_US/base' => '18220 w68 r s1',          # 20 Nov 2019
+  'player_ias-vflaU3CuL/en_US/base' => '18222 r s3 r w15 w33 w26 w29 w4 s2',# 22 Nov 2019
+  'player_ias-vfly7X4ko/en_US/base' => '18225 s1 w24 r w23 w32',  # 25 Nov 2019
+  'player_ias-vflGkJskG/en_US/base' => '18227 r w24 r w25 s3 r',  # 27 Nov 2019
+  'player_ias-vflVQDSr2/en_US/base' => '18229 s1 r s2 r s3 w16 w1',# 29 Nov 2019
+  'player_ias-vfl5RP2xB/en_US/base' => '18233 w28 s3 w15 w58 w54 r s1',# 03 Dec 2019
+  'player_ias-vflvcmhHb/en_US/base' => '18234 w38 s1 w37 s3 r w65 w36 r s1',# 04 Dec 2019
+  'player_ias-vfliASpvT/en_US/base' => '18235 w52 s1 w68 w44 w57 s2 r',# 05 Dec 2019
+  'player_ias-vflYr569U/en_US/base' => '18235 w52 s1 w68 w44 w57 s2 r',# 05 Dec 2019
+  'player_ias-vflhdSMEK/en_US/base' => '18236 r w44 s3',          # 06 Dec 2019
+  'player_ias-vflDT4YKf/en_US/base' => '18240 w4 s3 r s3 w47',    # 10 Dec 2019
+  'player_ias-vflZn7_Zv/en_US/base' => '18240 w4 s3 r s3 w47',    # 10 Dec 2019
+  'player_ias-vfl7Ksmll/en_US/base' => '18242 w70 s2 w19 s3',     # 12 Dec 2019
+  'player_ias-vfl22ubNH/en_US/base' => '18249 w26 s1 r s2 r s1 w45 r',# 19 Dec 2019
+  'player_ias-vflMn34bn/en_US/base' => '18268 s1 r s1 w5',        # 07 Jan 2020
+  'player_ias-vflY-95hF/en_US/base' => '18269 w58 s2 r s1 r',     # 08 Jan 2020
+  'player_ias-vflDLieI-/en_US/base' => '18269 w58 s2 r s1 r',     # 08 Jan 2020
+  'player_ias-vflJiqSE7/en_US/base' => '18272 w32 w13 s2 r',      # 11 Jan 2020
+  'player_ias-vflO3yVXL/en_US/base' => '18281 w42 w65 s1 r',      # 20 Jan 2020
+  'player_ias-vflwruZYD/en_US/base' => '18282 s2 r w36',          # 21 Jan 2020
+  'player_ias-vfl7lL1_p/en_US/base' => '18284 w8 r s2 r s1 r w59 s2',# 23 Jan 2020
+  'player_ias-vfl1GpCbm/en_US/base' => '18290 w46 r s2 r',        # 29 Jan 2020
   'player_ias-vflbwmoEe/en_US/base' => '18295 r w51 r s2 w39 r w6 w58',# 03 Feb 2020
   'player_ias-vflZgL1a2/en_US/base' => '18298 s3 r s2 r w67 w11', # 06 Feb 2020
   'player_ias-vflrgVy3r/en_US/base' => '18302 r w53 w5',          # 10 Feb 2020
@@ -2264,17 +2264,6 @@ my %ciphers = (
   'player_ias-vflQJ_oH3/en_US/base' => '18332 w61 r s2',          # 11 Mar 2020
   'player_ias-vflJMXyvH/en_US/base' => '18337 w29 w41 s2 w23 s2 r s2',# 17 Mar 2020
   'player_ias-vflSBTliv/en_US/base' => '18338 w15 s1 w43 s3 r s3',# 17 Mar 2020
-  'player_ias-vflEO2H8R/en_US/base' => '18340 s3 w28 r s3',       # 19 Mar 2020
-  'player_ias-vfl2Bfj4C/en_US/base' => '18341 w70 s1 w62 r w69 r s1',# 20 Mar 2020
-  'player_ias-vflJalPc2/en_US/base' => '18344 r w23 w65 w53',     # 23 Mar 2020
-  'player_ias-vfl_gAQka/en_US/base' => '18351 w45 s1 w52 r w36 r w2',# 30 Mar 2020
-  'player_ias-vfluKIiVl/en_US/base' => '18352 r w67 w37 s2 w59',  # 31 Mar 2020
-  'player_ias-vflBAN1y0/en_US/base' => '18352 r w67 w37 s2 w59',  # 31 Mar 2020
-  'player_ias-vfl5cScu9/en_US/base' => '18353 r s3 r',            # 01 Apr 2020
-  'player_ias-vfl6MUxK7/en_US/base' => '18354 w35 r w42 w11 w48 s3 w70 s1',# 02 Apr 2020
-  'player_ias-vfl_CsZz6/en_US/base' => '18356 w22 w17 s2 r s1 w8',# 04 Apr 2020
-  'player_ias-vfl6VLxLZ/en_US/base' => '18359 s3 w39 s2 w1 s1 w35 w51 s2 r',# 07 Apr 2020
-  '4fbb4d5b/player_ias.vflset/en_US/base' => '18359 s3 w39 s2 w1 s1 w35 w51 s2 r',# 07 Apr 2020
 );
 
 
@@ -2338,13 +2327,9 @@ sub page_cipher_base_url($$) {
   $body =~ s/\\//gs;
   # Sometimes but not always the "ux.js" file comes before "base.js".
   # But in the past, the file was not named "base.js"...
-  # The proper document is the one that starts with "var _yt_player =".
   my ($c) = ($body =~ m@/jsbin/((?:html5)?player[-_][^<>\"\']+?/base)\.js@s);
      ($c) = ($body =~ m@/jsbin/((?:html5)?player[-_][^<>\"\']+?)\.js@s)
        unless defined($c);
-     ($c) = ($body =~ m@/player/([^<>\"\']+/player[-_][^<>\"\']+/base)\.js@s)
-       unless defined($c);
-
   $c =~ s@\\@@gs if defined($c);
   errorI ("matched wrong cipher: $c $url\nBody:\n$body")
     if (defined($c) && $c !~ m/base$/s);
@@ -2397,9 +2382,7 @@ sub guess_cipher($;$$) {
   }
 
   $cipher_id =~ s@\\@@gs;
-  $url = ($cipher_id =~ m/vflset/
-          ? "https://www.youtube.com/s/player/$cipher_id.js"
-          : "https://s.ytimg.com/yts/jsbin/$cipher_id.js");
+  $url = "https://s.ytimg.com/yts/jsbin/$cipher_id.js";
 
   ($http, $head, $body) = get_url ($url);
   check_http_status ($id, $url, $http, 2);
@@ -3007,8 +2990,6 @@ sub load_youtube_formats_html($$$) {
   $title = '' unless $title;
   utf8::decode ($title);  # Pack multi-byte UTF-8 back into wide chars.
   $title = munge_title (html_unquote ($title));
-  # Do this after we determine whether we have any video info.
-  # sanity_check_title ($title, $url, $body, 'load_youtube_formats_html');
 
   get_youtube_year ($id, $body);  # Populate cache so we don't load twice.
 
@@ -3068,17 +3049,6 @@ sub load_youtube_formats_html($$$) {
 
       $oerror = $err;
       $http = 'HTTP/1.0 404';
-    }
-  }
-
-  # Sometimes we have <TITLE>YouTube</TITLE> but the real title is
-  # buried inside some JSON.
-  #
-  if (!$title || $title =~ m/^untitled$/si) {
-    if ($body =~ m/\\?"title\\?":\\?"(.*?)\\?",/si) {
-      $title = $1;
-      $title =~ s/\\//gs;
-      $title = munge_title (html_unquote ($title));
     }
   }
 
@@ -3143,13 +3113,6 @@ sub load_youtube_formats_html($$$) {
       $count += youtube_parse_urlmap ("$id HTML", $v, $cipher, $fmts);
     }
   }
-
-  # Do this after we determine whether we have any video info.
-  sanity_check_title ($title, $url,
-                      "ERR: \"$err\"\n\n$body", ####
-                      'load_youtube_formats_html')
-    if ($count);
-
 
   $fmts->{title}  = $title  unless defined($fmts->{title});
   $fmts->{cipher} = $cipher unless defined($fmts->{cipher});
@@ -3607,7 +3570,6 @@ sub load_tumblr_formats($$$) {
     $img =~ s@^https?://[^/]+@https://vt.tumblr.com@si;
 
     $title = munge_title (html_unquote ($title || ''));
-    sanity_check_title ($title, $url, $body, 'load_tumblr_formats');
     my $fmts = {};
     my $i = 0;
     my ($w, $h) = (0, 0);
@@ -3642,7 +3604,6 @@ sub load_tumblr_formats($$$) {
   my ($year)  = ($body =~ m@ "date" : \s* \" (\d{4})- @six);
 
   $title = munge_title (html_unquote ($title || ''));
-  sanity_check_title ($title, $url, $body, 'load_tumblr_formats 2');
 
   my $fmts = {};
 
@@ -3712,7 +3673,6 @@ sub load_instagram_formats($$$) {
     unless ($src && $w && $h && $ct && $title);
 
   $title = munge_title (html_unquote ($title || ''));
-  sanity_check_title ($title, $url, $body, 'load_instagram_formats');
   $ct =~ s/;.*//s;
 
   my $fmts = {};
@@ -3785,7 +3745,6 @@ sub load_twitter_formats($$$) {
 
   $title =~ s/ on Twitter$//s;
   $title = munge_title (html_unquote ($title || ''));
-  sanity_check_title ($title, $url, $body, 'load_twitter_formats');
 
   my $ct = 'image/mp4';
   my ($w, $h) = (0, 0);
@@ -3887,22 +3846,6 @@ my $ffmpeg_warned_p = 0;
 #
 sub pick_download_format($$$$$) {
   my ($id, $site, $url, $force_fmt, $fmts) = @_;
-
-  foreach my $k (keys %$fmts) {
-    next if ($k eq 'title' || $k eq 'year' || $k eq 'cipher' || $k eq 'thumb');
-    my $fmt = $fmts->{$k};
-    my $ct = $fmt->{content_type} || '';
-
-    # Youtube has started returning "video/mp4" content types that are
-    # actually VP9 / WebM rather than H.264. Those must be transcoded,
-    # not copied, to play on H.264-only devices.
-    #
-    if ($ct =~ m@^video/mp4.*vp9@si) {		# video/mp4;+codecs="vp9"
-      $fmt->{content_type} = 'video/webm';
-    } elsif ($ct =~ m@^audio/mp4.*opus@si) {	# audio/mp4;+codecs="opus"
-      $fmt->{content_type} = 'audio/opus';
-    }
-  }
 
   if (defined($force_fmt) && $force_fmt eq 'all') {
     my @all = ();
@@ -4097,7 +4040,7 @@ sub pick_download_format($$$$$) {
    402 => { v => 'av1',  w => 3840, h => 2160, a => undef               },
    403 => { v => 'av1',  w => 5888, h => 2160, a => undef               },
    597 => { v => 'mp4',  w =>  256, h =>  144, a => undef               },
-   598 => { v => 'webm', w =>  256, h =>  144, a => undef               },
+   598 => { v => 'vp9',  w =>  256, h =>  144, a => undef               },
    599 => { v => undef,                        a => 'aac',  abr =>  30  },
    600 => { v => undef,                        a => 'opus', abr =>  35  },
   );
@@ -4836,12 +4779,6 @@ sub munge_title($) {
 }
 
 
-sub sanity_check_title($$$$) {
-  my ($title, $url, $body, $where) = @_;
-  errorI ("no title: $where, $url\n\n$body")
-    if (!$title || $title =~ m/^untitled$/si);
-}
-
 
 # Does any version of the file exist with the usual video suffixes?
 # Returns the one that exists.
@@ -5366,7 +5303,6 @@ sub download_video_url($$$$$$$$$$$) {
   #
   if (!defined($title) && defined($fmts)) {
     $title = munge_title ($fmts->{title});
-    #sanity_check_title ($title, $url, '[fmts]', 'download_video_url');
 
     # Add the year to the title unless there's a year there already.
     #
@@ -5703,7 +5639,6 @@ sub youtube_playlist_urls($$;$) {
   my ($title) = ($body =~ m@<title>\s*([^<>]+?)\s*</title>@si);
 
   $title = munge_title($title);
-  sanity_check_title ($title, $url, $body, 'youtube_playlist_urls');
   $title = 'Untitled Playlist' unless $title;
 
   ($body =~ s/^.*?<div \s+ id="pl-video-list"//six) ||
@@ -5767,7 +5702,6 @@ sub youtube_playlist_urls($$;$) {
     $i++;
     my $t2 = $P->[0];
     $t2 = munge_title (html_unquote ($t2));
-    sanity_check_title ($t2, $url, $body, 'youtube_playlist_urls 2');
     my $ii = ($count > 999 ? sprintf("%04d", $i) :
               $count >  99 ? sprintf("%03d", $i) :
                              sprintf("%02d", $i));
