@@ -6,7 +6,7 @@ The idea here is to get as close as possible to being able to sit down at a fres
 
 ## Using this repo
 
-Caution! This whole thing is a work in progress. I'm making this repo publicly available so other people can use my code and techniques. But it's not a product, it's not stable, and there's no support. I'm going to continue to change this stuff to meet my own needs, maybe in non-back-compatible ways. So don't think you can just clone the repo and use it directly. If you want to use it, make a copy, read and understand it, and make your own `dotfiles` repo (not a fork of mine; you want your own independent one).
+Caution! This whole thing is a work in progress. I'm making this repo publicly available so other people can use my code and techniques. But it's not a product, it's not stable, and there's no support. I'm going to continue to change this stuff to meet my own needs, maybe in non-back-compatible ways. So don't think you can just clone the repo and use it directly. If you want to use it, make a copy, read and understand it, and make your own `dotfiles` repo (not a GitHub fork of mine; you want your own independent one).
 
 ## Repo sections
 
