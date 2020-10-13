@@ -145,7 +145,7 @@ uname=`uname`
 if ls --version 2>/dev/null | grep GNU &>/dev/null; then
   # Color on by default
   alias ls="ls --color --quoting-style=literal"
-elif [ $uname = "Darwin" ] || [ $uname = "FreeBSD" ]; then
+elif [[ $uname = "Darwin" ]] || [[ $uname = "FreeBSD" ]]; then
   # On BSD, prefer GNU ls for nicer colors
   # (Unsure if I really want to do this, b/c of gls' uneven column widths)
   if which gls &>/dev/null && gls --color -d . &>/dev/null; then
