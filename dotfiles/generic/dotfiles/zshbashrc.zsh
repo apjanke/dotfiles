@@ -180,8 +180,8 @@ if [ $uname = "Darwin" ]; then
 
   # Set up Sublime Text command line support
   if whence subl &>/dev/null; then
-    export VISUAL='subl -w'
-    export GUIEDITOR='subl'
+    export VISUAL='code'
+    export GUIEDITOR='code'
   fi
 
   # manp - view a man page in Preview
