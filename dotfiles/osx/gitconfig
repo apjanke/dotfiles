@@ -7,6 +7,8 @@
 	tool = meld
 [core]
 	excludesfile = /Users/janke/.gitignore_global
+	editor = micro
+	pager = diff-so-fancy | less --tabs=4 -RFX
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
@@ -46,3 +48,8 @@
 	template = /Users/janke/.stCommitMsg
 [hub]
 	protocol = https
+[mergetool "gitblade"]
+	cmd = \"/Applications/GitBlade.app/Contents/MacOS/GitBlade\" -c \"\"
+	trustExitCode = true
+[pull]
+	rebase = false
