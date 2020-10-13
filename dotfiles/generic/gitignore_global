@@ -31,7 +31,7 @@ nbactions.xml
 nb-configuration.xml
 
 # IntelliJ IDEA working files
-.idea
+#.idea
 cmake-build-debug
 
 # Visual Studio artifacts
