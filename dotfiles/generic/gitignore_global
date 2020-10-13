@@ -10,7 +10,6 @@
 #ignore thumbnails created by Windows
 Thumbs.db
 
-
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
@@ -18,7 +17,6 @@ Thumbs.db
 # Matlab
 *.asv
 *.m~
-
 
 # NetBeans working files
 nbproject/private/
