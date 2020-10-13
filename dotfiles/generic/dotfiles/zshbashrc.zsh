@@ -10,7 +10,6 @@
 
 # Aliases and environment
 
-
 # Misc stuff
 alias cls="clear"
 
@@ -50,7 +49,7 @@ alias goddammit="git reset --soft HEAD^"
 # Welp.
 alias heckit="git reset --hard HEAD"
 # Open any files marked as “modified” in your default editor.
-alias gchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
+alias geditchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
 # Get rid of Prezto's alias and replace it with my preferred one
 alias gbc="git branch | cat"
 
@@ -64,8 +63,9 @@ alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
 alias octave="octave -q"  # suppress banner
 alias octave-default="octave-default -q"  # suppress banner
 alias octave-stable="octave-stable -q"  # suppress banner
-alias octave@5.1.0="octave@5.1.0 -q"  # suppress banner
 alias octave4="octave@4.4.1 -q"  # suppress banner
+alias octave5="octave@5.1.0 -q"  # suppress banner
+alias octave6="octave@6.1.0 -q"  # suppress banner
 if which brew &>/dev/null; then
   alias octaveapp5='$(brew --prefix octave-octave-app@5.1.0)/bin/octave -q'
 fi
@@ -94,8 +94,8 @@ unalias mv 2>/dev/null
 # Fancycat™
 alias c="pygmentize -O style=solarized -f console256 -g"
 
-# IP addresses
-alias ip='IP=`dig +short myip.opendns.com @resolver1.opendns.com`; echo "${IP}"; echo "${IP}" | pbcopy'
+# IP address discovery
+alias myip='IP=`dig +short myip.opendns.com @resolver1.opendns.com`; echo "${IP}"; echo "${IP}" | pbcopy'
 alias lip='IP=`ipconfig getifaddr en0`; echo "${IP}"; echo "${IP}" | pbcopy'
 
 # Copy my public SSH key to the pasteboard
@@ -125,6 +125,7 @@ maybe_add_path "$HOME/local/bin" prepend
 # Hack: unconditionally load the Ruby gem location I've been working with
 maybe_add_path "$HOME/.gem/ruby/2.0.0/bin" prepend
 # Get the Homebrew-installed Ruby, including its gems
+# (I don't really know how Ruby Gems path management is supposed to work)
 maybe_add_path "/usr/local/opt/ruby/bin" prepend
 maybe_add_path "/usr/local/lib/ruby/gems/2.5.0/bin" prepend
 maybe_add_path "/usr/local/lib/ruby/gems/2.6.0/bin" prepend
@@ -132,8 +133,12 @@ maybe_add_path "/usr/local/lib/ruby/gems/2.7.0/bin" prepend
 # Google depot tools
 maybe_add_path "$HOME/local/opt/depot_tools"
 
+# Optionally installed tools and thingies
 export GOPATH=$HOME/local/go-work
 maybe_add_path "$GOPATH/bin"
+if [[ -d $HOME/.rvm ]]; then
+  PATH="$PATH:$HOME/.rvm/bin"
+fi
 
 # ls customization
 uname=`uname`
@@ -168,7 +173,7 @@ export EDITOR=vi
 
 #  MacOS specifics
 
-if [ $uname = "Darwin" ]; then
+if [[ $uname = "Darwin" ]]; then
 
   # Force /usr/local (for Homebrew, including git) to front of path
   PATH="/usr/local/sbin:$PATH"
@@ -274,3 +279,8 @@ export LSCOLORS="gxxxdxdxdxexexdxdxgxgx"
 export LS_COLORS="di=36:so=33:pi=33:ex=33:bd=34:cd=34:su=33:sg=33:tw=36:ow=36"
 # GNU-specific extras
 LS_COLORS="${LS_COLORS}:ln=00;04"
+
+# And allow for machine- or environment-local overrides
+if [[ -f $HOME/.zshbashrc-local ]]; then
+  source $HOME/.zshbashrc-local
+fi

@@ -150,12 +150,7 @@ function gh-local-pr() {
   _apj_print_and_do git checkout pr-$pr
 }
 
-
-export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
-
-
 # For exercism.io
 if [[ -f ~/.config/exercism/exercism_completion.zsh ]]; then
   . ~/.config/exercism/exercism_completion.zsh
 fi
-
