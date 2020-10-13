@@ -27,10 +27,6 @@
 #  --list --list     List IDs and titles of a playlist.
 #  --size --size     List the sizes of each video of a playlist.
 #
-#  --max-size SIZE   Don't download videos larger than the given size, if
-#                    possible. Size can be WxH, "1080p", "SD", etc.  For when
-#                    you don't really need that "4K" version.
-#
 #  --no-mux          Only download pre-muxed videos, instead of sometimes
 #                    downloading separate audio and video files, then combining
 #                    them afterward with "ffmpeg".  If you specify this option,
@@ -66,7 +62,7 @@ use Encode;
 
 my $progname0 = $0;
 my $progname = $0; $progname =~ s@.*/@@g;
-my ($version) = ('$Revision: 1.1593 $' =~ m/\s(\d[.\d]+)\s/s);
+my ($version) = ('$Revision: 1.1540 $' =~ m/\s(\d[.\d]+)\s/s);
 
 # Without this, [:alnum:] doesn't work on non-ASCII.
 use locale;
@@ -80,7 +76,6 @@ my $webm_transcode_p = 0;
 
 
 my $http_proxy = undef;
-my $ffmpeg = 'ffmpeg';
 
 $ENV{PATH} = "/opt/local/bin:$ENV{PATH}";   # for macports ffmpeg
 
@@ -295,9 +290,9 @@ my %keepalive;  # { $hostname => $socket, ... }
 # $bytes_read, $content_length, $document_length.
 # Does not retry or process redirects.
 #
-sub get_url_1($;$$$$$$$$) {
+sub get_url_1($;$$$$$$$) {
   my ($url, $referer, $to_file, $bwlimit, $start_byte, $max_bytes,
-      $append_p, $progress_p, $extra_headers) = @_;
+      $append_p, $progress_p) = @_;
 
   error ("not an HTTP URL, try rtmpdump: $url") if ($url =~ m@^rtmp@i);
   error ("not an HTTP URL: $url") unless ($url =~ m@^(https?|feed)://@i);
@@ -319,38 +314,6 @@ sub get_url_1($;$$$$$$$$) {
 
   if ($S) {
     print STDERR "$progname: reusing connection: $host\n" if ($verbose > 2);
-
-  } elsif (!$http_proxy && $proto eq 'https:') {
-
-    # If we're not using a proxy, do a direct SSL connection.
-    #
-    # There *should* be no difference between:
-    #      IO::Socket::SSL->new (..)
-    # and
-    #      IO::Socket::INET->new (...)
-    #      IO::Socket::SSL->start_SSL (...)
-    # but, there is.
-    #
-    # As of Jun 2020, the former works but the latter results in Youtube
-    # responding with "429 Too Many Requests".  So that means that there
-    # is some difference in how those two methods set up the connection,
-    # and that difference is being detected by Youtube and causing it to
-    # limit our connections more highly.  WTF, and WTF.
-    #
-    $S = IO::Socket::SSL->new (PeerAddr => $host,
-                               PeerPort => $port,
-                               Proto    => 'tcp',
-                               # Ignore certificate errors
-                               verify_hostname => 0,
-                               SSL_verify_mode => 0,
-                               SSL_verifycn_scheme => 'none',
-                               # set hostname for SNI
-                               SSL_hostname => $ohost,
-                              )
-      || error ("socket: SSL: $!");
-
-    $S->autoflush(1);
-
   } else {
 
     # If we were just using LWP::UserAgent, we wouldn't have to do all of this
@@ -454,7 +417,6 @@ sub get_url_1($;$$$$$$$$) {
   my @extra_headers = ();
   push @extra_headers, "Referer: $referer" if ($referer);
   push @extra_headers, "Connection: keep-alive" if ($keepalive_p);
-  push @extra_headers, @$extra_headers if ($extra_headers);
 
   # If we're only reading the first N bytes, don't ask for more.
   #
@@ -481,8 +443,7 @@ sub get_url_1($;$$$$$$$$) {
       print STDERR "  ==> $_\n";
     }
   }
-  syswrite ($S, $hdrs) ||
-    error ('syswrite: ' . ($! || 'I/O error') . ": $host");
+  syswrite ($S, $hdrs) || error ("syswrite: $url: $!");
 
   # Using max SSL frame sized (16384) chunks improves performance by
   # avoiding SSL frame splitting on sysread() of IO::Socket::SSL.
@@ -768,9 +729,9 @@ sub get_url_1($;$$$$$$$$) {
 # Loads the given URL, processes redirects; retries dropped connections.
 # Returns: $http, $head, $body, $final_redirected_url.
 #
-sub get_url($;$$$$$$$$) {
+sub get_url($;$$$$$$$) {
   my ($url, $referer, $to_file, $bwlimit, $max_bytes, 
-      $append_p, $progress_p, $force_ranges_p, $extra_headers) = @_;
+      $append_p, $progress_p, $force_ranges_p) = @_;
 
   my $orig_url       = $url;
   my $redirect_count = 0;
@@ -815,7 +776,7 @@ sub get_url($;$$$$$$$$) {
     my ($http, $head, $body, $bytes, $cl, $cl2) =
       get_url_1 ($url, $referer, $to_file, $bwlimit,
                  $start_byte, $max_bytes_2,
-                 $append_p, $progress_p, $extra_headers);
+                 $append_p, $progress_p);
 
     $total_bytes += $bytes;
     $max_bytes -= $bytes if defined($max_bytes);
@@ -896,19 +857,6 @@ sub get_url($;$$$$$$$$) {
 }
 
 
-sub get_url_hdrs($$) {
-  my ($url, $hdrs) = @_;
-  return get_url ($url, undef,   # $referer
-                  undef, # $to_file
-                  undef, # $bwlimit
-                  undef, # $max_bytes
-                  undef, # $append_p
-                  undef, # $progress_p
-                  undef, # $force_ranges_p
-                  $hdrs);
-}
-
-
 sub check_http_status($$$$) {
   my ($id, $url, $http, $err_p) = @_;
   return 1 if ($http =~ m@^HTTP/[0-9.]+ 20\d@si);
@@ -930,7 +878,7 @@ sub video_file_size($) {
 
   my $size = (stat($file))[7];
 
-  my @cmd = ($ffmpeg,
+  my @cmd = ("ffmpeg",
              "-i", $file,
              "-vframes", "0",
              "-f", "null",
@@ -979,8 +927,7 @@ sub video_file_size($) {
 
 sub which($) {
   my ($cmd) = @_;
-  return (-x $cmd) if ($cmd =~ m@^/@s);
-  foreach my $dir (split (/:/, $ENV{PATH})) {
+ foreach my $dir (split (/:/, $ENV{PATH})) {
     my $cmd2 = "$dir/$cmd";
     return $cmd2 if (-x "$cmd2");
   }
@@ -1277,7 +1224,7 @@ sub video_url_size($$;$$$) {
 # - wN = swap 0th and Nth character.
 #
 # The first number is the "sts" parameter from the html5player file,
-# which is the "Signature Time Stamp" corresponding to this algorithm.
+# which is a timestamp or other ID code corresponding to this algorithm.
 # Requesting get_video_info with that number will return URLs using the
 # corresponding cipher algorithm. Except sometimes those old 'sts' values
 # stop working!  See below.
@@ -2328,43 +2275,6 @@ my %ciphers = (
   'player_ias-vfl_CsZz6/en_US/base' => '18356 w22 w17 s2 r s1 w8',# 04 Apr 2020
   'player_ias-vfl6VLxLZ/en_US/base' => '18359 s3 w39 s2 w1 s1 w35 w51 s2 r',# 07 Apr 2020
   '4fbb4d5b/player_ias.vflset/en_US/base' => '18359 s3 w39 s2 w1 s1 w35 w51 s2 r',# 07 Apr 2020
-  '5478d871/player_ias.vflset/en_US/base' => '18366 w38 w7 s2',   # 14 Apr 2020
-  'f676c671/player_ias.vflset/en_US/base' => '18368 s2 w4 w46 s2 w34 w59 r',# 16 Apr 2020
-  'bfb2a3b4/player_ias.vflset/en_US/base' => '18372 s3 w21 r s3 r w36',# 20 Apr 2020
-  '45e4d51d/player_ias.vflset/en_US/base' => '18375 w17 w16 r w25 r w50 w35',# 23 Apr 2020
-  '0374edcb/player_ias.vflset/en_US/base' => '18379 w8 w43 w10 w34',# 27 Apr 2020
-  '64dddad9/player_ias.vflset/en_US/base' => '18382 r w69 r w40', # 30 Apr 2020
-  '52b1e972/player_ias.vflset/en_US/base' => '18386 w25 w47 r s1 w47',# 04 May 2020
-  '0acb4375/player_ias.vflset/en_US/base' => '18389 r s1 w23 s3 w51',# 07 May 2020
-  '376e3c34/player_ias.vflset/en_US/base' => '18394 r s3 w26',    # 12 May 2020
-  '70f6ca87/player_ias.vflset/en_US/base' => '18395 w24 w13 w22 w23 s1 w44 r w15',# 13 May 2020
-  'c31ba6fc/player_ias.vflset/en_US/base' => '18396 s3 w35 r w7', # 14 May 2020
-  'e3cd195e/player_ias.vflset/en_US/base' => '18400 r w5 w20 r s2 w52 r w66 r',# 18 May 2020
-  '85548937/player_ias.vflset/en_US/base' => '18403 s2 r s3 w14 w68 r w49 w30 w69',# 21 May 2020
-  '4583e272/player_ias.vflset/en_US/base' => '18407 w27 s1 r s2 r w43',# 25 May 2020
-  'de455b1a/player_ias.vflset/en_US/base' => '18410 w11 w70 w8 w40',# 28 May 2020
-  'c31b936c/player_ias.vflset/en_US/base' => '18414 w23 w59 s3 w33 w49 s3 r',# 01 Jun 2020
-  '39dd62a0/player_ias.vflset/en_US/base' => '18417 w11 w29 s3 w69 r s2 r',# 05 Jun 2020
-  '16a691a1/player_ias.vflset/en_US/base' => '18421 r s3 w1 w67 s2 w8',# 08 Jun 2020
-  '0c5285fd/player_ias.vflset/en_US/base' => '18428 s1 r w18 w59',# 15 Jun 2020
-  '1d33781a/player_ias.vflset/en_US/base' => '18432 r s1 r w28',  # 19 Jun 2020
-  '5cc7c83f/player_ias.vflset/en_US/base' => '18435 s1 w29 r s3 w41 s2 w27 r',# 22 Jun 2020
-  '68f00b39/player_ias.vflset/en_US/base' => '18438 r w15 s1 r w11 s2',# 25 Jun 2020
-  '02c092a5/player_ias.vflset/en_US/base' => '18442 s2 r s1 r w37 s3',# 29 Jun 2020
-  '54668ca9/player_ias.vflset/en_US/base' => '18444 r w43 r s3 r',# 01 Jul 2020
-  '3662280c/player_ias.vflset/en_US/base' => '18449 s2 r w70',    # 06 Jul 2020
-  '5253ac4d/player_ias.vflset/en_US/base' => '18456 r s3 r w70',  # 13 Jul 2020
-  '8786a07b/player_ias.vflset/en_US/base' => '18463 r s2 r w29 r s1 r s3',# 20 Jul 2020
-  '0bb3b162/player_ias.vflset/en_US/base' => '18466 w39 r w20',   # 23 Jul 2020
-  'c718385a/player_ias.vflset/en_US/base' => '18473 w23 r w63 r s1 r',# 30 Jul 2020
-  'e49bfb00/player_ias.vflset/en_US/base' => '18477 w4 r w15 s3 w24 w4 r w24',# 03 Aug 2020
-  'c0a91787/player_ias.vflset/en_US/base' => '18480 w14 w61 s2 w28 w27 s3 w1 w20',# 06 Aug 2020
-  '0a90460f/player_ias.vflset/en_US/base' => '18484 s1 r s1 w47', # 10 Aug 2020
-  '0c815aae/player_ias.vflset/en_US/base' => '18487 w29 r w61 s2 w32 s3 w34',# 13 Aug 2020
-  'cba0baa7/player_ias.vflset/en_US/base' => '18491 w27 w46 w22 r w46 s2 r w21',# 17 Aug 2020
-  '530216c1/player_ias.vflset/en_US/base' => '18494 r s3 r w43',  # 20 Aug 2020
-  'eecb0f1e/player_ias.vflset/en_US/base' => '18498 w20 w11 s3 r w27 r s2 r s2',# 24 Aug 2020
-  '54d6fa95/player_ias.vflset/en_US/base' => '18501 s1 w39 s3',   # 27 Aug 2020
 );
 
 
@@ -2511,10 +2421,6 @@ sub guess_cipher($;$$) {
     # Find "N" in this: var f=18264; a.fa("ipp_signature_cipher_killswitch")
     ($sts) = ($body =~
               m/$v = (\d{5,}) ; $v \("ipp_signature_cipher_killswitch"\) /sx);
-  }
-
-  if (!$sts) {  # New way, 15-Aug-2020
-    ($sts) = ($body =~ m/signatureTimestamp[:=](\d{5,})/s);
   }
 
   errorI ("$cipher_id: no sts parameter: $url") unless $sts;
@@ -2815,8 +2721,8 @@ sub youtube_parse_urlmap($$$;$) {
       $v = '' unless $v;
 
       # In JSON, "cipher":"sp=sig&s=...&url=..."
-      if ($mapelt =~ m@\b(cipher|signatureCipher)=([^&\"]+)@s) {
-        my $sig4 = url_unquote ($2);
+      if ($mapelt =~ m@\bcipher=([^&\"]+)@s) {
+        my $sig4 = url_unquote ($1);
         $sig4 =~ s/^.*"(.*?)".*$/$1/s;
         my ($s2)  = ($sig4 =~ m/\bs=([^&]+)/s);
         my ($u2)  = ($sig4 =~ m/\burl=([^&]+)/s);
@@ -3005,17 +2911,6 @@ sub youtube_parse_dashmpd($$$$) {
   # Nuke the subtitles: the Representations inside them aren't useful.
   $body2 =~ s@<AdaptationSet mimeType=[\"\']text/.*?</AdaptationSet>@@gs;
 
-  my ($mpd) = ($body2 =~ m@<MPD\b([^<>]*)>@si);
-  error ("no MPD in DASH $url") unless $mpd;
-  if ($mpd =~ m@\btype=[\"\']dynamic[\"\']@si) {
-    # default: type="static"
-    # The stream is live, and there will be some arbitrary (possibly large)
-    # number of segments, but that's not the whole thing. Punt.
-    print STDERR "$progname: DASH is a live stream: $url\n"
-      if ($verbose > 2);
-    return 0;
-  }
-
   my @reps = split(/<Representation\b/si, $body2);
   shift @reps;
   foreach my $rep (@reps) {
@@ -3079,7 +2974,6 @@ my $blocked_re = join ('|',
                         'has closed their YouTube account',
                         'is not available',
                         'is unavailable',
-                        'video unavailable',
                         'is not embeddable',
                         'can\'t download rental videos',
                         'livestream videos',
@@ -3095,7 +2989,6 @@ my $blocked_re = join ('|',
                         'video has not yet premiered',
                         'live event will begin in',
                         '^[^:]+: exists: ',
-                        'no pre-muxed format',
                        ));
 
 
@@ -3184,6 +3077,7 @@ sub load_youtube_formats_html($$$) {
   if (!$title || $title =~ m/^untitled$/si) {
     if ($body =~ m/\\?"title\\?":\\?"(.*?)\\?",/si) {
       $title = $1;
+      $title =~ s/\\//gs;
       $title = munge_title (html_unquote ($title));
     }
   }
@@ -3232,30 +3126,13 @@ sub load_youtube_formats_html($$$) {
       last;
     }
 
-    if ($v =~ m@&live_playback=([^&]+)@si ||
-        $v =~ m@&live=(1)@si ||
-        $v =~ m@&source=(yt_live_broadcast)@si ||
-        $v =~ m@"status":"LIVE_STREAM_OFFLINE"@si) {
-      $err = "can't download live videos";
-      # The fmts point to an M3U8 that is currently of unbounded length.
-      undef %$fmts;
-      last;
-    }
-
     if ($key eq 'dashmpd' || $key eq 'hlsvp') {
-      my $n = youtube_parse_dashmpd ("$id HTML", $v, $cipher, $fmts);
-      $count += $n;
-      $err = "can't download live videos" if ($n == 0 && !$err);
-
+      $count += youtube_parse_dashmpd ("$id HTML", $v, $cipher, $fmts);
     } elsif ($key eq 'player_response') {
       my $ov = $v;
       ($v) = ($ov =~ m@"dashManifestUrl": *"(.*?[^\\])"@s);
       # This manifest sometimes works when the one in get_video_info doesn't.
-      if ($v) {
-        my $n = youtube_parse_dashmpd ("$id HTML", $v, $cipher, $fmts);
-        $count += $n;
-        $err = "can't download live videos" if ($n == 0 && !$err);
-      }
+      $count += youtube_parse_dashmpd ("$id HTML", $v, $cipher, $fmts) if $v;
 
       # Nov 2019: Saw this on an old fmt 133 video, and it was the only
       # list of formats available in the HTML.
@@ -3352,20 +3229,9 @@ sub load_youtube_formats_video_info($$$) {
       my $err2 = (check_http_status ($id, $url, $http, 0) ? undef : $http);
       $err = $err2 unless $err;
 
-      my $body2 = $body;		# FFS
-      $body2 =~ s/%5C/\\/gs;
-      $body2 =~ s/\\u0026/&/gs;
-      $body2 =~ s/%3D/=/gs;
-
-      my ($prep) = ($body2 =~ m@&player_response=([^&]+)@si);
-      $prep = url_unquote ($prep || '');
-
-      ($title)    = ($body2 =~ m@&title=([^&]+)@si) unless $title;
-      ($rental)   = ($body2 =~ m@&ypc_vid=([^&]+)@si);
-      ($live_p)   = ($body2 =~ m@&live_playback=([^&]+)@si ||
-                     $body2 =~ m@&live=(1)@si ||
-                     $body2 =~ m@&source=(yt_live_broadcast)@si ||
-                     $prep =~ m@"is_viewed_live","value":"True"@si);
+      ($title)    = ($body =~ m@&title=([^&]+)@si) unless $title;
+      ($rental)   = ($body =~ m@&ypc_vid=([^&]+)@si);
+      ($live_p)   = ($body =~ m@&live_playback=([^&]+)@si);
 
       $embed_p = $1 if ($body =~ m@&allow_embed=([^&]+)@si);
       $embed_p = 0 if (!defined($embed_p) &&
@@ -3402,10 +3268,7 @@ sub load_youtube_formats_video_info($$$) {
                      "\n"
           if ($verbose > 1);
         if ($key eq 'dashmpd' || $key eq 'hlsvp') {
-          my $n = youtube_parse_dashmpd ("$id VI-1", $v, $cipher, $fmts);
-          $count += $n;
-          $err = "can't download live videos" if ($n == 0 && !$err);
-
+          $count += youtube_parse_dashmpd ("$id VI-1", $v, $cipher, $fmts);
         } elsif ($key eq 'player_response') {
           ($v) = ($v =~ m@"adaptiveFormats":\[(.*?)\]@s);
           $count += youtube_parse_urlmap ("$id VI-2", $v, $cipher, $fmts)
@@ -3977,7 +3840,7 @@ sub get_youtube_year($;$) {
   # 2015, I edited the description text.  I have no theory for why the
   # "published" and "updated" dates are different and are both 2015.
   #
-  # So, let's scrape the HTML instead of using the API.
+  # So, let's scrape the HTML isntead of using the API.
   #
   # (Actually, we don't have a choice now anyway, since they turned off
   # the v2 API in June 2015, and the v3 API requires authentication.)
@@ -3998,14 +3861,8 @@ sub get_youtube_year($;$) {
   #   ($body =~ m@<published>(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)@si);
 
   ($year) = ($body =~ m@\bclass="watch-time-text">[^<>]+\b(\d{4})</@s);
-
-  # Jul 2020
-  ($year) = ($body =~ m@\"uploadDate\\?\":\\?\"(\d{4})-\d\d-@si)
-    unless $year;
-  ($year) = ($body =~ m@\"uploadDate\" content=\"(\d{4})-\d\d-@si)
-    unless $year;
-
   $youtube_year_cache{$id} = $year;
+
   return $year;
 }
 
@@ -4028,11 +3885,8 @@ my $ffmpeg_warned_p = 0;
 
 # Given a list of available underlying videos, pick the ones we want.
 #
-sub pick_download_format($$$$$$) {
-  my ($id, $site, $url, $force_fmt, $fmts, $max_size) = @_;
-
-  my ($maxw, $maxh) = ($max_size =~ m/^(\d+)x(\d+)$/s)
-    if defined($max_size);
+sub pick_download_format($$$$$) {
+  my ($id, $site, $url, $force_fmt, $fmts) = @_;
 
   foreach my $k (keys %$fmts) {
     next if ($k eq 'title' || $k eq 'year' || $k eq 'cipher' || $k eq 'thumb');
@@ -4055,8 +3909,6 @@ sub pick_download_format($$$$$$) {
     foreach my $k (keys %$fmts) {
       next if ($k eq 'title' || $k eq 'year' || $k eq 'cipher' ||
                $k eq 'thumb');
-      next if (($maxw && ($fmts->{$k}->{w} || 0) > $maxw) ||
-               ($maxh && ($fmts->{$k}->{h} || 0) > $maxh));
       push @all, $k;
     }
     return sort { $a <=> $b } @all;
@@ -4462,17 +4314,9 @@ sub pick_download_format($$$$$$) {
       my $A = $known_formats{$a};
       my $B = $known_formats{$b};
 
-      # If there is a max-size, prefer the fmt that is at or below it.
-      if (defined($maxw) && $A->{w} && $B->{w}) {
-        return  1 if ($A->{w} > $maxw && $B->{w} <= $maxw);
-        return -1 if ($B->{w} > $maxw && $A->{w} <= $maxw);
-        return  1 if ($A->{h} > $maxh && $B->{h} <= $maxh);
-        return -1 if ($B->{h} > $maxh && $A->{h} <= $maxh);
-      }
-
-      my $aa = $A->{h} || 0;
+      my $aa = $A->{h} || 0;			# Prefer taller video.
       my $bb = $B->{h} || 0;
-      return ($bb - $aa) unless ($aa == $bb);	# Prefer taller video.
+      return ($bb - $aa) unless ($aa == $bb);
 
       $aa = (($A->{v} || '') eq 'mp4');		# Prefer MP4 over WebM.
       $bb = (($B->{v} || '') eq 'mp4');
@@ -4568,12 +4412,9 @@ sub pick_download_format($$$$$$) {
     # But maybe we can't because there's no ffmpeg -- if so, print
     # a warning, then fall back to a lower resolution stream, if possible.
     #
-    if ($vfmt && $afmt && !which ($ffmpeg)) {
-      if (!$mfmt) {
-        error ("$id: \"$ffmpeg\" is not installed, and this video has" .
-               " no pre-muxed format.");
-      } elsif (!$ffmpeg_warned_p) {
-        print STDERR "$progname: WARNING: $id: \"$ffmpeg\" not installed.\n";
+    if ($vfmt && $afmt && !which ("ffmpeg")) {
+      if (!$ffmpeg_warned_p) {
+        print STDERR "$progname: WARNING: $id: \"ffmpeg\" not installed.\n";
         print STDERR "$progname: $id: downloading lower resolution.\n"
           if ($mfmt);
         $ffmpeg_warned_p = 1;
@@ -4645,7 +4486,7 @@ sub pick_download_format($$$$$$) {
   } elsif ($force_fmt) {
     return $force_fmt;
   } else {
-    error ("$id: No pre-muxed formats; \"$ffmpeg\" required for download");
+    error ("$id: No pre-muxed formats; \"ffmpeg\" required for download");
   }
 }
 
@@ -5056,7 +4897,7 @@ sub canonical_url($;) {
                     .*? [?&] list=(?:PL)? |
                     embed/videoseries\?list=(?:PL)?
                 )
-                ([^<>?&,\#]+) ($|[&\#]) @sx) {
+                ([^<>?&,]+) ($|&) @sx) {
     ($site, $id) = ($1, $2);
     $url = "https://www.$site.com/view_play_list?p=$id";
     $playlist_p = 1;
@@ -5064,13 +4905,13 @@ sub canonical_url($;) {
   # Youtube "/verify_age" URLs.
   } elsif ($url =~
            m@^https?://(?:[a-z]+\.)?(youtube) (?:-nocookie)? \.com/+
-	     .* next_url=([^&\#]+)@sx ||
+	     .* next_url=([^&]+)@sx ||
            $url =~ m@^https?://(?:[a-z]+\.)?google\.com/
                      .* service = (youtube)
-                     .* continue = ( http%3A [^?&\#]+)@sx ||
+                     .* continue = ( http%3A [^?&]+)@sx ||
            $url =~ m@^https?://(?:[a-z]+\.)?google\.com/
                      .* service = (youtube)
-                     .* next = ( [^?&\#]+)@sx
+                     .* next = ( [^?&]+)@sx
           ) {
     $site = $1;
     $url = url_unquote($2);
@@ -5089,13 +4930,13 @@ sub canonical_url($;) {
                          .*? &v= |
                          [^/\#?&]+ \#p(?: /[a-zA-Z\d] )* /
                      )
-                     ([^<>?&,\'\"\#]+) ($|[?&#]) @sx) {
+                     ([^<>?&,\'\"]+) ($|[?&]) @sx) {
     ($site, $id) = ($1, $2);
     $url = "https://www.$site.com/watch?v=$id";
 
   # Youtube "/user" and "/profile" URLs.
   } elsif ($url =~ m@^https?://(?:[a-z]+\.)?(youtube) (?:-nocookie)? \.com/
-                     (?:user|profile).*\#.*/([^&/\#]+)@sx) {
+                     (?:user|profile).*\#.*/([^&/]+)@sx) {
     $site = $1;
     $id = url_unquote($2);
     $url = "https://www.$site.com/watch?v=$id";
@@ -5117,7 +4958,7 @@ sub canonical_url($;) {
   # Vimeo /channels/name/NNNNNN URLs.
   # Vimeo /ondemand/name/NNNNNN URLs.
   } elsif ($url =~
-           m@^https?://(?:[a-z]+\.)?(vimeo)\.com/[^/?&\#]+/[^/?&\#]+/(\d+)@s) {
+           m@^https?://(?:[a-z]+\.)?(vimeo)\.com/[^/]+/[^/]+/(\d+)@s) {
     ($site, $id) = ($1, $2);
     $url = "https://$site.com/$id";
 
@@ -5134,7 +4975,7 @@ sub canonical_url($;) {
 
   # Tumblr /video/UUU/NNNNN
   } elsif ($url =~
-        m@^https?://[-_a-z\d]+\.(tumblr)\.com/video/([^/?&\#]+)/(\d{8,})/@si) {
+           m@^https?://[-_a-z\d]+\.(tumblr)\.com/video/([^/]+)/(\d{8,})/@si) {
     my $user;
     ($site, $user, $id) = ($1, $2, $3);
     $site = lc($site);
@@ -5149,15 +4990,14 @@ sub canonical_url($;) {
     $url = "https://$user.$site.com/post/$id";
 
   # Instagram /p/NNNNN
-  } elsif ($url =~
-           m@^https?://([-_a-z\d]+\.)?(instagram)\.com/p/([^/?&\#]+)@si) {
+  } elsif ($url =~ m@^https?://([-_a-z\d]+\.)?(instagram)\.com/p/([^/?&]+)@si) {
     (undef, $site, $id) = ($1, $2, $3);
     $site = lc($site);
     $url = "https://www.$site.com/p/$id";
 
   # Twitter /USER/status/NNNNN
-  } elsif ($url =~ m@^https?://([-_a-z\d]+\.)?(twitter)\.com/([^/?&\#]+)
-                     /status/([^/?&\#]+)@six) {
+  } elsif ($url =~ m@^https?://([-_a-z\d]+\.)?(twitter)\.com/([^/?&]+)
+                     /status/([^/?&]+)@six) {
     my $user;
     (undef, $site, $user, $id) = ($1, $2, $3, $4);
     $site = lc($site);
@@ -5194,7 +5034,7 @@ sub mux_downloaded_files($$$$$$$) {
 
   error ("$video_file does not exist") unless (-f $video_file);
   error ("$audio_file does not exist") unless (-f $audio_file);
-  my @cmd = ($ffmpeg,
+  my @cmd = ('ffmpeg',
              # "-hide_banner", # not present in 0.6.5
              # "-loglevel", "panic",
 
@@ -5401,11 +5241,11 @@ sub load_formats($$) {
 }
 
 
-sub download_video_url($$$$$$$$$$$$);
-sub download_video_url($$$$$$$$$$$$) {
+sub download_video_url($$$$$$$$$$$);
+sub download_video_url($$$$$$$$$$$) {
   my ($url, $title, $prefix, $outfile, $size_p,
       $list_p, $list_idx, $list_count,
-      $bwlimit, $progress_p, $force_fmt, $max_size) = @_;
+      $bwlimit, $progress_p, $force_fmt) = @_;
 
   $error_whiteboard = '';	# reset per-URL diagnostics
   $progress_ticks = 0;		# reset progress-bar counters
@@ -5429,7 +5269,7 @@ sub download_video_url($$$$$$$$$$$$) {
     error ("--out does not work with playlists") if ($outfile);
     return download_youtube_playlist ($id, $url, $title, $prefix, $size_p,
                                       $list_p, $bwlimit, $progress_p,
-                                      $force_fmt, $max_size);
+                                      $force_fmt);
   }
 
   # Fuck you, Twitter. Handle links to Youtube inside twits.
@@ -5563,8 +5403,7 @@ sub download_video_url($$$$$$$$$$$$) {
   # If we're doing --fmt all, this is all of them.
   # Otherwise, it's either one URL or two (audio + video mux).
   #
-  my @targets = pick_download_format ($id, $site, $url, $force_fmt, $fmts,
-                                      $max_size)
+  my @targets = pick_download_format ($id, $site, $url, $force_fmt, $fmts)
     if (defined ($fmts));
   my @pair = (@targets == 2 && $force_fmt ne 'all' ? @targets : ());
 
@@ -5799,10 +5638,10 @@ sub download_video_url($$$$$$$$$$$$) {
 # But retrying often works.
 # Also sometimes the underlying video segments are 404.
 #
-sub download_video_url_retry($$$$$$$$$$$$) {
+sub download_video_url_retry($$$$$$$$$$$) {
   my ($url, $title, $prefix, $outfile, $size_p,
       $list_p, $list_idx, $list_count,
-      $bwlimit, $progress_p, $force_fmt, $max_size) = @_;
+      $bwlimit, $progress_p, $force_fmt) = @_;
 
   ($url) = canonical_url ($url);
 
@@ -5814,7 +5653,7 @@ sub download_video_url_retry($$$$$$$$$$$$) {
       $noerror = 1;
       download_video_url ($url, $title, $prefix, $outfile, $size_p,
                           $list_p, $list_idx, $list_count,
-                          $bwlimit, $progress_p, $force_fmt, $max_size);
+                          $bwlimit, $progress_p, $force_fmt);
     };
     $noerror = $ono;
 
@@ -5839,9 +5678,7 @@ sub download_video_url_retry($$$$$$$$$$$$) {
         ($err =~ m/$blocked_re/sio ||
          $err =~ m@\b403 Forbidden@s ||
          $err =~ m@\b404 Not Found@s ||
-         $err =~ m@\bno video in @s ||
-         $err =~ m@\bI/O error:@s ||
-         $err =~ m@broken pipe@s)) {
+         $err =~ m@\bno video in @s)) {
       # With --quiet, just silently ignore private videos and 404s
       # for "youtubefeed".
       exit (1);
@@ -5863,60 +5700,41 @@ sub youtube_playlist_urls($$;$) {
   my ($http, $head, $body) = get_url ($url);
   check_http_status ($id, $url, $http, 1);
 
-  my ($title) = ($body =~ m/"og:title"\s+content="(.*?)">/si);
-  ($title) = ($body =~ m@<title>\s*([^<>]+?)\s*</title>@si) unless $title;
+  my ($title) = ($body =~ m@<title>\s*([^<>]+?)\s*</title>@si);
 
   $title = munge_title($title);
   sanity_check_title ($title, $url, $body, 'youtube_playlist_urls');
   $title = 'Untitled Playlist' unless $title;
 
-  if ($body =~ m/window\[.ytInitialData.\] *= *(.*?);/s) {
-    $body = $1;
-  } else {
-    errorI ("playlist html unparsable: $url");
-  }
+  ($body =~ s/^.*?<div \s+ id="pl-video-list"//six) ||
+  ($body =~ s/^.*?<\/ytd-playlist-sidebar-renderer//six) ||
+    errorI ("unparsable playlist HTML: $url");
 
-  # Get the up-to-100 videos that came with the document.
-  #
-  $body =~ s/\n/ /g;
-  $body =~ s/\\//g;
-  $body =~ s/("playlistVideoRenderer")/\n$1/g;
-  my $prev_id = '';
-  foreach my $chunk (split (/\n/, $body)) {
-    my $id = $1 if ($chunk =~ m/\{"videoId":"(.*?)"/si);
-    my $t2 = $1 if ($chunk =~ m/"simpleText":"(.*?)"/si);
-    next unless defined($id);
-    next if ($id eq $prev_id);
-    $prev_id = $id;
-    if ($id && $t2) {
-      $t2 = munge_title (html_unquote ($t2));
-      push @playlist, { title => $t2,
-                        url   => 'https://www.youtube.com/watch?v=' . $id };
-    }
-  }
-
-  errorI ("$id: no playlist entries") unless @playlist;
+  my ($more) = ($body =~ m@href=[\"\']([^\"\']*/browse_ajax[^\"\']+)@si);
 
   if ($first_only_p) {
     @playlist = ( $playlist[0] );
+    $more = undef;
   }
 
+  my $i = 0;
+  $body =~ s@<A \b (.*?) > \s* ([^<>]*?) \s* </A> @{
+    my ($href, $t2) = ($1, $2);
+    (undef, $href) = ($href =~ m% \b href \s* = \s* ([\"\'])(.*?)\1%six);
+    if ($href && $t2) {
+      $href = html_unquote($href);
+      if ($href =~ m%[?&]v=([^?&]+)%si) {
+        push \@playlist, [ $t2, 'https://www.youtube.com/watch?v=' . $1 ];
+      }
+    }
+    "";
+  }@gsexi;
+
+  errorI ("$id: no playlist entries?") unless @playlist;
 
   # Scraping the HTML only gives us the first hundred videos if the
   # playlist has more than that. To get the rest requires more work.
   #
-  my $more = undef;
-  if (!$first_only_p &&
-      $body =~
-    m/"continuation"\s*:\s*"(.+?)".*?"clickTrackingParams"\s*:\s*"(.+?)"/si) {
-    $more = ('/browse_ajax' .
-             '?ctoken=' . $1 .
-             '&amp;continuation=' . $1 .
-             '&amp;itct=' . $2);
-  }
-
-  my $vv = $1 if ($body =~ m/"client.version","value":"(.*?)"/si);
-
   my $page = 2;
   while ($more) {
     $more = html_unquote ($more);
@@ -5925,67 +5743,45 @@ sub youtube_playlist_urls($$;$) {
 
     print STDERR "$progname: loading playlist page $page...\n"
       if ($verbose > 1);
-
-    errorI ("$id: no client version") unless defined($vv);
-    ($http, $head, $body) = get_url_hdrs ($more,
-                                          # You absolute bastards!!
-                                          ["X-YouTube-Client-Name: 1",
-                                           "X-YouTube-Client-Version: $vv"]);
+    ($http, $head, $body) = get_url ($more);
     check_http_status ($id, $more, $http, 1);
 
-    # Get the next up-to-100 videos.
-    #
-    $body =~ s/\n/ /g;
-    $body =~ s/\\//g;
-    $body =~ s/("playlistVideoRenderer")/\n$1/g;
-    $prev_id = '';
-    foreach my $chunk (split (/\n/, $body)) {
-      my $id = $1 if ($chunk =~ m/\{"videoId":"(.*?)"/si);
-      my $t2 = $1 if ($chunk =~ m/"simpleText":"(.*?)"/si);
-      next unless defined($id);
-      next if ($id eq $prev_id);
-      $prev_id = $id;
-      if ($id && $t2) {
-        $t2 = munge_title (html_unquote ($t2));
-        push @playlist, { title => $t2,
-                          url   => 'https://www.youtube.com/watch?v=' . $id };
-      }
+    $body =~ s/ \\[ux] ([a-z0-9]{4}) / chr(hex($1)) /gsexi; # \uXXXX
+    $body =~ s@\\@@gs;
+    foreach my $tag ($body =~ m@<[^<>]+>@gsi) {
+      my (undef, $t2) = ($tag =~ m@data-title=([\"\"])(.*?)\1@si);
+      my (undef, $id) = ($tag =~ m@data-video-id=([\"\"])(.*?)\1@si);
+      push @playlist, [ $t2, 'https://www.youtube.com/watch?v=' . $id ]
+        if ($id);
     }
 
-    $more = undef;
-    if ($body =~
-    m/"continuation"\s*:\s*"(.+?)".*?"clickTrackingParams"\s*:\s*"(.+?)"/si) {
-      $more = ('/browse_ajax' .
-               '?ctoken=' . $1 .
-               '&amp;continuation=' . $1 .
-               '&amp;itct=' . $2);
-    }
+    ($more) = ($body =~ m@href=[\"\']([^\"\']*/browse_ajax[^\"\']+)@si);
     $page++;
   }
 
   # Prefix each video's title with the playlist's title and its index.
   #
-  my $i = 0;
+  $i = 0;
   my $count = @playlist;
   foreach my $P (@playlist) {
     $i++;
-    my $t2 = $P->{'title'};
+    my $t2 = $P->[0];
     $t2 = munge_title (html_unquote ($t2));
     sanity_check_title ($t2, $url, $body, 'youtube_playlist_urls 2');
     my $ii = ($count > 999 ? sprintf("%04d", $i) :
               $count >  99 ? sprintf("%03d", $i) :
                              sprintf("%02d", $i));
     $t2 = "$title: $ii: $t2";
-    $P->{'title'} = $t2;
+    $P->[0] = $t2;
   }
 
   return ($title, @playlist);
 }
 
 
-sub download_youtube_playlist($$$$$$$$$$) {
+sub download_youtube_playlist($$$$$$$$$) {
   my ($id, $url, $title, $prefix, $size_p, $list_p,
-      $bwlimit, $progress_p, $force_fmt, $max_size) = @_;
+      $bwlimit, $progress_p, $force_fmt) = @_;
 
   # With "--size", only get the size of the first video.
   # With "--size --size", get them all.
@@ -6000,16 +5796,14 @@ sub download_youtube_playlist($$$$$$$$$$) {
   my $list_count = scalar @playlist;
   my $list_idx = 0;
   foreach my $P (@playlist) {
-    my $t2 = $P->{'title'};
-    my $u2 = $P->{'url'};
+    my ($t2, $u2) = @$P;
     my $ono = $noerror;
     eval {
       $noerror = 1;
       utf8::encode ($t2) if defined($t2);
       download_video_url_retry ($u2, $t2, $prefix, undef, $size_p, $list_p,
                                 $list_idx, $list_count,
-                                $bwlimit, $progress_p, $force_fmt,
-                                $max_size);
+                                $bwlimit, $progress_p, $force_fmt);
       $noerror = $ono;
     };
     print STDERR "$progname: $@" if $@;
@@ -6019,36 +5813,12 @@ sub download_youtube_playlist($$$$$$$$$$) {
 }
 
 
-sub parse_size($$) {
-  my ($arg, $s) = @_;
-  usage ("unparsable size: $arg") unless defined($s);
-  if    ($s =~ m/^8K$/si)        { $s = '7680x4320'; }
-  elsif ($s =~ m/^UHD$/si)       { $s = '7680x4320'; }
-  elsif ($s =~ m/^4320[pi]$/si)  { $s = '7680x4320'; }
-  elsif ($s =~ m/^5K$/si)        { $s = '5120x2880'; }
-  elsif ($s =~ m/^2880[pi]$/si)  { $s = '5120x2880'; }
-  elsif ($s =~ m/^4K$/si)        { $s = '4096x2160'; }
-  elsif ($s =~ m/^QHD$/si)       { $s = '2560x1440'; }
-  elsif ($s =~ m/^1440[pi]?$/si) { $s = '2560x1440'; }
-  elsif ($s =~ m/^2K$/si)        { $s = '2048x1080'; }
-  elsif ($s =~ m/^1080[pi]?$/si) { $s = '1920x1080'; }
-  elsif ($s =~ m/^720[pi]?$/si)  { $s = '1280x720';  }
-  elsif ($s =~ m/^PAL$/si)       { $s =  '720x576';  }
-  elsif ($s =~ m/^576[pi]?$/si)  { $s =  '720x576';  }
-  elsif ($s =~ m/^DV$/si)        { $s =  '720x480';  }
-  elsif ($s =~ m/^480[pi]$/si)   { $s =  '720x480';  }
-  elsif ($s =~ m/^SD$/si)        { $s =  '640x480';  }
-  elsif ($s =~ m/^NTSC$/si)      { $s =  '640x480';  }
-  return $s if ($s =~ m/^(\d+)x(\d+)$/s);
-  usage ("unparsable size: $arg $s");
-}
-
 sub usage() {
   print STDERR "usage: $progname" .
                  " [--verbose] [--quiet] [--progress] [--size]\n" .
            "\t\t   [--title txt] [--prefix txt] [--suffix] [--out file]\n" .
            "\t\t   [--fmt N] [--no-mux] [--bwlimit N [kb | KB | mb | MB]]\n" .
-           "\t\t   [--max-size WxH] [--webm] [--webm-transcode]\n" .
+           "\t\t   [--webm] [--webm-transcode]\n" .
            "\t\t   youtube-or-vimeo-urls ...\n";
   exit 1;
 }
@@ -6083,7 +5853,6 @@ sub main() {
   my $guessp = 0;
   my $muxp = 1;
   my $bwlimit = undef;
-  my $max_size = undef;
 
   while ($#ARGV >= 0) {
     $_ = shift @ARGV;
@@ -6107,7 +5876,6 @@ sub main() {
     elsif (m/^--?webm-trans(code)?$/)     { $webm_p = 1;
                                             $webm_transcode_p = 1; }
     elsif (m/^--?no-?webm-trans(code)?$/) { $webm_transcode_p = 0; }
-    elsif (m/^--?max-size$/) { $max_size = parse_size ($_, shift @ARGV); }
     elsif (m/^--?guess$/)    { $guessp++; }
     elsif (m/^--?bwlimit$/) {
       #
@@ -6181,10 +5949,9 @@ sub main() {
     my ($title, $fmt, $out, $url) = @$_;
     download_video_url_retry ($url, $title, $prefix, $out, $size_p,
                               $list_p, 0, 0, 
-                              $bwlimit, $progress_p, $fmt, $max_size);
+                              $bwlimit, $progress_p, $fmt);
   }
-  exit 0;
 }
 
-main() unless caller();
-1;
+main();
+exit 0;
