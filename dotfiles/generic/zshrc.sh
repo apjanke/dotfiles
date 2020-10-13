@@ -154,3 +154,9 @@ function gh-local-pr() {
 if [[ -f ~/.config/exercism/exercism_completion.zsh ]]; then
   . ~/.config/exercism/exercism_completion.zsh
 fi
+
+# Local configuration
+if [[ -f ~/.zshrc-local ]]; then
+    source ~/.zshrc-local
+fi
+

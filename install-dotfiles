@@ -126,7 +126,7 @@ for file in "${dotfiles[@]}"; do
 done
 
 CHANGED=0
-symlink "$sourcedir/bin" "bin"
+symlink "$dotdir/bin" "bin"
 if [[ $CHANGED == 1 ]]; then
   echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
 fi
@@ -140,3 +140,4 @@ if [[ $OPT_TRACE == 1 ]]; then
 fi
 
 main; exit 0
+
