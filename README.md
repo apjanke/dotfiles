@@ -17,9 +17,16 @@ There are a few different parts to this repo.
 * *manual-settings* – Exported and imported settings files from various programs
 * [*iTerm2*](iTerm2/README.md) – Shared data directory for iTerm2's "load settings from folder" preference at
 
-## Overall Installation / Usage 
+## Overall Installation / Usage
 
-To set up a new computer from scratch:
+To set up the dotfiles:
+
+* Clone this repo locally, to its permanent location
+* cd to it and run the `install-dotfiles` command
+
+That will symlink your various `~/.*` files to their definitions in the repo.
+
+To set up a new Mac from scratch:
 
 * Clone this repo locally, to its permanent location
 * Install Xcode and/or the Xcode CLT
@@ -27,7 +34,6 @@ To set up a new computer from scratch:
   * `./setup-osx-homebrew`
   * `sudo ./setup-osx-system`
   * `./setup-osx-user`
-* `./install-dotfiles`
 
 Optional Dropbox setup:
 
