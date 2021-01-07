@@ -134,11 +134,14 @@ maybe_add_path "/usr/local/lib/ruby/gems/2.7.0/bin" prepend
 maybe_add_path "$HOME/local/opt/depot_tools"
 
 # Optionally installed tools and thingies
+# Go
 export GOPATH=$HOME/local/go-work
 maybe_add_path "$GOPATH/bin"
 if [[ -d $HOME/.rvm ]]; then
   PATH="$PATH:$HOME/.rvm/bin"
 fi
+# DAML
+maybe_add_path $HOME/.daml/bin
 
 # ls customization
 uname=`uname`
