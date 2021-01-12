@@ -18,7 +18,7 @@ fi
 
 ZSH_THEME_SCM_CHECK_TIMEOUT=0.5
 #CASE_SENSITIVE=true
-if [[ $DISABLE_OH_MY_ZSH_CUSTOM != 1 ]]; then
+if [[ -d $HOME/.oh-my-zsh-custom && "$DISABLE_OH_MY_ZSH_CUSTOM" != 1 ]]; then
   ZSH_CUSTOM=$HOME/.oh-my-zsh-custom
   ZSH_THEME=${ZSH_THEME:-apjanke-01}
 else
@@ -26,7 +26,6 @@ else
 fi
 # These themes have problems for me, like bad hg calls
 ZSH_BLACKLISTED_THEMES=(rkj-repos)
-ZSH_DEFAULT_USER="janke"
 
 #DISABLE_AUTO_TITLE=true
 DISABLE_AUTO_UPDATE=true

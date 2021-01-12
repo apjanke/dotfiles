@@ -51,6 +51,10 @@ fi
 # Load selected configurator, falling back to stock if it is not
 # installed on this system.
 
+is_at_demex () {
+  env | grep demex &> /dev/null
+}
+
 # Valid configurators: "oh-my-zsh", "prezto", or "none"
 ZSH_CONFIGURATOR=oh-my-zsh
 if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
@@ -58,7 +62,7 @@ if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
   #_OMZ_DEBUG_SMKX=1
   #DISABLE_OH_MY_ZSH_CUSTOM=1
   #ZSH_THEME=apjanke-01
-  DEFAULT_USER=janke
+  ZSH_DEFAULT_USERS=(janke apjanke andrew.janke@demextech.com ajanke-sa)
   AGNOSTER_PATH_STYLE=shrink
   AGNOSTER_RANDOM_EMOJI_REALLY_RANDOM=1
   AGNOSTER_RANDOM_EMOJI_EACH_PROMPT=1
@@ -74,7 +78,11 @@ if [[ $ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
     status
     blank
   )
-  ZSH_THEME=agnosterj
+  if is_at_demex; then
+    ZSH_THEME=apjanke-01
+  else
+    ZSH_THEME=agnosterj
+  fi
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
   plugins=( osx themes )
   source ~/.dotfiles/zshrc-oh-my-zsh.zsh
