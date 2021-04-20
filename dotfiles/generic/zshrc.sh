@@ -170,26 +170,37 @@ fi
 
 # Google Cloud SDK.
 # (This is a stupid installation location for it.)
-if [ -f '/Users/janke/Downloads/google-cloud-sdk/path.zsh.inc' ]; then
+if [[ -f '/Users/janke/Downloads/google-cloud-sdk/path.zsh.inc' ]]; then
     . '/Users/janke/Downloads/google-cloud-sdk/path.zsh.inc'
 fi
-if [ -f '/Users/janke/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then
+if [[ -f '/Users/janke/Downloads/google-cloud-sdk/completion.zsh.inc' ]]; then
     . '/Users/janke/Downloads/google-cloud-sdk/completion.zsh.inc'
 fi
 
 # Anaconda
-__conda_setup="$('/opt/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-    conda deactivate
-else
-    if [ -f "/opt/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/opt/anaconda3/etc/profile.d/conda.sh"
+function {
+local -a conda_candidates
+conda_candidates=(
+  '/opt/anaconda3'
+  "$HOME/anaconda3"
+)
+for cand in $conda_candidates; do
+  if [[ -f "$cand/bin/conda" ]]; then
+    __conda_setup="$('$cand/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+        conda deactivate
     else
-        export PATH="/opt/anaconda3/bin:$PATH"
+        if [[ -f "$cand/etc/profile.d/conda.sh" ]]; then
+            . "$cand/etc/profile.d/conda.sh"
+        else
+            export PATH="$cand/bin:$PATH"
+        fi
     fi
-fi
-unset __conda_setup
+    unset __conda_setup
+  fi
+done
+}
 
 # Don't forget to:
 #   conda config --set changeps1 false
