@@ -122,14 +122,17 @@ PATH="/usr/local/bin:$PATH"
 maybe_add_path "$HOME/bin" prepend
 maybe_add_path "$HOME/bin-local" prepend
 maybe_add_path "$HOME/local/bin" prepend
+maybe_add_path "$HOME/.local/bin" prepend
 # Hack: unconditionally load the Ruby gem location I've been working with
-maybe_add_path "$HOME/.gem/ruby/2.0.0/bin" prepend
-# Get the Homebrew-installed Ruby, including its gems
-# (I don't really know how Ruby Gems path management is supposed to work)
-maybe_add_path "/usr/local/opt/ruby/bin" prepend
-maybe_add_path "/usr/local/lib/ruby/gems/2.5.0/bin" prepend
+maybe_add_path "$HOME/.gem/ruby/2.6.0/bin" prepend
+# Pull in system Ruby
 maybe_add_path "/usr/local/lib/ruby/gems/2.6.0/bin" prepend
 maybe_add_path "/usr/local/lib/ruby/gems/2.7.0/bin" prepend
+maybe_add_path "/usr/local/lib/ruby/gems/3.0.0/bin" prepend
+# Get the Homebrew-installed Ruby, including its gems, and have it take
+# precedence over system Ruby.
+# (I don't really know how Ruby Gems path management is supposed to work)
+maybe_add_path "/usr/local/opt/ruby/bin" prepend
 # Google depot tools
 maybe_add_path "$HOME/local/opt/depot_tools"
 
@@ -223,16 +226,6 @@ if [[ $uname = "Darwin" ]]; then
   alias bpullb='brew pull --branch-okay --bottle'
   alias bsr='brew style --rspec --display-cop-names'
   alias plistbuddy='/usr/libexec/PlistBuddy'
-  
-  # brew187 - run brew under Ruby 1.8.7
-  function brew187 {
-    local ruby187_prefix=$(brew --prefix ruby187 2>/dev/null)
-    if [[ -z "$ruby187_prefix" ]]; then
-      echo >&2 "Error: no ruby187 installation found"
-      return 1
-    fi
-    HOMEBREW_RUBY_PATH="$ruby187_prefix/bin/ruby" brew "$@"
-  }
 
   # brew-gist-logs - brew gist-logs wrapper, with login support
   function brew-gist-logs() {
