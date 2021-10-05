@@ -135,6 +135,7 @@ maybe_add_path "/usr/local/lib/ruby/gems/3.0.0/bin" prepend
 maybe_add_path "/usr/local/opt/ruby/bin" prepend
 # Google depot tools
 maybe_add_path "$HOME/local/opt/depot_tools"
+maybe_add_path "/Applications/Sublime Text.app/Contents/SharedSupport/bin"
 
 # Optionally installed tools and thingies
 # Go
