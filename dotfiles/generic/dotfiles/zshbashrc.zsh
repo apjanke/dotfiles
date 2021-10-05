@@ -272,6 +272,15 @@ if [[ $uname = "Darwin" ]]; then
     fi
   }
 
+  # Enable rainbow colorization in file listing
+  function rainbow-me() {
+    export CLICOLOR=1
+    export LSCOLORS=gx
+
+    alias l='ls | lolcat' 
+    alias la='ls -la | lolcat'
+  }
+
   # Command line JavaScript
   alias jsc=/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Resources/jsc
 
