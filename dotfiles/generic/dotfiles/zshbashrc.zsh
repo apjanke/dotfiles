@@ -259,7 +259,7 @@ if [[ $uname = "Darwin" ]]; then
   function locate-matlab-on-mac() {
     if ! which matlab &> /dev/null; then
       # Prefer newer versions
-      want_matlab_rels=(R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
+      want_matlab_rels=(R2023b R2023a R2022b R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
       # I actually am specifically on R2019b now
       want_matlab_rels=(R2019b $want_matlab_rels)
       for matlab_rel in "${want_matlab_rels[@]}"; do
