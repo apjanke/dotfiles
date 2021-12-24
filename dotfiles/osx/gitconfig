@@ -58,3 +58,5 @@
 	rebase = false
 [credential "https://dev.azure.com"]
 	useHttpPath = true
+[init]
+	defaultBranch = main
