@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Sets up Homebrew on this machine
+# Sets up Homebrew on this machine.
 #
 # This is idempotent, so you can rerun it on a machine that already has brew installed,
 # though you may see (lots of) spurious warning messages. Each run does git fetches, so

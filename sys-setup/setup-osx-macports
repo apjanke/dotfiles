@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# Sets up MacPorts-based stuff on this machine.
+#
+# This assumes you already have MacPorts installed. It just installs my preferred packages
+# under MacPorts.
+
+set -e
+
+PROGRAM_NAME="$(basename $0)"
+
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - Install my preferred MacPorts packages on this machine
+
+Usage:
+  $PROGRAM_NAME [-x]
+  $PROGRAM_NAME -h
+
+Options:
+    -x    trace program execution
+    -h    display help
+EOF
+}
+
+while getopts xh opt; do
+  case $opt in
+    x)
+      OPT_TRACE=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      exit 1
+      ;;
+  esac
+done
+
+function _do() {
+  echo "$@"
+  "$@"
+}
+
+function main() {
+
+  THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
+  my_macports_cfg_dir="$THISDIR/macports"
+  ports=($(cat "$my_macports_cfg_dir/macports-ports-standard"))
+
+  sudo port selfupdate
+  sudo port -N install "${ports[@]}"
+
+}
+
+main
