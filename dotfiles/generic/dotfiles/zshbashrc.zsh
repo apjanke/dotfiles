@@ -256,21 +256,11 @@ if [[ $uname = "Darwin" ]]; then
     HOMEBREW_MAKE_JOBS=1 brew install -v --build-from-source $* 2>&1
   }
 
-  function locate-matlab-on-mac() {
-    if ! which matlab &> /dev/null; then
-      # Prefer newer versions
-      want_matlab_rels=(R2023b R2023a R2022b R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
-      # I actually am specifically on R2019b now
-      want_matlab_rels=(R2019b $want_matlab_rels)
-      for matlab_rel in "${want_matlab_rels[@]}"; do
-        matlab_app="/Applications/MATLAB_${matlab_rel}.app"
-        if [[ -f "$matlab_app/bin/matlab" ]]; then
-          PATH="$PATH:$matlab_app/bin"
-          break
-        fi
-      done
-    fi
-  }
+  # MacPorts stuff
+
+  if [ -e /opt/local/share/nvm/init-nvm.sh ]; then
+    source /opt/local/share/nvm/init-nvm.sh
+  fi
 
   # Enable rainbow colorization in file listing
   function rainbow-me() {
@@ -291,6 +281,21 @@ if [[ $uname = "Darwin" ]]; then
   ulimit -c unlimited
 
   # Find Matlab
+  function locate-matlab-on-mac() {
+    if ! which matlab &> /dev/null; then
+      # Prefer newer versions
+      want_matlab_rels=(R2023b R2023a R2022b R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
+      # I actually am specifically on R2019b now
+      want_matlab_rels=(R2019b $want_matlab_rels)
+      for matlab_rel in "${want_matlab_rels[@]}"; do
+        matlab_app="/Applications/MATLAB_${matlab_rel}.app"
+        if [[ -f "$matlab_app/bin/matlab" ]]; then
+          PATH="$PATH:$matlab_app/bin"
+          break
+        fi
+      done
+    fi
+  }
   locate-matlab-on-mac
 fi
 
