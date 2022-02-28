@@ -182,6 +182,9 @@ export EDITOR=vi
 
 if [[ $uname = "Darwin" ]]; then
 
+  # TODO: Conditionalize all Homebrew stuff on Homebrew being installed, and add
+  # MacPorts equivalents.
+
   # Force /usr/local (for Homebrew, including git) to front of path
   PATH="/usr/local/sbin:$PATH"
 
@@ -258,9 +261,16 @@ if [[ $uname = "Darwin" ]]; then
 
   # MacPorts stuff
 
-  if [ -e /opt/local/share/nvm/init-nvm.sh ]; then
-    source /opt/local/share/nvm/init-nvm.sh
-  fi
+  # Load NVM from MacPorts.
+  # NVM initialization is too slow for me to want it on every shell startup, so stick it
+  # inside a function I'll call manually when I want NVM.
+  # This function only loads from the MacPorts location, but I'll expand it if I start using
+  # NVM from other installation methods, so use the generic name "nvm-load".
+  function nvm-load() {
+    if [ -e /opt/local/share/nvm/init-nvm.sh ]; then
+      source /opt/local/share/nvm/init-nvm.sh
+    fi
+  }
 
   # Enable rainbow colorization in file listing
   function rainbow-me() {
@@ -275,6 +285,7 @@ if [[ $uname = "Darwin" ]]; then
   alias jsc=/System/Library/Frameworks/JavaScriptCore.framework/Versions/Current/Resources/jsc
 
   # AsciiDoc / DocBook installation
+  # TODO: This location is Homebrew-specific; update it with MacPorts and maybe other locations.
   export XML_CATALOG_FILES=/usr/local/etc/xml/catalog
 
   # Enable core dumps
@@ -310,7 +321,7 @@ export LS_COLORS="di=36:so=33:pi=33:ex=33:bd=34:cd=34:su=33:sg=33:tw=36:ow=36"
 # GNU-specific extras
 LS_COLORS="${LS_COLORS}:ln=00;04"
 
-# And allow for machine- or environment-local overrides
+# Allow for machine- or environment-local overrides
 if [[ -f $HOME/.zshbashrc-local ]]; then
   source $HOME/.zshbashrc-local
 fi
