@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# flac2alac - Convert FLAC audio files to ALAC (Apple Lossless).
+#
+#   flac2alac <file> [...]
+
+set -e
+
+for flacfile in "$@"; do
+  echo "Converting: $flacfile"
+  filebase="${flacfile%.*}"
+  m4afile="$filebase.m4a"
+  ffmpeg -v 0 -i "$flacfile" -acodec alac -vcodec copy "$m4afile"
+  echo "Wrote: $m4afile"
+done

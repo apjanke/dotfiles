@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# extract-audio-from-mp4
+#
+# Extracts the audio track from an MP4 video file (as downloaded from YouTube) to
+# an M4A audio file.
+#
+#   extract-audio-from-mp4 <file> [...]
+
+set -e
+
+for mp4file in "$@"; do
+  filebase="${mp4file%.*}"
+  m4afile="$filebase.m4a"
+
+  ffmpeg -i "$mp4file" -vn -acodec copy "$m4afile"
+  echo "Wrote: $m4afile"
+done
