@@ -188,6 +188,11 @@ if [[ $uname = "Darwin" ]]; then
   # Force /usr/local (for Homebrew, including git) to front of path
   PATH="/usr/local/sbin:$PATH"
 
+  # Pick up new /opt/homebrew location
+  if [[ -d /opt/homebrew/bin ]]; then
+    PATH="/opt/homebrew/bin:$PATH"
+  fi
+
   # Detect installed JDK 
   #if [ -z $JAVA_HOME ] && /usr/libexec/java_home &> /dev/null; then
     #export JAVA_HOME=$(/usr/libexec/java_home)
@@ -310,7 +315,7 @@ if [[ $uname = "Darwin" ]]; then
   locate-matlab-on-mac
 fi
 
-#  Appearance  #
+# Appearance
 
 # (In zsh, this may be overridden by the theme when using OMZ, but it provides a
 # default)
