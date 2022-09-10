@@ -194,9 +194,9 @@ if [[ $uname = "Darwin" ]]; then
   fi
 
   # Detect installed JDK 
-  #if [ -z $JAVA_HOME ] && /usr/libexec/java_home &> /dev/null; then
-    #export JAVA_HOME=$(/usr/libexec/java_home)
-  #fi
+  if [[ -z $JAVA_HOME ]] && /usr/libexec/java_home &> /dev/null; then
+    export JAVA_HOME=$(/usr/libexec/java_home)
+  fi
 
   # Set up Sublime Text command line support
   if whence subl &>/dev/null; then
