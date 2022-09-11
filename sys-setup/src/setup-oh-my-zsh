@@ -1,61 +1,82 @@
 #!/bin/bash
 #
-# Setup and installation of Oh My Zsh on OS X, using my conventions
+# Install and set up Oh My Zsh on Unixes, using Andrew's conventions
+# and file location preferences.
+#
+# This covers getting the files set up locally. You'll need to do the editing
+# of your ~/.zshrc yourself to get it to load up Oh My Zsh upon startup.
+#
+# Prerequisites:
+#
+#   * git (May be provided by the system, or Xcode CLT on macOS.)
+#   * curl
+
 
 set -e
 
-GITHUB_USER=apjanke
+MY_GITHUB_USER=apjanke
 
 function main() {
 
-# Prerequisites:
-#  git (may be provided by Xcode CLT)
-
 # Install Oh My Zsh
-# (using manual installation, because their install breaks $PATH)
+#
+# Do our own installation procedure, because their installer script breaks $PATH and may
+# otherwise mess up your ~/.zshrc.
 
-omz_repos_dir=~/local/opp/oh-my-zsh
+omz_repos_dir="${HOME}/local/opp/ohmyzsh"
 mkdir -p "$omz_repos_dir"
-if [[ ! -e "$omz_repos_dir/oh-my-zsh" ]]; then
-  echo "Cloning oh-my-zsh"
-  git clone https://github.com/$GITHUB_USER/oh-my-zsh.git "$omz_repos_dir/oh-my-zsh"
-  pushd "$omz_repos_dir/oh-my-zsh"
-  git remote add upstream https://github.com/robbyrussell/oh-my-zsh
-  git fetch --all
-  popd
+if [[ ! -e "$omz_repos_dir/ohmyzsh" ]]; then
+  (
+    cd "$omz_repos_dir"
+    echo "Cloning oh-my-zsh"
+    git clone https://github.com/$MY_GITHUB_USER/ohmyzsh
+    cd ohmyzsh
+    git remote add upstream https://github.com/ohmyzsh/ohmyzsh
+    git fetch --all
+  )
 fi
 if [[ ! -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
-  local not_found=$(curl -s https://api.github.com/repos/$GITHUB_USER/oh-my-zsh-custom | grep "Not Found")
-  if [[ -z "$not_found" ]]; then
-    echo "Cloning oh-my-zsh-custom"
-    git clone https://github.com/$GITHUB_USER/oh-my-zsh-custom "$omz_repos_dir/oh-my-zsh-custom"
-  else
-    echo "User $GITHUB_USER has no oh-my-zsh-custom repo; skipping"
-  fi
+  (
+    cd "$omz_repos_dir"
+    # TODO: I think this will only work for public GitHub repos
+    local not_found=$(curl -s https://api.github.com/repos/$MY_GITHUB_USER/oh-my-zsh-custom | grep "Not Found")
+    if [[ -z "$not_found" ]]; then
+      echo "Cloning oh-my-zsh-custom"
+      git clone https://github.com/$MY_GITHUB_USER/oh-my-zsh-custom "$omz_repos_dir/oh-my-zsh-custom"
+    else
+      echo "User $MY_GITHUB_USER has no (public) oh-my-zsh-custom repo; skipping."
+    fi
+  )
 fi
 if [[ ! -e ~/.oh-my-zsh ]]; then
-  echo "Linking .oh-my-zsh"
-  ln -s "$omz_repos_dir/oh-my-zsh" ~/.oh-my-zsh
+  echo "Linking ~/.oh-my-zsh"
+  ln -s "$omz_repos_dir/ohmyzsh" ~/.oh-my-zsh
   echo "Linked ~/.oh-my-zsh. You will need to edit ~/.zshrc to source it."
 fi
 if [[ ! -e ~/.oh-my-zsh-custom ]]; then
   if [[ -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
-    echo "Linking .oh-my-zsh-custom"
+    echo "Linking ~/.oh-my-zsh-custom"
     ln -s "$omz_repos_dir/oh-my-zsh-custom" ~/.oh-my-zsh-custom
   else
-    echo "No oh-my-zsh-custom repo is defined; skipping"
+    echo "No oh-my-zsh-custom repo is defined under $omz_repos_dir; skipping linking"
   fi
 fi
 
+# Check that zsh is the default shell.
+#
+# Do not actually set it; that's too aggressive, and we can't reliably tell where
+# the zsh the user would want is located.
+
 if [[ $(uname) = Darwin ]]; then
-  curr_shell=$(dscl /Search -read "/Users/$USER" UserShell | awk '{print $2}')
+  curr_shell_if_zsh=$(dscl /Search -read "/Users/$USER" UserShell | awk '{print $2}' | grep zsh 2>/dev/null)
 else
-  curr_shell="$SHELL"
+  curr_shell_if_zsh=$(echo "$SHELL" | grep zsh 2>/dev/null)
 fi
-if [[ $curr_shell != /bin/zsh ]]; then
-  chsh -s /bin/zsh
+if [[ -z "$curr_shell" ]]; then
+  echo "NOTE: Your current shell is not zsh. You will need to change it to zsh if you want to use oh-my-zsh."
 fi
 
 }
 
-main; exit 0
+main
+exit 0

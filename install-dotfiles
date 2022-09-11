@@ -67,11 +67,11 @@ function symlink() {
   	fi
   fi
   if [[ -d "$target" && ! -L "$target" ]]; then
-  	echo >&2 "Error: '$target' is a non-symlink directory"
+  	echo >&2 "ERROR: '$target' is a non-symlink directory"
   	exit 1
   fi
   if [[ -f "$target" ]]; then
-    echo "File '$target' is a regular file"
+    echo "SKIPPED: File '$target' is a regular file"
     return
   fi
   ln -sfn "$source" "$target"
@@ -104,34 +104,35 @@ todir=$HOME
 
 detect_os_type
 
-CHANGED=0
-# Normally I don't use `cd` in shell scripts, but this makes display a lot nicer
-cd $todir
+(
+  CHANGED=0
+  cd $todir
 
-# These files have their names munged to add a leading dot and strip extension.
-# Makes it easier to work with them in shell and editors.
-if [[ -e "$dotdir/$OSNAME" ]]; then
-  dotfiles=( $( (ls $dotdir/generic; ls $dotdir/$OSNAME) | sort | uniq ) )
-else
-  dotfiles=($(ls $dotdir/generic))
-fi
-for file in "${dotfiles[@]}"; do
-  tofile=".${file%\.sh}"
-  if [[ -e "$dotdir/$OSNAME/$file" ]]; then
-  	fromfile="$dotdir/$OSNAME/$file"
+  # These files have their names munged to add a leading dot and strip extension.
+  # Makes it easier to work with them in shell and editors.
+  if [[ -e "$dotdir/$OSNAME" ]]; then
+    dotfiles=( $( (ls $dotdir/generic; ls $dotdir/$OSNAME) | sort | uniq ) )
   else
-  	fromfile="$dotdir/generic/$file"
+    dotfiles=($(ls $dotdir/generic))
   fi
-  symlink "$fromfile" "$tofile"
-done
+  for file in "${dotfiles[@]}"; do
+    tofile=".${file%\.sh}"
+    if [[ -e "$dotdir/$OSNAME/$file" ]]; then
+      fromfile="$dotdir/$OSNAME/$file"
+    else
+      fromfile="$dotdir/generic/$file"
+    fi
+    symlink "$fromfile" "$tofile"
+  done
 
-CHANGED=0
-symlink "$dotdir/bin" "bin"
-if [[ $CHANGED == 1 ]]; then
-  echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
-fi
+  CHANGED=0
+  symlink "$dotdir/bin" "bin"
+  if [[ $CHANGED == 1 ]]; then
+    echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
+  fi
+)
 
-echo Dotfiles are linked to $dotdir
+echo "Dotfiles are now linked to $dotdir."
 
 }
 
@@ -139,5 +140,5 @@ if [[ $OPT_TRACE == 1 ]]; then
   set -x
 fi
 
-main; exit 0
-
+main
+exit 0
