@@ -9,9 +9,8 @@
 	tool = meld
 [core]
 	excludesfile = /Users/janke/.gitignore_global
-	editor = nano
+	editor = "code --wait"
 	#pager = diff-so-fancy | less --tabs=4 -RFX
-	editor = vi
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
@@ -60,3 +59,5 @@
 	useHttpPath = true
 [init]
 	defaultBranch = main
+[sendpack]
+	sideband = false
