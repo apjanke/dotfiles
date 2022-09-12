@@ -13,7 +13,7 @@ PROGRAM_NAME="$(basename $0)"
 
 function usage() {
   cat <<EOF
-$PROGRAM_NAME - set up system settings to apjanke's preferred ones
+$PROGRAM_NAME - Set up system settings according to apjanke's preferences
 
 Usage:
   $PROGRAM_NAME [-x]
@@ -35,7 +35,7 @@ while getopts xh opt; do
       exit 0
       ;;
     \?)
-      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      echo >&2 "ERROR: Invalid option. See '$PROGRAM_NAME -h' for usage."
       exit 1
       ;;
   esac
@@ -43,7 +43,7 @@ done
 
 function main() {
 
-# Ask for administrator password up front
+# Prompt for administrator password up front
 sudo -v
 
 ################################################
@@ -64,13 +64,15 @@ if false; then
   elif [[ $rslt == *"already installed"* ]]; then
     echo "Looks like Xcode CLT is already installed."
   else
-    echo "Error installing Xcode CLT: $rslt"
+    echo "ERROR: Failed installing Xcode CLT: $rslt"
     exit 1
   fi
 fi
 
 # Only /usr/local exists by default
 # I might want to link in some binaries, so make sure bin/ exists, too
+
+# TODO: These are outdated now that Homebrew has changed its installation location.
 
 # These sudos aren't necessary or desirable if Homebrew is being installed.
 # But I'm not going to assume that yet.
@@ -82,13 +84,12 @@ fi
 
 # Link Sublime Text command line tool
 if [[ -e /usr/local/bin/subl ]]; then
-  echo "subl is already linked"
+  echo "subl is already linked."
 else
-  # Prefer Sublime version 2 since 3 is still in beta
-  if [[ -e "/Applications/Sublime Text 2.app" ]]; then
-    sudo ln -s -v "/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
-  elif [[ -e "/Applications/Sublime Text 3.app" ]]; then
+  if [[ -e "/Applications/Sublime Text 3.app" ]]; then
     sudo ln -s -v "/Applications/Sublime Text 3.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
+  elif [[ -e "/Applications/Sublime Text 2.app" ]]; then
+    sudo ln -s -v "/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
   fi
 fi
 
@@ -158,4 +159,5 @@ if [[ $OPT_TRACE == 1 ]]; then
   set -x
 fi
 
-main; exit 0
+main
+exit 0

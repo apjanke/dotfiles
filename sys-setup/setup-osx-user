@@ -29,7 +29,7 @@ PROGRAM_NAME="$(basename $0)"
 
 function usage() {
   cat <<EOF
-$PROGRAM_NAME - set up system settings to apjanke's preferred ones
+$PROGRAM_NAME - Set up system settings according to apjanke's preferences
 
 Usage:
   $PROGRAM_NAME [-x] [-v] [-k]
@@ -108,7 +108,7 @@ function defaults-write() {
   #echo "current is '$current', want '$value'"
   # booleans are written as true/false, but read back as 1/0
   local expected
-  if [[ $value_type == bool ]]; then
+  if [[ "$value_type" == bool ]]; then
     if [[ "$value" == true ]]; then
       expected=1
     else
@@ -133,7 +133,7 @@ function defaults-delete() {
   local key="$2"
   if defaults read "$domain" "$key" &>/dev/null; then
     defaults delete "$domain" "$key"
-    v_echo "deleted defaults $domain $key"
+    v_echo "Deleted defaults $domain $key"
     changed-something
   else
     v_echo "defaults $domain $key is already deleted"
@@ -603,13 +603,13 @@ CHANGED=0
 function update_iterm_prefs() {
 local ITERM_PREFS_DIR="$DOTFILES_REPO_PATH/iTerm2/$ITERM_PREFERENCES_SET"
 if [[ ! -d "$ITERM_PREFS_DIR" ]]; then
-  echo >&2 "Warning: Not updating iTerm2 shared prefs dir because dir does not exist: '$ITERM_PREFS_DIR'"
+  echo >&2 "WARNING: Not updating iTerm2 shared prefs dir because dir does not exist: '$ITERM_PREFS_DIR'"
   return
 fi
 if ps aux | grep '[i]Term' &>/dev/null; then
   if [[ $(defaults read com.googlecode.iterm2 PrefsCustomFolder) != "$ITERM_PREFS_DIR" ]]; then
-    echo >&2 "Warning: Cannot change iTerm2 preferences shared folder while iTerm2 is running"
-    echo >&2 "Warning: iTerm2 preferences folder not updated"
+    echo >&2 "WARNING: Cannot change iTerm2 preferences shared folder while iTerm2 is running."
+    echo >&2 "WARNING: iTerm2 preferences folder was not updated."
   fi
 else
   defaults-write com.googlecode.iterm2 PrefsCustomFolder "$ITERM_PREFS_DIR"
@@ -818,7 +818,10 @@ defaults-write org.herf.Flux wakeTime -int 600
 mkdir -p ~/local/RubymineProjects
 if [[ ! -e "~/local/RubymineProjects/Homebrew-local" ]]; then
   if [[ -e "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz" ]]; then
-    ( cd ~/local/RubymineProjects; tar xf "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz")
+    (
+      cd ~/local/RubymineProjects
+      tar xf "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz"
+    )
   fi
 fi
 
@@ -832,7 +835,13 @@ $MYDIR/src/setup-oh-my-zsh
 # Prezto
 ################################################
 
-ln -s $HOME/Dropbox/#repos/prezto $HOME/.zprezto
+if [[ -d "$HOME/Dropbox/#repos/prezto" ]]; then
+  ln -s "$HOME/Dropbox/#repos/prezto" "$HOME/.zprezto"
+elif [[ -d "$HOME/repos/prezto" ]]; then
+  ln -s "$HOME/repos/prezto" "$HOME/.zprezto"
+else
+  echo "No prezto repo found; not linking to ~/.zprezto."
+fi
 
 ################################################
 # File associations
@@ -843,14 +852,14 @@ if which duti >/dev/null; then
     duti -s com.barebones.bbedit .txt all
   fi
 else
-  echo "duti is not installed. Not setting file associations."
+  echo "WARNING: duti is not installed. Not setting file associations."
 fi
 
 ################################################
 # My conventional directories
 ################################################
 
-mkdir -p ~/local/repos
+mkdir -p ~/local
 mkdir -p ~/local/opp
 mkdir -p ~/local/RubymineProjects
 
@@ -861,12 +870,10 @@ mkdir -p ~/local/RubymineProjects
 # User settings for when running as a guest inside a VM
 
 if pkgutil --pkg-info com.vmware.tools.macos.pkg.files &>/dev/null; then
-
   # Re-enable “natural” (Lion-style) scrolling
   # This will end up having old-style scrolling in effect, because of interaction
   # with the host's scrolling setup and/or the VM's mouse driver
   defaults-write NSGlobalDomain com.apple.swipescrolldirection -bool true
-
 fi
 
 ################################################
@@ -892,4 +899,5 @@ if [[ $OPT_TRACE == 1 ]]; then
   set -x
 fi
 
-main; exit 0
+main
+exit 0

@@ -2,9 +2,13 @@
 #
 # Sets up Homebrew on this machine.
 #
-# This is idempotent, so you can rerun it on a machine that already has brew installed,
-# though you may see (lots of) spurious warning messages. Each run does git fetches, so
-# it requires a network connection even if everything is already set up.
+# THIS IS OUTDATED. Homebrew has changed their default installation location, setup
+# process, and the whole Cask mechanism in the last few years (as of 2022). This script
+# has not been updated for that uet.
+#
+# This script is (hopefully) idempotent, so you can rerun it on a machine that already
+# has brew installed, though you may see (lots of) spurious warning messages. Each run
+# does git fetches, so it requires a network connection even if everything is already set up.
 
 set -e
 
@@ -12,7 +16,7 @@ PROGRAM_NAME="$(basename $0)"
 
 function usage() {
   cat <<EOF
-$PROGRAM_NAME - set up Homebrew and some formulae on this machine
+$PROGRAM_NAME - Set up Homebrew and some formulae on this machine.
 
 Usage:
   $PROGRAM_NAME [-x]
@@ -39,7 +43,7 @@ while getopts xh opt; do
       exit 0
       ;;
     \?)
-      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."
       exit 1
       ;;
   esac
@@ -60,7 +64,7 @@ function ensure_github_user_fork_remote() {
 
 function main() {
 
-THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
+THISDIR=$(dirname "${BASH_SOURCE[0]}")
 GITHUB_USERNAME=apjanke
 my_brew_cfg_dir="$THISDIR/homebrew"
 
@@ -69,9 +73,10 @@ my_brew_cfg_dir="$THISDIR/homebrew"
 # Check for Xcode or CLT
 if ! xcode-select -p >/dev/null; then
   cat >&2 <<EOF
-Error: Neither Xcode nor CLT are installed. Please install one.
-  To install CLT:  sudo xcode-select --install
-  To do Xcode:     Install Xcode and then run:
+ERROR: Neither Xcode nor Xcode CLT are installed. Please install one.
+
+  To install Scode CLT:  sudo xcode-select --install
+  To do Xcode:           Install Xcode and then run:
      sudo xcode-select -s /Applications/Xcode-<version>.app
 EOF
   exit 1
@@ -79,29 +84,29 @@ fi
 
 # Install Homebrew
 (
-if [[ -z $(which brew) ]]; then
-  INSTALLER_URL=https://raw.githubusercontent.com/Homebrew/install/master/install
-  ruby -e "$(curl -fsSL $INSTALLER_URL)"
-else
-  echo "Homebrew is already installed."
-fi
-cd $(brew --repo)
-if [[ -e .git/shallow ]]; then
-  git fetch --unshallow
-fi
-ensure_github_user_fork_remote $GITHUB_USERNAME brew
-git fetch --all
-cd "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core"
-if [[ -e .git/shallow ]]; then
-  git fetch --unshallow
-fi
-ensure_github_user_fork_remote $GITHUB_USERNAME homebrew-core
-git fetch --all
+  if [[ -z $(which brew) ]]; then
+    INSTALLER_URL=https://raw.githubusercontent.com/Homebrew/install/master/install
+    ruby -e "$(curl -fsSL $INSTALLER_URL)"
+  else
+    echo "Homebrew is already installed."
+  fi
+  cd $(brew --repo)
+  if [[ -e .git/shallow ]]; then
+    git fetch --unshallow
+  fi
+  ensure_github_user_fork_remote $GITHUB_USERNAME brew
+  git fetch --all
+  cd "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core"
+  if [[ -e .git/shallow ]]; then
+    git fetch --unshallow
+  fi
+  ensure_github_user_fork_remote $GITHUB_USERNAME homebrew-core
+  git fetch --all
 )
 
 # Pick what to install
 if [[ -e "$my_brew_cfg_dir" ]]; then
-  echo "Found brew config dir at $my_brew_cfg_dir"
+  echo "Found brew config dir at: $my_brew_cfg_dir"
   taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
   formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
   casks=($(cat "$my_brew_cfg_dir/brew-casks-standard"))
@@ -109,7 +114,7 @@ if [[ -e "$my_brew_cfg_dir" ]]; then
       casks=()
   fi
 else
-  echo "No brew config dir found at '$my_brew_cfg_dir'; Using defaults"
+  echo "No brew config dir found at '$my_brew_cfg_dir'; using defaults."
   # Common defaults
   taps=( apjanke/personal )
   formulae=( bash zsh browser duti wget dos2unix fortune git pstree tree watch )
@@ -139,4 +144,4 @@ _do brew install "${formulae[@]}"
 }
 
 main
-
+exit 0

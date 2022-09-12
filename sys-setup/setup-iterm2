@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Sets up this user's iTerm2 settings
+# Sets up this user's iTerm2 settings.
 #
 # This is a work in progress. Once it's working, it should be
 # integrated into the main setup-osx-user script.
@@ -11,6 +11,5 @@ if [[ $? == 0 ]]; then
 else
   IS_RETINA=0
 fi
-
 
 # TODO: Figure out how to get it to read its prefs from a directory

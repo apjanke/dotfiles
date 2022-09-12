@@ -1,5 +1,6 @@
 #!/bin/bash
-# set-osx-hostname
+#
+# set-osx-hostname - Set the system hostname on macOS.
 #
 # sudo set-osx-hostname <name>
 #
@@ -7,13 +8,13 @@
 # This is intended to be the equivalent of manually setting it in the
 # System Preferences > Sharing control panel.
 #
-# I'm not sure if it actually works
+# I'm not sure if this actually works.
 
 PROGRAM_NAME="$(basename $0)"
 
 function usage() {
   cat <<EOF
-$PROGRAM_NAME - set the hostname on this machine
+$PROGRAM_NAME - Set the hostname on this macOS machine.
 
 Usage:
   $PROGRAM_NAME [-x] <hostname>
@@ -35,7 +36,7 @@ while getopts xh opt; do
       exit 0
       ;;
     \?)
-      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."
       exit 1
       ;;
   esac
@@ -63,3 +64,4 @@ if [[ $OPT_TRACE == 1 ]]; then
 fi
 
 main
+exit 0

@@ -2,8 +2,8 @@
 #
 # Sets up MacPorts-based stuff on this machine.
 #
-# This assumes you already have MacPorts installed. It just installs my preferred packages
-# under MacPorts.
+# This assumes you already have MacPorts installed. It just installs apjanke's
+# preferred packages using MacPorts.
 
 set -e
 
@@ -11,7 +11,7 @@ PROGRAM_NAME="$(basename $0)"
 
 function usage() {
   cat <<EOF
-$PROGRAM_NAME - Install my preferred MacPorts packages on this machine
+$PROGRAM_NAME - Install apjanke's preferred MacPorts packages on this machine
 
 Usage:
   $PROGRAM_NAME [-x]
@@ -33,7 +33,7 @@ while getopts xh opt; do
       exit 0
       ;;
     \?)
-      echo >&2 "See '$PROGRAM_NAME -h' for usage"
+      echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage"
       exit 1
       ;;
   esac
@@ -45,14 +45,13 @@ function _do() {
 }
 
 function main() {
-
   THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
   my_macports_cfg_dir="$THISDIR/macports"
   ports=($(cat "$my_macports_cfg_dir/macports-ports-standard"))
 
   sudo port selfupdate
   sudo port -N install "${ports[@]}"
-
 }
 
 main
+exit 0
