@@ -8,6 +8,8 @@
 # This deals mostly with configuration for external commands, and not the shells' 
 # internal behavior.
 
+uname=`uname`
+
 # Aliases and environment
 
 # Misc stuff
@@ -107,8 +109,8 @@ alias qemu=qemu-system-x86_64
 #  Paths and commands  #
 
 function maybe_add_path() {
-  if [ -d "$1" ]; then
-    if [ "$2" = "prepend" ]; then
+  if [[ -d "$1" ]]; then
+    if [[ "$2" = "prepend" ]]; then
       PATH="$1:$PATH";
     else
       PATH="$PATH:$1";
@@ -120,6 +122,9 @@ function maybe_add_path() {
 PATH="/usr/local/bin:$PATH"
 # Get my local dirs on the path
 maybe_add_path "$HOME/bin" prepend
+if [[ $uname = "Darwin" ]]; then
+  maybe_add_path "$HOME/bin/osx" prepend
+fi
 maybe_add_path "$HOME/bin-local" prepend
 maybe_add_path "$HOME/local/bin" prepend
 maybe_add_path "$HOME/.local/bin" prepend
@@ -148,7 +153,6 @@ fi
 maybe_add_path $HOME/.daml/bin
 
 # ls customization
-uname=`uname`
 if ls --version 2>/dev/null | grep GNU &>/dev/null; then
   # Color on by default
   alias ls="ls --color --quoting-style=literal"
