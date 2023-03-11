@@ -128,18 +128,10 @@ fi
 maybe_add_path "$HOME/bin-local" prepend
 maybe_add_path "$HOME/local/bin" prepend
 maybe_add_path "$HOME/.local/bin" prepend
-# Hack: unconditionally load the Ruby gem location I've been working with
-maybe_add_path "$HOME/.gem/ruby/2.6.0/bin" prepend
-# Pull in system Ruby
-maybe_add_path "/usr/local/lib/ruby/gems/2.6.0/bin" prepend
-maybe_add_path "/usr/local/lib/ruby/gems/2.7.0/bin" prepend
-maybe_add_path "/usr/local/lib/ruby/gems/3.0.0/bin" prepend
-# Get the Homebrew-installed Ruby, including its gems, and have it take
-# precedence over system Ruby.
-# (I don't really know how Ruby Gems path management is supposed to work)
-maybe_add_path "/usr/local/opt/ruby/bin" prepend
+
 # Google depot tools
 maybe_add_path "$HOME/local/opt/depot_tools"
+
 maybe_add_path "/Applications/Sublime Text.app/Contents/SharedSupport/bin"
 
 # Optionally installed tools and thingies
@@ -174,6 +166,46 @@ function wwhich() {
     which $1
   fi
 }
+
+
+# Ruby Environment
+
+# TODO: Figure out a better way to handle this Ruby versioning stuff!
+# I am currently using Ruby on both Mac and Linux. On Mac, I install it with
+# either MacPorts or Homebrew. On Linux, I use the distro Ruby/bundler packages.
+# (I don't really know how Ruby Gems path management is supposed to work.)
+# (Maybe I should be using rvm instead?)
+#
+# Besides the stuff here, there's also MacPorts-managed Ruby/gem/bundler, but that
+# should be handled by the MacPorts path management stuff. I think.
+
+# Set GEM_* variables so it defaults to user instead of system installs, which is needed
+# for systems with locked-down permissions, like MacPorts-managed macOS and some Linux
+# setups. And I want to default to user-scoped Gem installs anyway.
+export GEM_HOME="${HOME}/.gem"
+# TODO: Do I need to do this too?
+# export GEM_PATH="${HOME}/.gem
+
+# This is disabled because as of 2023-01-17 I think it's wrong; it sticks the
+# version-specific system-managed Gem stuff on the path ahead of the MacPorts unversioned
+# stuff, or something like that? -apj
+#
+# for MY_RUBY_VER in 2.6.0 2.7.0 3.0.0 3.1.0 3.2.0 3.3.0; do
+#   # Pull in system Ruby Gems
+#   maybe_add_path "/usr/local/lib/ruby/gems/${MY_RUBY_VER}/bin" prepend
+#   # Add version-specific user Ruby Gems binary path
+#   maybe_add_path "$HOME/.gem/ruby/${MY_RUBY_VER}/bin" prepend
+# done
+
+# Get the Homebrew-installed Ruby, including its gems, and have it take
+# precedence over system Ruby.
+if which brew &> /dev/null; then
+  # TODO: This should maybe use `brew --prefix` or similar, instead of a hardcoded
+  # /usr/local/opt path?
+  maybe_add_path "/usr/local/opt/ruby/bin" prepend
+  # TODO: Is there a Homebrew-managed gem path to add here, too?
+fi
+
 
 #  Command configuration
 
@@ -321,8 +353,7 @@ fi
 
 # Appearance
 
-# (In zsh, this may be overridden by the theme when using OMZ, but it provides a
-# default)
+# (In zsh, this may be overridden by the theme when using OMZ, but it provides a default.)
 
 export LSCOLORS="gxxxdxdxdxexexdxdxgxgx"
 # Same baseline as LSCOLORS
@@ -331,6 +362,7 @@ export LS_COLORS="di=36:so=33:pi=33:ex=33:bd=34:cd=34:su=33:sg=33:tw=36:ow=36"
 LS_COLORS="${LS_COLORS}:ln=00;04"
 
 # Allow for machine- or environment-local overrides
+# TODO: This should maybe be pulled from an XDG local dir instead of a special file?
 if [[ -f $HOME/.zshbashrc-local ]]; then
   source $HOME/.zshbashrc-local
 fi
