@@ -1,4 +1,3 @@
-gcc
 ant
 asciidoc
 asciidoctor
@@ -20,8 +19,6 @@ git
 git-extras
 glib
 gnupg
-go
-gradle
 graphviz
 htop-osx
 hub
@@ -29,8 +26,6 @@ imagemagick
 jpeg
 libtiff
 libtool
-macvim
-makedepend
 markdown
 maven
 mercurial
@@ -41,7 +36,6 @@ pstree
 python3
 rsync
 sphinx-doc
-subversion
 tmux
 trash
 tree
