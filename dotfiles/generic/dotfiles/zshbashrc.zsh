@@ -103,8 +103,8 @@ alias lip='IP=`ipconfig getifaddr en0`; echo "${IP}"; echo "${IP}" | pbcopy'
 # Copy my public SSH key to the pasteboard
 alias pubkey="more ~/.ssh/id_rsa.pub | pbcopy | printf '=> Public key copied to pasteboard.\n'"
 
-# Miscellaneous
-alias qemu=qemu-system-x86_64
+# Fun stuff
+alias dadjoke="curl https://icanhazdadjoke.com --silent; echo"
 
 #  Paths and commands  #
 
