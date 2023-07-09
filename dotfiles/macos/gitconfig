@@ -3,8 +3,7 @@
 	email = andrew@apjanke.net
 [credential]
 	helper = osxkeychain
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager-core
+	helper = /usr/local/share/gcm-core/git-credential-manager
 [merge]
 	tool = meld
 [core]
