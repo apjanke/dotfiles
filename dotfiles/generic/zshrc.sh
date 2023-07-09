@@ -165,44 +165,57 @@ fi
 
 # Local configuration
 if [[ -f ~/.zshrc-local ]]; then
-    source ~/.zshrc-local
+  source ~/.zshrc-local
 fi
 
 # Google Cloud SDK.
 # (This is a stupid installation location for it.)
-if [[ -f '/Users/janke/Downloads/google-cloud-sdk/path.zsh.inc' ]]; then
-    . '/Users/janke/Downloads/google-cloud-sdk/path.zsh.inc'
+function () {
+if [[ -f "${HOME}/Downloads/google-cloud-sdk/path.zsh.inc" ]]; then
+  . "${HOME}/Downloads/google-cloud-sdk/path.zsh.inc"
 fi
-if [[ -f '/Users/janke/Downloads/google-cloud-sdk/completion.zsh.inc' ]]; then
-    . '/Users/janke/Downloads/google-cloud-sdk/completion.zsh.inc'
+if [[ -f "${HOME}/Downloads/google-cloud-sdk/completion.zsh.inc" ]]; then
+  . "${HOME}/Downloads/google-cloud-sdk/completion.zsh.inc"
 fi
-
-# Anaconda
-function {
-local -a conda_candidates
-conda_candidates=(
-  '/opt/anaconda3'
-  "$HOME/anaconda3"
-)
-for cand in $conda_candidates; do
-  if [[ -f "$cand/bin/conda" ]]; then
-    __conda_setup="$('$cand/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-    if [ $? -eq 0 ]; then
-        eval "$__conda_setup"
-        conda deactivate
-    else
-        if [[ -f "$cand/etc/profile.d/conda.sh" ]]; then
-            . "$cand/etc/profile.d/conda.sh"
-        else
-            export PATH="$cand/bin:$PATH"
-        fi
-    fi
-    unset __conda_setup
-  fi
-done
 }
 
-# Don't forget to:
+# Anaconda
+function apj-load-conda () {
+  # "Load" conda, adding it to the path, but not activating its base env.
+  # Call `conda activate` to actually activate it.  
+  local -a conda_candidates
+  local prefix __conda_setup
+  conda_candidates=(
+    "$HOME/anaconda3"
+    "$HOME/anaconda"
+    "$HOME/mambaforge"
+    '/opt/mambaforge'
+    '/opt/anaconda3'
+    '/opt/anaconda'
+    '/usr/local/anaconda3'
+    '/usr/local/anaconda'
+  )
+  for prefix in $conda_candidates; do
+    # echo "Checking for conda at ${prefix}"
+    if [[ -f "${prefix}/bin/conda" ]]; then
+      __conda_setup="$('${prefix}/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+      if [[ $? -eq 0 ]]; then
+        eval "$__conda_setup"
+        # conda deactivate
+      else
+        if [[ -f "${prefix}/etc/profile.d/conda.sh" ]]; then
+          . "${prefix}/etc/profile.d/conda.sh"
+        else
+          export PATH="${prefix}/bin:$PATH"
+        fi
+      fi
+      echo "Loaded conda from ${prefix}"
+      break
+    fi
+  done
+}
+
+# You can also do this:
 #   conda config --set changeps1 false
 # if you're running Agnoster or another prompt with virtualenv display in it.
 # This is a one-time-per-machine thing.

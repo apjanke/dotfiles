@@ -6,10 +6,9 @@ These are things that still need to be done manually, in addition to what the se
 
 * Sign in to AppleID/iCloud if on Mac.
 * Install Dropbox.
-* Install JDK.
 * Install fonts.
 * In System Preferences > Sharing, enable File Sharing and Remote Login.
-* `ssh localhost` to create ~/.ssh with proper permissions.
+* `ssh localhost` or `ssh-keygen` to create ~/.ssh with proper permissions.
 * Get my standard SSH keys in to ~/.ssh on my machine from somewhere else.
 
 ## Get the files needed to bootstrap the automated process
