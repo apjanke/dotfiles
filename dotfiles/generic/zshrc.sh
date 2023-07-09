@@ -180,7 +180,7 @@ fi
 }
 
 # Anaconda
-function apj-load-conda () {
+function apj-conda-load () {
   # "Load" conda, adding it to the path, but not activating its base env.
   # Call `conda activate` to actually activate it.  
   local -a conda_candidates
