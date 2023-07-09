@@ -51,7 +51,7 @@ fi
 # Load selected configurator, falling back to stock if it is not
 # installed on this system.
 
-is_at_demex () {
+function is_at_demex () {
   env | grep demex &> /dev/null
 }
 
@@ -170,7 +170,7 @@ fi
 
 # Google Cloud SDK.
 # (This is a stupid installation location for it.)
-function () {
+() {
 if [[ -f "${HOME}/Downloads/google-cloud-sdk/path.zsh.inc" ]]; then
   . "${HOME}/Downloads/google-cloud-sdk/path.zsh.inc"
 fi

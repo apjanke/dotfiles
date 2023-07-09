@@ -351,6 +351,49 @@ if [[ $uname = "Darwin" ]]; then
   locate-matlab-on-mac
 fi
 
+
+# Anaconda
+
+# To load manually:
+# eval "$(/opt/mambaforge/bin/conda shell.zsh hook)"
+
+if [[ -n "$ZSH_VERSION" ]]; then __my_shell="zsh"; else __my_shell="bash"; fi
+__conda_prefix="${HOME}/anaconda3"
+__conda_setup="$("${__conda_prefix}/bin/conda" "shell.${__my_shell}" 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "${__conda_prefix}/etc/profile.d/conda.sh" ]; then
+        . "${__conda_prefix}//etc/profile.d/conda.sh"
+    else
+        if [[ -d "${__conda_prefix}/bin" ]]; then
+            export PATH="${__conda_prefix}/bin:$PATH"
+        fi
+    fi
+fi
+unset __conda_setup
+unset __my_shell
+
+# TODO: Pull in this mamba init stuff
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+# __conda_setup="$('/opt/mambaforge/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+# if [ $? -eq 0 ]; then
+#    eval "$__conda_setup"
+#else
+#    if [ -f "/opt/mambaforge/etc/profile.d/conda.sh" ]; then
+#        . "/opt/mambaforge/etc/profile.d/conda.sh"
+#    else
+#        export PATH="/opt/mambaforge/bin:$PATH"
+#    fi
+#fi
+unset __conda_setup
+
+if [ -f "/opt/mambaforge/etc/profile.d/mamba.sh" ]; then
+    . "/opt/mambaforge/etc/profile.d/mamba.sh"
+fi
+# <<< conda initialize <<<
+
 # Appearance
 
 # (In zsh, this may be overridden by the theme when using OMZ, but it provides a default.)
