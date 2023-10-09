@@ -182,13 +182,13 @@ fi
 # Anaconda
 function apj-conda-load () {
   # "Load" conda, adding it to the path, but not activating its base env.
-  # Call `conda activate` to actually activate it.  
+  # Call regular `conda activate` to actually activate it.  
   local -a conda_candidates
-  local prefix __conda_setup
+  local prefix conda_setup_code
   conda_candidates=(
-    "$HOME/anaconda3"
-    "$HOME/anaconda"
-    "$HOME/mambaforge"
+    "${HOME}/anaconda3"
+    "${HOME}/anaconda"
+    "${HOME}/mambaforge"
     '/opt/mambaforge'
     '/opt/anaconda3'
     '/opt/anaconda'
@@ -198,15 +198,14 @@ function apj-conda-load () {
   for prefix in $conda_candidates; do
     # echo "Checking for conda at ${prefix}"
     if [[ -f "${prefix}/bin/conda" ]]; then
-      __conda_setup="$('${prefix}/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+      conda_setup_code="$('${prefix}/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
       if [[ $? -eq 0 ]]; then
-        eval "$__conda_setup"
-        # conda deactivate
+        eval "$conda_setup_code"
       else
         if [[ -f "${prefix}/etc/profile.d/conda.sh" ]]; then
-          . "${prefix}/etc/profile.d/conda.sh"
+          source "${prefix}/etc/profile.d/conda.sh"
         else
-          export PATH="${prefix}/bin:$PATH"
+          PATH="${prefix}/bin:$PATH"
         fi
       fi
       echo "Loaded conda from ${prefix}"
@@ -215,7 +214,3 @@ function apj-conda-load () {
   done
 }
 
-# You can also do this:
-#   conda config --set changeps1 false
-# if you're running Agnoster or another prompt with virtualenv display in it.
-# This is a one-time-per-machine thing.
