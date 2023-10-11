@@ -24,8 +24,6 @@
 	clean = git hawser clean %f
 	smudge = git hawser smudge %f
 	required = true
-[push]
-	default = simple
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
@@ -42,16 +40,14 @@
 	who = shortlog -sn --
 [github]
 	user = apjanke
-[commit]
 [pager]
 	status = false
 [commit]
 	template = /Users/janke/.stCommitMsg
 [hub]
 	protocol = https
-[mergetool "gitblade"]
-	cmd = \"/Applications/GitBlade.app/Contents/MacOS/GitBlade\" -c \"\"
-	trustExitCode = true
+[push]
+	default = simple
 [pull]
 	rebase = false
 [credential "https://dev.azure.com"]
