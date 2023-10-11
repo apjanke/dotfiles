@@ -25,6 +25,7 @@ libtool
 macvim
 makedepend
 mercurial
+mpstats
 neofetch
 pkgconfig
 pstree
