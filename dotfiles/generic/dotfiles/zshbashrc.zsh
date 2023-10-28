@@ -221,13 +221,8 @@ if [[ $uname = "Darwin" ]]; then
   # TODO: Conditionalize all Homebrew stuff on Homebrew being installed, and add
   # MacPorts equivalents.
 
-  # Force /usr/local (for Homebrew, including git) to front of path
+  # Force /usr/local/sbin (for Homebrew) to front of path
   PATH="/usr/local/sbin:$PATH"
-
-  # Pick up new /opt/homebrew location
-  if [[ -d /opt/homebrew/bin ]]; then
-    PATH="/opt/homebrew/bin:$PATH"
-  fi
 
   # Detect installed JDK 
   if [[ -z $JAVA_HOME ]] && /usr/libexec/java_home &> /dev/null; then
@@ -255,50 +250,73 @@ if [[ $uname = "Darwin" ]]; then
   # Also, clear Apple’s System Logs to improve shell startup speed
   alias emptytrash="sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl"
   
-  # Homebrew stuff
+  # Homebrew setup
 
-  export HOMEBREW_DEVELOPER=1
-  export HOMEBREW_SANDBOX=1
-  export HOMEBREW_EDITOR=subl
-  export HOMEBREW_NO_AUTO_UPDATE=1
-  alias bas='brew audit --strict'
-  alias baso='brew audit --strict --online'
-  alias brew-repo='cd $(brew --repo)'
-  alias brew-core='cd $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula'
-  alias brew-apjanke='cd $(brew --repo)/Library/Taps/apjanke/homebrew-personal/Formula'
-  alias brew-octave='cd $(brew --repo)/Library/Taps/octave-app/homebrew-octave-app/Formula'
-  alias bpull='brew pull --branch-okay'
-  alias bpullb='brew pull --branch-okay --bottle'
-  alias bsr='brew style --rspec --display-cop-names'
+  if [[ $USE_HOMEBREW = 1 ]]; then
+    # Load Homebrew
+    # This detects the Intel vs. Apple Silicon location, plus non-default locations. 
+    # The default /usr/local on Intel will already be on the default PATH.
+    _cand_brew_prefixes=(
+      '/opt/homebrew'
+      '/usr/local/homebrew'
+    )
+    for _brew_prefix in "$_cand_brew_prefixes[@]"; do
+      if [[ -f "${_brew_prefix}/bin/brew" ]]; then
+        PATH="$PATH:${_brew_prefix}/bin"
+        break
+      fi
+    done
+    unset _cand_brew_prefixes _brew_prefix
+    # My old unconditional loading code:
+    # if [[ -d /opt/homebrew/bin ]]; then
+    #   PATH="/opt/homebrew/bin:$PATH"
+    # fi
+
+    # brew configuration and custom aliases
+    export HOMEBREW_DEVELOPER=1
+    export HOMEBREW_SANDBOX=1
+    export HOMEBREW_EDITOR=subl
+    export HOMEBREW_NO_AUTO_UPDATE=1
+    alias bas='brew audit --strict'
+    alias baso='brew audit --strict --online'
+    alias brew-repo='cd $(brew --repo)'
+    alias brew-core='cd $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula'
+    alias brew-apjanke='cd $(brew --repo)/Library/Taps/apjanke/homebrew-personal/Formula'
+    alias brew-octave='cd $(brew --repo)/Library/Taps/octave-app/homebrew-octave-app/Formula'
+    alias bpull='brew pull --branch-okay'
+    alias bpullb='brew pull --branch-okay --bottle'
+    alias bsr='brew style --rspec --display-cop-names'
+
+    # brew-gist-logs - brew gist-logs wrapper, with login support
+    function brew-gist-logs() {
+      if [[ -e ~/.ssh/github-token ]]; then
+        # Use a subshell so the secret isn't left in main shell's environment
+        ( export HOMEBREW_GITHUB_API_TOKEN=$(cat ~/.ssh/github-token); brew gist-logs $* )
+      else
+        echo "~/.ssh/github-token not found" >&2
+        return 1
+      fi
+    }
+
+    # Various Homebrew wrappers
+    function brew-gist-bug() {
+      brew-gist-logs --new-issue $*
+    }
+
+    function brew-install-debug() {
+      HOMEBREW_MAKE_JOBS=1 brew install -v $* 2>&1
+    }
+
+    function brew-build() {
+      brew install --build-from-source $*
+    }
+
+    function brew-build-debug() {
+      HOMEBREW_MAKE_JOBS=1 brew install -v --build-from-source $* 2>&1
+    }
+  fi
+
   alias plistbuddy='/usr/libexec/PlistBuddy'
-
-  # brew-gist-logs - brew gist-logs wrapper, with login support
-  function brew-gist-logs() {
-    if [[ -e ~/.ssh/github-token ]]; then
-      # Use a subshell so the secret isn't left in main shell's environment
-      ( export HOMEBREW_GITHUB_API_TOKEN=$(cat ~/.ssh/github-token); brew gist-logs $* )
-    else
-      echo "~/.ssh/github-token not found" >&2
-      return 1
-    fi
-  }
-
-  # Various Homebrew wrappers
-  function brew-gist-bug() {
-    brew-gist-logs --new-issue $*
-  }
-
-  function brew-install-debug() {
-    HOMEBREW_MAKE_JOBS=1 brew install -v $* 2>&1
-  }
-
-  function brew-build() {
-    brew install --build-from-source $*
-  }
-
-  function brew-build-debug() {
-    HOMEBREW_MAKE_JOBS=1 brew install -v --build-from-source $* 2>&1
-  }
 
   # MacPorts stuff
 
@@ -387,11 +405,11 @@ unset __my_shell
 #        export PATH="/opt/mambaforge/bin:$PATH"
 #    fi
 #fi
-unset __conda_setup
-
-if [ -f "/opt/mambaforge/etc/profile.d/mamba.sh" ]; then
-    . "/opt/mambaforge/etc/profile.d/mamba.sh"
-fi
+#unset __conda_setup
+#
+#if [[ -f "/opt/mambaforge/etc/profile.d/mamba.sh" ]]; then
+#    . "/opt/mambaforge/etc/profile.d/mamba.sh"
+#fi
 # <<< conda initialize <<<
 
 # Appearance
@@ -406,6 +424,8 @@ LS_COLORS="${LS_COLORS}:ln=00;04"
 
 # Allow for machine- or environment-local overrides
 # TODO: This should maybe be pulled from an XDG local dir instead of a special file?
+# TODO: Maybe need one that's loaded early so it can control other initialization stuff
+# in this script?
 if [[ -f $HOME/.zshbashrc-local ]]; then
-  source $HOME/.zshbashrc-local
+  source "${HOME}/.zshbashrc-local"
 fi

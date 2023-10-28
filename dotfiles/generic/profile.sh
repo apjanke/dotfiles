@@ -3,14 +3,14 @@
 #
 # (non-bash-specific login shell configuration)
 
+# Configuration and choices
 
-#  Non-platform-specifc stuff
+# Whether to load Homebrew (in addition to MacPorts). If on, then brew's stuff
+# will be loaded in front of MacPorts.
+USE_HOMEBREW=1
 
-if which subl &>/dev/null; then
-    # Let's try using Sublime Text for shell-invoked editor, too
-   export EDITOR='subl -w'
-   export VISUAL='subl -w'
-fi
+
+# Path setup
 
 export PATH
 
@@ -21,7 +21,7 @@ if [[ -e $HOME/.rvm/bin ]]; then
   fi
 fi
 
-#  Anaconda
+# Anaconda
 
 # Currently all commented out because I'm trying to work with system pythons
 
@@ -34,3 +34,8 @@ fi
 #if [[ -e "$HOME/anaconda3/bin" ]]; then
 #  PATH="$HOME/anaconda3/bin:$PATH"
 #fi
+
+# Allow for machine- or environment-local overrides
+if [[ -f $HOME/.profile-local ]]; then
+  source "${HOME}/.profile-local"
+fi

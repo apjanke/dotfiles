@@ -214,4 +214,3 @@ function apj-conda-load () {
   done
 }
 
-
