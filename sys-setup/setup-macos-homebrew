@@ -4,7 +4,8 @@
 #
 # THIS IS OUTDATED. Homebrew has changed their default installation location, setup
 # process, and the whole Cask mechanism in the last few years (as of 2022). This script
-# has not been updated for that uet.
+# has not been updated for that yet. Also, the location of taps and Library under the
+# Homebrew prefix has changed, and may vary between Intel and AS. Need to account for that.
 #
 # This script is (hopefully) idempotent, so you can rerun it on a machine that already
 # has brew installed, though you may see (lots of) spurious warning messages. Each run
@@ -55,10 +56,10 @@ function _do() {
 }
 
 function ensure_github_user_fork_remote() {
-  USERNAME=$1
-  REPO=$2
-  if ! git remote get-url $USERNAME &>/dev/null; then
-    _do git remote add $USERNAME https://github.com/$USERNAME/$REPO.git
+  local USERNAME="$1"
+  local REPO="$2"
+  if ! git remote get-url "$USERNAME" &>/dev/null; then
+    _do git remote add "$USERNAME" "https://github.com/${USERNAME}/${REPO}.git"
   fi
 }
 
@@ -94,18 +95,26 @@ fi
   if [[ -e .git/shallow ]]; then
     git fetch --unshallow
   fi
-  ensure_github_user_fork_remote $GITHUB_USERNAME brew
+  ensure_github_user_fork_remote "$GITHUB_USERNAME" brew
   git fetch --all
-  cd "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core"
-  if [[ -e .git/shallow ]]; then
-    git fetch --unshallow
+  if [[ -d "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core" ]]; then
+    cd "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core"
+    if [[ -e .git/shallow ]]; then
+      git fetch --unshallow
+    fi
+    ensure_github_user_fork_remote "$GITHUB_USERNAME" homebrew-core
+    git fetch --all
   fi
-  ensure_github_user_fork_remote $GITHUB_USERNAME homebrew-core
-  git fetch --all
 )
+# Account for varying location of Library; changed introduced around 2020
+if [[ -d "$(brew --prefix)/Homebrew" ]]; then
+  HOMEBREW_LIBRARY="$(brew --prefix)/Homebrew/Library"
+else
+  HOMEBREW_LIBRARY="$(brew --prefix)/Library"
+fi
 
 # Pick what to install
-if [[ -e "$my_brew_cfg_dir" ]]; then
+if [[ -d "$my_brew_cfg_dir" ]]; then
   echo "Found brew config dir at: $my_brew_cfg_dir"
   taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
   formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
@@ -116,17 +125,17 @@ if [[ -e "$my_brew_cfg_dir" ]]; then
 else
   echo "No brew config dir found at '$my_brew_cfg_dir'; using defaults."
   # Common defaults
-  taps=( apjanke/personal )
+  taps=( apjanke/personal adoptopenjdk/openjdk )
   formulae=( bash zsh browser duti wget dos2unix fortune git pstree tree watch )
   casks=()
 fi
 
 # Install taps
 for tap in "${taps[@]}"; do
-  tap_base_name=homebrew-$(basename $tap)
-  tap_owner_name=$(dirname $tap)
-  _do brew tap --full $tap
-  cd $(brew --prefix)/Homebrew/Library/Taps/$tap_owner_name/$tap_base_name
+  tap_base_name=homebrew-$(basename "$tap")
+  tap_owner_name=$(dirname "$tap")
+  _do brew tap "$tap"
+  cd "${HOMEBREW_LIBRARY}/Taps/$tap_owner_name/$tap_base_name"
   ensure_github_user_fork_remote $GITHUB_USERNAME $tap_base_name
   git fetch --all
 done
@@ -135,11 +144,10 @@ done
 
 # Do casks first so Java gets picked up; it is a dependency of some formulae
 for cask in "${casks[@]}"; do
-  _do brew cask install $cask
+  _do brew install --cask $cask
 done
 
 _do brew install "${formulae[@]}"
-
 
 }
 
