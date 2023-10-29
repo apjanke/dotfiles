@@ -63,17 +63,18 @@ alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
 alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
 alias octave="octave -q"  # suppress banner
-alias octave-default="octave-default -q"  # suppress banner
-alias octave-stable="octave-stable -q"  # suppress banner
-alias octave4="octave@4.4.1 -q"  # suppress banner
-alias octave5="octave@5.1.0 -q"  # suppress banner
+if which octave-default &>/dev/null; then
+  alias octave-default="octave-default -q"  # suppress banner
+fi
+if which octave-stable &>/dev/null; then
+  alias octave-stable="octave-stable -q"  # suppress banner
+fi
 alias octave6="octave@6.1.0 -q"  # suppress banner
 if which brew &>/dev/null; then
   alias octaveapp5='$(brew --prefix octave-octave-app@5.1.0)/bin/octave -q'
 fi
 
 # Directory navigation
-# (Based on OMZ's lib/completion)
 alias -- -='cd -'
 alias ~="cd ~"
 alias ..='cd ..'
