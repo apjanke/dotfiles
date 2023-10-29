@@ -84,11 +84,10 @@ alias cd...='cd ../..'
 alias cd....='cd ../../..'
 alias pd=pushd
 alias ppd=popd
-mkcd() {
+function mkcd() {
   mkdir -p "$1"
   cd "$1"
 }
-alias subl-dotfiles="subl $HOME/Dropbox/\#repos/dotfiles/dotfiles"
 
 # OMZ & Prezto sometimes alias these for "safety" to versions that prompt
 # on clobber, etc. I don't want that.
@@ -230,8 +229,8 @@ if [[ $uname = "Darwin" ]]; then
     export JAVA_HOME=$(/usr/libexec/java_home)
   fi
 
-  # Set up Sublime Text command line support
-  if whence subl &>/dev/null; then
+  # Editor command line support
+  if whence code &>/dev/null; then
     export VISUAL='code'
     export GUIEDITOR='code'
   fi
@@ -276,7 +275,7 @@ if [[ $uname = "Darwin" ]]; then
     # brew configuration and custom aliases
     export HOMEBREW_DEVELOPER=1
     export HOMEBREW_SANDBOX=1
-    export HOMEBREW_EDITOR=subl
+    export HOMEBREW_EDITOR=code
     export HOMEBREW_NO_AUTO_UPDATE=1
     alias bas='brew audit --strict'
     alias baso='brew audit --strict --online'
@@ -315,13 +314,12 @@ if [[ $uname = "Darwin" ]]; then
     function brew-build-debug() {
       HOMEBREW_MAKE_JOBS=1 brew install -v --build-from-source $* 2>&1
     }
-  fi
+  fi  # Homebrew
 
   alias plistbuddy='/usr/libexec/PlistBuddy'
 
-  # MacPorts stuff
-
-  # Load NVM from MacPorts.
+  # NVM, loaded from MacPorts or similar
+  #
   # NVM initialization is too slow for me to want it on every shell startup, so stick it
   # inside a function I'll call manually when I want NVM.
   # This function only loads from the MacPorts location, but I'll expand it if I start using
@@ -418,7 +416,7 @@ unset __my_shell
 # (In zsh, this may be overridden by the theme when using OMZ, but it provides a default.)
 
 export LSCOLORS="gxxxdxdxdxexexdxdxgxgx"
-# Same baseline as LSCOLORS
+# Same baseline as LSCOLORS, in different (GNU) format
 export LS_COLORS="di=36:so=33:pi=33:ex=33:bd=34:cd=34:su=33:sg=33:tw=36:ow=36"
 # GNU-specific extras
 LS_COLORS="${LS_COLORS}:ln=00;04"
