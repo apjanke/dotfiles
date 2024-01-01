@@ -3,16 +3,16 @@
 # install-dotfiles
 #
 # Installs symlinks to dotfiles in this repo into current user's $HOME dir.
-# Blows away existing dotfiles, even if they're not symlinks.
 #
-# This just installs the "generic" (non platform or hardware specific) links.
-# I used to have additional specialized links for different OSes or retina/non-retina,
-# but I've gotten away from that now, so there's no non-generic logic left.
+# Blows away existing dotfiles, if they're currently symlinks. Does not check to see
+# if those symlinks are pointing to what looks like this dotfiles repo or a variant
+# of it, so be careful.
 
-set -e
-if [[ $OPT_TRACE == 1 ]]; then
-  set -x
-fi
+set -o errexit
+set -o nounset
+set -o pipefail
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+
 
 PROGRAM_NAME="$(basename $0)"
 
@@ -68,12 +68,10 @@ function symlink() {
       v_echo "Symlink '$target' is already set up"
   	  return
   	fi
-  fi
-  if [[ -d "$target" && ! -L "$target" ]]; then
+  elif [[ -d "$target" && ! -L "$target" ]]; then
   	echo >&2 "ERROR: '$target' is a non-symlink directory"
   	exit 1
-  fi
-  if [[ -f "$target" ]]; then
+  elif [[ -f "$target" ]]; then
     echo "SKIPPED: File '$target' is a regular file"
     return
   fi

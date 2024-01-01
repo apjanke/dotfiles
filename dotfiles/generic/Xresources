@@ -4,7 +4,7 @@
 !URxvt*font: xft:Meslo LG M Regular:size=10
 ! Plain Menlo seems to work though
 !URxvt*font: xft:Menlo:size=10
-! But I find it ugly under X11, so just used regular fixed width
+! But I find it ugly under X11, so just use regular fixed width.
 Rxvt*font: fixed
 Rxvt*background: Black
 Rxvt*foreground: White

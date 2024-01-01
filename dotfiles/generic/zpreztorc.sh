@@ -9,7 +9,7 @@
 # Theme to use down below in prompt section
 # Other themes I like:
 #   sorin, steeef, cloud, agnoster, sorin-apj, apjanke-01
-_ZPREZTO_THEME="sorin-apj"
+_ZPREZTO_THEME="${JX_PREZTO_THEME:-sorin}"
 
 # Set case-sensitivity for completion, history lookup, etc.
 zstyle ':prezto:*:*' case-sensitive 'no'

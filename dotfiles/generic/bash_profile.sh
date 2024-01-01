@@ -1,15 +1,18 @@
-# bash_profile.sh for apjanke
+# .bash_profile - Bash login shell configuration 
 #
-# (bash-specific login shell configuration)
+# Bash-specific login shell configuration.
 
-# include common bourne/unix configuration
-. $HOME/.profile
+if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
+  set -o xtrace
+fi
 
-# include common interactive bash settings
-[ -r $HOME/.bashrc ] && . $HOME/.bashrc
+# Include common bashlike configuration
+if [[ -f "$HOME/.profile" ]]; then . "$HOME/.profile"; fi
 
-# bash-specific login-specific configuration
+# Include interactive bash settings
+if [[ -r "$HOME/.bashrc" ]]; then . "$HOME/.bashrc"; fi
 
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+# Bash-specific stuff
 
+# (nothing here currently)
 

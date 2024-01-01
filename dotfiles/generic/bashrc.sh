@@ -2,20 +2,24 @@
 #
 # (interactive bash configuration)
 
-# Pull in common bash/zsh configuration
-if [ -f $HOME/.dotfiles/zshbashrc.zsh ]; then source $HOME/.dotfiles/zshbashrc.zsh; fi
+if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
+  set -o xtrace
+fi
 
-# bash-specific settings
+# Pull in common bashlike configuration
+if [[ -f "$HOME/.dots/bashyrc.sh" ]]; then
+  source "$HOME/.dots/bashyrc.sh"
+fi
 
-unset maybe_add_path
+# Bash-specific settings
 
-#  History and interaction
+
+# History and interaction
 
 history_control=ignoredups
 export HISTIGNORE="&:ls:ls -la:[bf]g:exit"
-# Larger bash history (allow 32^3 entries; default is 500)
-export HISTSIZE=32768
-export HISTFILESIZE=$HISTSIZE
+export HISTSIZE=32768   # Longer history (default is only 500)
+export HISTFILESIZE="$HISTSIZE"
 export HISTCONTROL=ignoredups
 export HISTIGNORE="ls:ls *:cd:cd -:pwd:exit:date:* --help"
 shopt -s histappend
@@ -25,22 +29,20 @@ set -o vi
 shopt -s cdspell
 shopt -s checkwinsize
 
-#  Appearance
+# Appearance
 
-if [ "$USER" = "janke" ]; then
+if [[ "$USER" = "janke" ]]; then
   export PS1="[\W] \$ "
 else
   export PS1="[\h: \W] \$ "
 fi
 
-#  Homebrew
+# Homebrew bash-specifics
 
-if type brew 2&>/dev/null; then
-  for completion_file in $(brew --prefix)/etc/bash_completion.d/*; do
-    source "$completion_file"
+if type brew &> /dev/null; then
+  for _completion_file in $(brew --prefix)/etc/bash_completion.d/*; do
+    source "$_completion_file"
   done
 fi
+unset _completion_file
 
-#  Miscellaneous
-
-export PATH="$PATH:$HOME/.rvm/bin" # Add RVM to PATH for scripting
