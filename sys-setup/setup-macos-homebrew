@@ -84,28 +84,12 @@ EOF
 fi
 
 # Install Homebrew
-(
-  if [[ -z $(which brew) ]]; then
-    INSTALLER_URL=https://raw.githubusercontent.com/Homebrew/install/master/install
-    ruby -e "$(curl -fsSL $INSTALLER_URL)"
-  else
-    echo "Homebrew is already installed."
-  fi
-  cd $(brew --repo)
-  if [[ -e .git/shallow ]]; then
-    git fetch --unshallow
-  fi
-  ensure_github_user_fork_remote "$GITHUB_USERNAME" brew
-  git fetch --all
-  if [[ -d "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core" ]]; then
-    cd "$(brew --prefix)/Homebrew/Library/Taps/homebrew/homebrew-core"
-    if [[ -e .git/shallow ]]; then
-      git fetch --unshallow
-    fi
-    ensure_github_user_fork_remote "$GITHUB_USERNAME" homebrew-core
-    git fetch --all
-  fi
-)
+if [[ -z $(which brew) ]]; then
+  INSTALLER_URL='https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh'
+  ruby -e "$(curl -fsSL $INSTALLER_URL)"
+else
+  echo "Homebrew is already installed. Not installing."
+fi
 # Account for varying location of Library; changed introduced around 2020
 if [[ -d "$(brew --prefix)/Homebrew" ]]; then
   HOMEBREW_LIBRARY="$(brew --prefix)/Homebrew/Library"
@@ -126,18 +110,15 @@ else
   echo "No brew config dir found at '$my_brew_cfg_dir'; using defaults."
   # Common defaults
   taps=( apjanke/personal adoptopenjdk/openjdk )
-  formulae=( bash zsh browser duti wget dos2unix fortune git pstree tree watch )
+  formulae=( bash zsh wget dos2unix fortune git pstree tree watch )
   casks=()
 fi
 
 # Install taps
 for tap in "${taps[@]}"; do
-  tap_base_name=homebrew-$(basename "$tap")
+  tap_base_name="homebrew-$(basename "$tap")"
   tap_owner_name=$(dirname "$tap")
   _do brew tap "$tap"
-  cd "${HOMEBREW_LIBRARY}/Taps/$tap_owner_name/$tap_base_name"
-  ensure_github_user_fork_remote $GITHUB_USERNAME $tap_base_name
-  git fetch --all
 done
 
 # Install formulae and casks
@@ -148,6 +129,9 @@ for cask in "${casks[@]}"; do
 done
 
 _do brew install "${formulae[@]}"
+
+echo ""
+echo "Homebrew setup complete."
 
 }
 

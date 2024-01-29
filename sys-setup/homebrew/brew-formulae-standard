@@ -2,7 +2,6 @@ ant
 asciidoc
 asciidoctor
 bash-completion
-browser
 ccache
 cmake
 coreutils
