@@ -147,7 +147,9 @@ if [[ $JX_CONDA_AUTOLOAD = 1 ]]; then
     jx-conda-load
   fi
   if [[ $JX_CONDA_AUTOACTIVATE = 1 ]]; then
-    conda activate
+    if which conda &>/dev/null; then
+      conda activate
+    fi
   fi
 fi
 
