@@ -129,7 +129,7 @@ if [[ $__uname = "Darwin" ]]; then
       if [[ -f "${_brew_prefix}/bin/brew" ]]; then
         # Homebrew tries not to replace system commands, so at end of path should be fine?
         export HOMEBREW_PREFIX="$_brew_prefix"
-        PATH="$PATH:${HOMEBREW_PREFIX}/bin"
+        PATH="${HOMEBREW_PREFIX}/bin:$PATH"
         break
       fi
     done
