@@ -96,6 +96,15 @@ if [[ $__uname = "Darwin" ]]; then
     man "$*" | man2html -title "man $*" | browser
   }
 
+  # Do a find but exclude .git repo directories
+  function find-no-git {
+    local dir="$1"
+    shift
+    local args=( "$@" )
+
+    find "$dir" \( -type d -name .git -prune \) -o "${args[@]}"
+  }
+
   # Empty the Trash etc on all mounted volumes
   function emptytrash() {
     sudo rm -rfv /Volumes/*/.Trashes
