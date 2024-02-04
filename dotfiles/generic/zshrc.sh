@@ -8,7 +8,7 @@
 #PS4=$'+ %D{%s.%6.} %N:%i> '
 
 if type brew &>/dev/null; then
-  HOMEBREW_PREFIX=$(brew --prefix)
+  JX_HOMEBREW_PREFIX=$(brew --prefix)
 fi
 
 # Convert TERMINFO to a multi-entry path and pick up Homebrew's terminfo
@@ -17,8 +17,8 @@ fi
 () {
   if [[ -z $TERMINFO_DIRS ]]; then
     export TERMINFO_DIRS=~/.terminfo
-    if [[ -n $HOMEBREW_PREFIX ]]; then
-      TERMINFO_DIRS="$TERMINFO_DIRS:$HOMEBREW_PREFIX/share/terminfo"
+    if [[ -n $JX_HOMEBREW_PREFIX ]]; then
+      TERMINFO_DIRS="$TERMINFO_DIRS:$JX_HOMEBREW_PREFIX/share/terminfo"
     fi
     if [[ -n $TERMINFO ]]; then
       TERMINFO_DIRS="$TERMINFO_DIRS:$TERMINFO"
@@ -37,8 +37,8 @@ fi
   local site_dir site_dirs
 
   site_dirs=( /usr/local/share/zsh/site-functions )
-  if [[ -n $HOMEBREW_PREFIX ]]; then
-    site_dirs+="$HOMEBREW_PREFIX/share/zsh/site-functions"
+  if [[ -n $JX_HOMEBREW_PREFIX ]]; then
+    site_dirs+="$JX_HOMEBREW_PREFIX/share/zsh/site-functions"
   fi
   for site_dir ( $site_dirs ); do
     if [[ -d $site_dir  && ${fpath[(I)$site_dir]} == 0 ]]; then

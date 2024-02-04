@@ -132,13 +132,14 @@ if [[ $__uname = "Darwin" ]]; then
     # The default /usr/local on Intel will already be on the default PATH.
     _cand_brew_prefixes=(
       '/opt/homebrew'
+      '/usr/local'
       '/usr/local/homebrew'
     )
     for _brew_prefix in "$_cand_brew_prefixes[@]"; do
       if [[ -f "${_brew_prefix}/bin/brew" ]]; then
         # Homebrew tries not to replace system commands, so at end of path should be fine?
-        export HOMEBREW_PREFIX="$_brew_prefix"
-        PATH="${HOMEBREW_PREFIX}/bin:$PATH"
+        export JX_HOMEBREW_PREFIX="$_brew_prefix"
+        PATH="${JX_HOMEBREW_PREFIX}/bin:$PATH"
         break
       fi
     done
@@ -196,9 +197,9 @@ if [[ $__uname = "Darwin" ]]; then
     echo "old XML_CATALOG_FILES = ${XML_CATALOG_FILES}"
     export XML_CATALOG_FILES
     # The Homebrew one
-    if [[ -n $HOMEBREW_PREFIX ]]; then
-      if [[ -f "${HOMEBREW_PREFIX}/etc/xml/catalog" ]]; then
-        XML_CATALOG_FILES="${XML_CATALOG_FILES} file://${HOMEBREW_PREFIX}/etc/xml/catalog"
+    if [[ -n $JX_HOMEBREW_PREFIX ]]; then
+      if [[ -f "${JX_HOMEBREW_PREFIX}/etc/xml/catalog" ]]; then
+        XML_CATALOG_FILES="${XML_CATALOG_FILES} file://${JX_HOMEBREW_PREFIX}/etc/xml/catalog"
       fi
     fi
     # The MacPorts one
