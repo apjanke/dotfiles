@@ -13,7 +13,6 @@ set -o nounset
 set -o pipefail
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
-
 PROGRAM_NAME="$(basename $0)"
 
 function usage() {
@@ -99,7 +98,8 @@ function detect_os_type() {
 
 function main() {
 
-sourcedir=`dirname $0`
+sourcedir=$(dirname "$0")
+dotfiles_repo_dir="$sourcedir"
 dotdir=$(cd $sourcedir/dotfiles; pwd)
 todir=$HOME
 
@@ -127,7 +127,7 @@ detect_os_type
   done
 
   CHANGED=0
-  symlink "$dotdir/bin" "bin"
+  symlink "${dotfiles_repo_dir}/bin" "bin"
   if [[ $CHANGED == 1 ]]; then
     echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
   fi
