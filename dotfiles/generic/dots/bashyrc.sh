@@ -147,7 +147,6 @@ if [[ $__uname = "Darwin" ]]; then
 
     # brew configuration
     # export HOMEBREW_DEVELOPER=1
-    export HOMEBREW_SANDBOX=1
     export HOMEBREW_EDITOR=code
     export HOMEBREW_NO_AUTO_UPDATE=1
     export HOMEBREW_NO_ENV_HINTS=1
