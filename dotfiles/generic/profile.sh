@@ -13,6 +13,8 @@ fi
 # Whether to load Homebrew (in addition to MacPorts). If on, then brew's stuff
 # will be loaded in front of MacPorts.
 export JX_USE_HOMEBREW="${JX_USE_HOMEBREW:-1}"
+# Whether to load MacPorts (in addition to Homebrew).
+export JX_USE_MACPORTS="${JX_USE_MACPORTS:-0}"
 # Anaconda loading controls
 export JX_CONDA_AUTOLOAD="${JX_CONDA_AUTOLOAD:-1}"
 export JX_CONDA_AUTOACTIVATE="${JX_CONDA_AUTOACTIVATE:-1}"
@@ -34,6 +36,26 @@ if [[ $__uname = "Darwin" ]]; then
   # And why does it say "zsh" here? Is TMPPREFIX zsh-specific?
   if [[ $OSTYPE == Darwin* ]]; then
     TMPPREFIX="$TMPDIR/zsh"
+  fi
+
+  # MacPorts
+  function jx-load-macports() {
+    local bindir
+    local -a bindirs
+    # In reverse order of addition
+    bindirs=(
+      '/opt/local/sbin'
+      '/opt/local/bin'
+    )
+    for bindir in $bindirs; do
+      if [[ -d "$bindir" ]]; then
+        PATH="${bindir}:$PATH"  
+      fi
+    done
+  }
+
+  if [[ "$JX_USE_MACPORTS" = 1 ]]; then
+    jx-load-macports
   fi
 
 fi

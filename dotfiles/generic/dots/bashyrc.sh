@@ -91,18 +91,9 @@ if [[ $__uname = "Darwin" ]]; then
   }
 
   # manb - view a man page in the browser
-  # (Requires man2html and browser from homebrew or MacPorts)
+  # (Requires man2html and browser from Homebrew or MacPorts)
   function manb {
     man "$*" | man2html -title "man $*" | browser
-  }
-
-  # Do a find but exclude .git repo directories
-  function find-no-git {
-    local dir="$1"
-    shift
-    local args=( "$@" )
-
-    find "$dir" \( -type d -name .git -prune \) -o "${args[@]}"
   }
 
   # Empty the Trash etc on all mounted volumes
@@ -310,6 +301,15 @@ function wwhich() {
   else
     which $1
   fi
+}
+
+# Do a find but exclude .git repo directories
+function find-no-git {
+  local dir="$1"
+  shift
+  local args=( "$@" )
+
+  find "$dir" \( -type d -name .git -prune \) -o "${args[@]}"
 }
 
 # Fancycat
