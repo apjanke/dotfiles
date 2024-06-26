@@ -77,7 +77,8 @@ if [[ $__uname = "Darwin" ]]; then
   # TODO: Conditionalize all Homebrew stuff on Homebrew being installed, and add
   # MacPorts equivalents.
 
-  # Make $JAVA_HOME defined by default, based on what's installed
+  # Make $JAVA_HOME defined by default, based on what's installed in the Mac
+  # system Frameworks area
   if [[ -z $JAVA_HOME ]]; then
     __my_java_home=$(/usr/libexec/java_home 2>/dev/null)
     if [[ $? = 0 ]]; then
@@ -102,7 +103,7 @@ if [[ $__uname = "Darwin" ]]; then
     sudo rm -rfv ~/.Trash
     # Also, clear Apple’s System Logs to hopefully improve shell startup speed
     # Actually, disable that: I just copy-pasted it from somewhere and don't really
-    # understnad what it does.
+    # understand what it does.
     # sudo rm -rfv /private/var/log/asl/*.asl
   }
   
@@ -116,9 +117,9 @@ if [[ $__uname = "Darwin" ]]; then
 
   # Homebrew setup
 
-  if [[ $JX_USE_HOMEBREW = 1 ]]; then
-    # Load Homebrew
-
+  function jx-load-homebrew() {
+    local -a _cand_brew_prefixes
+    local _brew_prefix
     # This detects the Intel vs. Apple Silicon location, plus non-default locations. 
     # The default /usr/local on Intel will already be on the default PATH.
     _cand_brew_prefixes=(
@@ -134,7 +135,11 @@ if [[ $__uname = "Darwin" ]]; then
         break
       fi
     done
-    unset _cand_brew_prefixes _brew_prefix
+  }
+
+  if [[ $JX_USE_HOMEBREW = 1 ]]; then
+    # Load Homebrew
+    jx-load-homebrew
 
     # brew configuration
     # export HOMEBREW_DEVELOPER=1
@@ -174,7 +179,7 @@ if [[ $__uname = "Darwin" ]]; then
     function brew-build-debug() {
       HOMEBREW_MAKE_JOBS=1 brew install -v --build-from-source $* 2>&1
     }
-  fi  # end Homebrew
+  fi  # end Homebrew stuff
 
   # AsciiDoc / DocBook installation configuration
 
@@ -202,6 +207,8 @@ if [[ $__uname = "Darwin" ]]; then
     echo "new XML_CATALOG_FILES = ${XML_CATALOG_FILES}"
   fi
 
+  # Miscellaneous macOS stuff
+
   alias plistbuddy='/usr/libexec/PlistBuddy'
 
   # Command line JavaScript
@@ -209,7 +216,6 @@ if [[ $__uname = "Darwin" ]]; then
 
   # Enable core dumps
   ulimit -c unlimited
-
 fi
 
 

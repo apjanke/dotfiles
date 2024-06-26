@@ -37,32 +37,12 @@ jx_maybe_add_path "$HOME/bin-local" prepend
 jx_maybe_add_path "$HOME/local/bin" prepend
 jx_maybe_add_path "$HOME/.local/bin" prepend
 
-# Google Depot Tools
-
-jx_maybe_add_path "$HOME/local/opt/depot_tools"
 
 # RVM and Ruby
 
 if [[ -d $HOME/.rvm ]]; then
   # TODO: Should this go to the front, to shadow system installations?
   jx_maybe_add_path "$HOME/.rvm/bin"
-fi
-
-
-# MacOS specifics
-
-if [[ $uname = "Darwin" ]]; then
-
-  # TODO: Conditionalize all Homebrew stuff on Homebrew being installed, and add
-  # MacPorts equivalents.
-
-  # Force /usr/local/sbin (for Homebrew) to front of path
-  PATH="/usr/local/sbin:$PATH"
-
-  # Mac Apps that don't link their comands in to a standard bin dir
-
-  jx_maybe_add_path "/Applications/Sublime Text.app/Contents/SharedSupport/bin"
-
 fi
 
 

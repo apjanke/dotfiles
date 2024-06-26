@@ -1,4 +1,7 @@
 # bashy-langs.sh - language loading for bashlikes
+#
+# This file, called as part of bashrc/bashyrc, does path and env setup for languages
+# which have development environments that aren't part of the "main" system paths.
 
 # Call uname once and stash results for performance
 if [[ -z $__uname ]]; then
@@ -85,24 +88,15 @@ if [[ -n $JX_RUBY_AUTOLOAD_ENVMGR ]]; then
   jx-rbenvmgr-load "$JX_RUBY_AUTOLOAD_ENVMGR" quiet
 fi
 
-# Get the Homebrew-installed Ruby, including its gems, and have it take
-# precedence over system Ruby. This is needed because gems have a separate
-# bin dir that's not in the main bin. Or maybe this isn't needed, because there's
-# a gem linking mechanism?
-# TODO: Document why I need to do this?
-if which brew &> /dev/null; then
-  # TODO: This should maybe use `brew --prefix` or similar, instead of a hardcoded
-  # /usr/local/opt path?
-  jx_maybe_add_path "/usr/local/opt/ruby/bin" prepend
-  # TODO: Is there a Homebrew-managed gem path to add here, too?
-fi
-
 
 # Anaconda
 
 function jx-conda-load () {
   # "Load" conda, adding it to the path, but not activating its base env.
-  # Call regular `conda activate` to actually activate it.
+  #
+  # Call regular `conda activate` afternward to actually activate it.
+  # This supports both Anaconda and Mamba installations.
+  # If no conda installation is found, does not load anything, and silently succeeds.
 
   local -a conda_prefix_cands
   local -a conda_impl_cands
@@ -112,13 +106,14 @@ function jx-conda-load () {
 
   if [[ -n "$ZSH_VERSION" ]]; then my_shell="zsh"; else my_shell="bash"; fi
  
-  for conda_prefix in $conda_prefix_cands; do
-    for conda_impl in $conda_impl_cands; do
+  for conda_prefix in "${conda_prefix_cands[@]}"; do
+    for conda_impl in "${conda_impl_cands[@]}"; do
       conda_path_cand="${conda_prefix}/${conda_impl}"
       # echo "Checking for conda at ${conda_path_cand}"
       if [[ -f "${conda_path_cand}/bin/conda" ]]; then
+        # echo "Found ${conda_path_cand}/bin/conda"
         conda_path="$conda_path_cand"
-        conda_setup_code="$('${conda_path}/bin/conda' "$my_shell" 'hook' 2> /dev/null)"
+        conda_setup_code="$('${conda_path}/bin/conda' "shell.${my_shell}" 'hook' 2> /dev/null)"
         if [[ $? = 0 ]]; then
           eval "$conda_setup_code"
         else
@@ -136,20 +131,16 @@ function jx-conda-load () {
         break
       fi
     done
-    if [[ -n $conda_path ]]; then
+    if [[ -n "$conda_path" ]]; then
       break
     fi
   done
 }
 
 if [[ $JX_CONDA_AUTOLOAD = 1 ]]; then
-  if ! which conda &>/dev/null; then
-    jx-conda-load
-  fi
+  jx-conda-load
   if [[ $JX_CONDA_AUTOACTIVATE = 1 ]]; then
-    if which conda &>/dev/null; then
-      conda activate
-    fi
+    conda activate
   fi
 fi
 
@@ -157,11 +148,6 @@ fi
 
 if [[ $__uname = "Darwin" ]]; then
 
-  # TODO: Conditionalize all Homebrew stuff on Homebrew being installed, and add
-  # MacPorts equivalents.
-
-  # Node.js, loaded from MacPorts or similar
-  
   # NVM initialization is too slow for me to want it on every shell startup, so stick it
   # inside a function I'll call manually when I want NVM.
   # This function only loads from the MacPorts location, but I'll expand it if I start using
@@ -170,11 +156,10 @@ if [[ $__uname = "Darwin" ]]; then
   # TODO: Support alternate NVM installation locations, probably including detecting from
   # path or some `nvm --root` query.
   function jx-nvm-load() {
-    if [[ -e /opt/local/share/nvm/init-nvm.sh ]]; then
-      source /opt/local/share/nvm/init-nvm.sh
+    if [[ -e '/opt/local/share/nvm/init-nvm.sh' ]]; then
+      source '/opt/local/share/nvm/init-nvm.sh'
     fi
   }
-
 
   # Matlab
 
@@ -186,9 +171,7 @@ if [[ $__uname = "Darwin" ]]; then
     # TODO: Add Linux support.
     if ! which matlab &> /dev/null; then
       # Prefer newer versions
-      want_matlab_rels=(R2023b R2023a R2022b R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
-      # I actually am specifically on R2019b now
-      want_matlab_rels=(R2019b $want_matlab_rels)
+      want_matlab_rels=(R2025a R2024b R2024a R2023b R2023a R2022b R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
       for matlab_rel in "${want_matlab_rels[@]}"; do
         matlab_app="/Applications/MATLAB_${matlab_rel}.app"
         if [[ -f "$matlab_app/bin/matlab" ]]; then

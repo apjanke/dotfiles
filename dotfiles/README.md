@@ -72,11 +72,13 @@ For bash:
 * `/etc/bash.bashrc` (if interactive)
 * `~/.bash_profile` (if login)
   * `~/.profile`
-    * `/.profile-local`
+    * `~/.profile-local`
+    * `~/.dots/bashy-paths.sh`
   * `~/.bashrc` (or called directly by shell if non-login interactive)
     * `~/.dots/bashyrc.sh`
       * `~/.dots/bashy-langs.sh`
 * `~/.bash_logout` (at logout)
+  * `~/.dots/bashylogout.sh`
 
 When `.bash_profile` exists, it takes precedence over `.profile`, so I have my `.bash_profile` explicitly call `.profile` so that I can keep common non-bash-specific config code there for sharing with zsh and sh, and have bash-specific stuff live in `.bash_profile`.
 
@@ -86,9 +88,11 @@ For zsh:
 * `~/.zprofile` (if login)
   * `~/.profile`
     * `/.profile-local`
-  * `/.zprofile-local`
+    * `~/.dots/bashy-paths.sh`
+  * `~/.zprofile-local`
 * `~/.zshrc` (if interactive)
   * `~/.dots/bashyrc.sh`
+    * `~/.dots/bashy-langs.sh`
 * `~/.zlogin` (if login) (I currently don't define one)
 * `~/.zlogout` (at logout)
   * `~/.dots/bashylogout.sh`
