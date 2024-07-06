@@ -16,8 +16,8 @@ export JX_USE_HOMEBREW="${JX_USE_HOMEBREW:-1}"
 # Whether to load MacPorts (in addition to Homebrew).
 export JX_USE_MACPORTS="${JX_USE_MACPORTS:-0}"
 # Anaconda loading controls
-export JX_CONDA_AUTOLOAD="${JX_CONDA_AUTOLOAD:-1}"
-export JX_CONDA_AUTOACTIVATE="${JX_CONDA_AUTOACTIVATE:-1}"
+export JX_CONDA_AUTOLOAD="${JX_CONDA_AUTOLOAD:-0}"
+export JX_CONDA_AUTOACTIVATE="${JX_CONDA_AUTOACTIVATE:-0}"
 # Other stuff
 export JX_DO_XML_CATALOG=0
 # Which Ruby env mgr to load on startup: rbenv, rvm, none. or ''
