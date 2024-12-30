@@ -131,7 +131,7 @@ if [[ $__uname = "Darwin" ]]; then
       if [[ -f "${_brew_prefix}/bin/brew" ]]; then
         # Homebrew tries not to replace system commands, so at end of path should be fine?
         export JX_HOMEBREW_PREFIX="$_brew_prefix"
-        PATH="${JX_HOMEBREW_PREFIX}/bin:$PATH"
+        PATH="${JX_HOMEBREW_PREFIX}/bin:${JX_HOMEBREW_PREFIX}/sbin:$PATH"
         break
       fi
     done
@@ -182,6 +182,9 @@ if [[ $__uname = "Darwin" ]]; then
   fi  # end Homebrew stuff
 
   # AsciiDoc / DocBook installation configuration
+
+  # TODO: Can probably retire this (as of 2022-ish), bc it's for the old AsciiDoc, and not
+  # Asciidoctor, which I now use exclusively.
 
   # This is an env var, but needs to be done after the maOS package managers are
   # loaded, so it's in the rc phase instead of profile.
