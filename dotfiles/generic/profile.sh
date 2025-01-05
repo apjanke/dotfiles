@@ -18,8 +18,6 @@ export JX_USE_MACPORTS="${JX_USE_MACPORTS:-0}"
 # Anaconda loading controls
 export JX_CONDA_AUTOLOAD="${JX_CONDA_AUTOLOAD:-0}"
 export JX_CONDA_AUTOACTIVATE="${JX_CONDA_AUTOACTIVATE:-0}"
-# Other stuff
-export JX_DO_XML_CATALOG=0
 # Which Ruby env mgr to load on startup: rbenv, rvm, none. or ''
 export JX_RUBY_AUTOLOAD_ENVMGR=rbenv
 

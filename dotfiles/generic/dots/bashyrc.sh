@@ -158,35 +158,6 @@ if [[ $__uname = "Darwin" ]]; then
 
   fi  # end Homebrew stuff
 
-  # AsciiDoc / DocBook installation configuration
-
-  # TODO: Can probably retire this (as of 2022-ish), bc it's for the old AsciiDoc, and not
-  # Asciidoctor, which I now use exclusively.
-
-  # This is an env var, but needs to be done after the maOS package managers are
-  # loaded, so it's in the rc phase instead of profile.
-  # And it isn't working correctly; seems to prevent the system's initialization? Maybe
-  # it needs to go in a different location?
-
-  if [[ $JX_DO_XML_CATALOG = 1 ]]; then
-    echo "old XML_CATALOG_FILES = ${XML_CATALOG_FILES}"
-    export XML_CATALOG_FILES
-    # The Homebrew one
-    if [[ -n $JX_HOMEBREW_PREFIX ]]; then
-      if [[ -f "${JX_HOMEBREW_PREFIX}/etc/xml/catalog" ]]; then
-        XML_CATALOG_FILES="${XML_CATALOG_FILES} file://${JX_HOMEBREW_PREFIX}/etc/xml/catalog"
-      fi
-    fi
-    # The MacPorts one
-    if [[ -n $JX_MACPORTS_PREFIX ]]; then
-      if [[ -f "$JX_MACPORTS_PREFIX/etc/xml/catalog" ]]; then
-        # goes at the front bc MacPorts shadows sytem stuff
-        XML_CATALOG_FILES="file://${JX_MACPORTS_PREFIX}/etc/xml/catalog ${XML_CATALOG_FILES}"
-      fi
-    fi
-    echo "new XML_CATALOG_FILES = ${XML_CATALOG_FILES}"
-  fi
-
   # Miscellaneous macOS stuff
 
   alias plistbuddy='/usr/libexec/PlistBuddy'

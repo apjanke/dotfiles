@@ -134,7 +134,6 @@ These dotfile scripts are themselves controllable by some custom shell/environme
 * `$JX_CONDA_AUTOACTIVATE` - Whether to automatically activate Anaconda after loading it at shell startup time.
 * `$JX_RUBY_AUTOLOAD_ENVMGR` – Selects a Ruby env manager to autoload.
 * `$JX_TRACE_SHELL_STARTUP` – Whether to trace shell startup for debugging. (May cause breakage.)
-* `$JX_DO_XML_CATALOG` – Whether to manipulate the XML_CATALOG_PATH env var (for asciidoc etc).
 
 Set these in the early env-stage shell startup scripts, `.profile` (for common ones) and `.zprofile` (for zsh-specifics). You'll probably want to both export them and make their assignment conditional (like with `FOO="${FOO:-myval}"`) so alterations to them are inherited by child shells.
 
