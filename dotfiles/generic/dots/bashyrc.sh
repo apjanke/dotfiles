@@ -156,32 +156,6 @@ if [[ $__uname = "Darwin" ]]; then
     alias brew-core='cd $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula'
     alias brew-octave='cd $(brew --repo)/Library/Taps/octave-app/homebrew-octave-app/Formula'
 
-    function brew-gist-logs() {
-      # A brew gist-logs wrapper, with GitHub login support
-      #
-      # This may be obsolete now that Git Credential Manager works well.
-
-      # My custom location for the token file, bc ~/.ssh should be pretty locked down
-      if [[ -e ~/.ssh/github-token ]]; then
-        # Use a subshell so the secret isn't left in main shell's environment
-        ( export HOMEBREW_GITHUB_API_TOKEN=$(cat ~/.ssh/github-token); brew gist-logs $* )
-      else
-        echo >&2 "No GitHub API token found at: ~/.ssh/github-token"
-        return 1
-      fi
-    }
-
-    function brew-install-debug() {
-      HOMEBREW_MAKE_JOBS=1 brew install -v $* 2>&1
-    }
-
-    function brew-build() {
-      brew install --build-from-source $*
-    }
-
-    function brew-build-debug() {
-      HOMEBREW_MAKE_JOBS=1 brew install -v --build-from-source $* 2>&1
-    }
   fi  # end Homebrew stuff
 
   # AsciiDoc / DocBook installation configuration
