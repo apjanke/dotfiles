@@ -145,6 +145,9 @@ if [[ $__uname = "Darwin" ]]; then
     # export HOMEBREW_DEVELOPER=1
     export HOMEBREW_EDITOR=code
     export HOMEBREW_NO_AUTO_UPDATE=1
+    # I like to do my cleanup separately, to avoid long and variant log spam when doing
+    # big installs.
+    export HOMEBREW_NO_INSTALL_CLEANUP=1
     export HOMEBREW_NO_ENV_HINTS=1
 
     # My custom brew aliases and wrappers
