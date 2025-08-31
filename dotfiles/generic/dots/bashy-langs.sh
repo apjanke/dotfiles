@@ -52,7 +52,7 @@ fi
 #   jx_maybe_add_path "$HOME/.gem/ruby/${MY_RUBY_VER}/bin" prepend
 # done
 
-# Load requested Ruby env mgr
+# Load a requested Ruby env mgr
 function jx-rbenvmgr-load () {
   local envmgr my_shell
   envmgr="$1"
@@ -89,7 +89,7 @@ if [[ -n $JX_RUBY_AUTOLOAD_ENVMGR ]]; then
 fi
 
 
-# Anaconda
+# Anaconda and Python
 
 function jx-conda-load () {
   # "Load" conda, adding it to the path, but not activating its base env.
@@ -144,22 +144,63 @@ if [[ $JX_CONDA_AUTOLOAD = 1 ]]; then
   fi
 fi
 
+# Node, NVM, npm, and JavaScript
+
+# Load NVM in to this shell session
+#
+# NVM initialization is too slow for me to want it on every shell startup, so stick it
+# inside a function I'll call manually when I want NVM.
+#
+# TODO: Support alternate NVM installation locations, probably including detecting from
+# path or some `nvm --root` query.
+function jx-nvm-load() {
+  local -a nvm_locn_cands
+  local cand found verbose=0
+
+  #TODO: Maybe adapt NVM's official instructions (from https://github.com/nvm-sh/nvm):
+  # export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+  # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+  #   or
+  # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use # This loads nvm, without auto-using the default version
+
+  if [[ "$1" == '-v' ]]; then
+    verbose=1
+  fi
+  # TODO: only check Homebrew and MacPorts locations if they're loaded, respectively?
+  nvm_locn_cands=(
+    # User-local installation (NVM's own recommended installation approach)
+    # This is ~/.nvm if you're following NVM's recommendations
+    "$NVM_DIR"
+    # Homebrew (Intel)
+    /usr/local/opt/nvm
+    # Homebrew (As)
+    /opt/homebrew/nvm
+    # MacPorts - disabled bc I don't use it lately
+    # /opt/local/share/nvm
+  )
+  for cand in "${nvm_locn_cands[@]}"; do
+    if [[ -s "${cand}/nvm.sh" ]]; then
+      found="${cand}"
+      break
+    fi
+  done
+  if [[ -n "$found" ]]; then
+    source "${found}/nvm.sh"
+    if [[ "$verbose" == 1 ]]; then
+      echo >&2 "Loaded NVM from ${found}"
+    fi
+  else
+    echo >&2 "No NVM installation found"
+  fi
+}
+
+if [[ $JX_NVM_AUTOLOAD = 1 ]]; then
+  jx-nvm-load
+fi
+
 # MacOS specifics
 
 if [[ $__uname = "Darwin" ]]; then
-
-  # NVM initialization is too slow for me to want it on every shell startup, so stick it
-  # inside a function I'll call manually when I want NVM.
-  # This function only loads from the MacPorts location, but I'll expand it if I start using
-  # NVM from other installation methods, so use the generic name "nvm-load".
-  #
-  # TODO: Support alternate NVM installation locations, probably including detecting from
-  # path or some `nvm --root` query.
-  function jx-nvm-load() {
-    if [[ -e '/opt/local/share/nvm/init-nvm.sh' ]]; then
-      source '/opt/local/share/nvm/init-nvm.sh'
-    fi
-  }
 
   # Matlab
 

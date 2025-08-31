@@ -1,12 +1,14 @@
-# zprofile - zsh-specific profile
+# zprofile - zsh-specific profile (env configuration)
 #
 
 if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
   set -o xtrace
 fi
 
-# Include common bashlike configuration
-if [[ -f "$HOME/.profile" ]]; then . "$HOME/.profile"; fi
+# Include common bashlike env configuration, which is in the bash profile
+if [[ -f "$HOME/.profile" ]]; then
+  source "$HOME/.profile"
+fi
 
 # Zsh configurator
 

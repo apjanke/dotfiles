@@ -8,7 +8,7 @@ if [[ -z $__uname ]]; then
 fi
 
 
-# Configuration and choices for these dotfiles
+# Configuration and choices for these Janke dotfiles
 
 # Whether to load Homebrew (in addition to MacPorts). If on, then brew's stuff
 # will be loaded in front of MacPorts.
@@ -18,8 +18,21 @@ export JX_USE_MACPORTS="${JX_USE_MACPORTS:-0}"
 # Anaconda loading controls
 export JX_CONDA_AUTOLOAD="${JX_CONDA_AUTOLOAD:-0}"
 export JX_CONDA_AUTOACTIVATE="${JX_CONDA_AUTOACTIVATE:-0}"
-# Which Ruby env mgr to load on startup: rbenv, rvm, none. or ''
+# Which Ruby env mgr to load on startup, if any: rbenv, rvm, or none.
+# TODO: split in to bool "do autoload" and str "which env manager" controls
 export JX_RUBY_AUTOLOAD_ENVMGR=rbenv
+
+# NVM controls
+
+# Always set NVM_DIR, to avoid NVM clobbering itself or other system things if you're
+# pulling in the executables from a system install (instead of NVM's recommended per-user
+# installation location).
+export NVM_DIR="${HOME}/.nvm"
+# NVM is slow to load, so I usually have this off unless I'm actively doing
+# NVM development. The nvm command will still be available if it's system installed;
+# just won't modify the shell setup for it.
+# Enabled for now to get working with VS Code and RogCel MUD project.
+export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-1}"
 
 
 # MacOS specifics
@@ -37,6 +50,7 @@ if [[ $__uname = "Darwin" ]]; then
   fi
 
   # MacPorts
+
   function jx-load-macports() {
     local bindir
     local -a bindirs
