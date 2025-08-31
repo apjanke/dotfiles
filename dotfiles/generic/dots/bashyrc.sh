@@ -180,6 +180,8 @@ fi
 # Aliases and misc interactive stuff
 
 alias cls="clear"
+# recursive grep, excluding big dumb managed subdirs
+alias rgrep="grep -RIn --exclude-dir=node_modules --exclude-dir=dist"
 
 alias l="ls -oG"
 alias la="ls -a"
