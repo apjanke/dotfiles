@@ -101,8 +101,8 @@ function jx-conda-load () {
   local -a conda_prefix_cands
   local -a conda_impl_cands
   local conda_prefix conda_impl conda_path conda_path_cand conda_setup_code my_shell
-  conda_prefix_cands=("${HOME}" '/opt' '/usr/local')
-  conda_impl_cands=('miniforge3' 'miniforge' 'mambaforge3' 'mambaforge' 'anaconda3' 'anaconda')
+  conda_prefix_cands=("${HOME}" '/opt/pythons' '/opt' '/usr/local')
+  conda_impl_cands=('miniforge3' 'miniforge' 'anaconda3' 'anaconda')
 
   if [[ -n "$ZSH_VERSION" ]]; then my_shell="zsh"; else my_shell="bash"; fi
  
