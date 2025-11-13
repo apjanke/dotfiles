@@ -181,7 +181,7 @@ fi
 
 alias cls="clear"
 # recursive grep, excluding big dumb managed subdirs
-alias rgrep="grep -RIn --exclude-dir=node_modules --exclude-dir=dist"
+alias grepx="grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json"
 
 alias l="ls -oG"
 alias la="ls -a"
