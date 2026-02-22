@@ -1,0 +1,199 @@
+#!/bin/bash
+#
+# du_sh_and_count - do both 'du -sh' and file count, with compact output and timing
+#
+# See the HELP_SCREEN variable in the source code for details.
+
+
+# ========== Generic boilerplate and utilities ==========
+
+set -o errexit
+set -o nounset
+set -o pipefail
+if [[ "${TRACE:-0}" == "1" ]]; then set -o xtrace; fi
+
+readonly THIS_PROGRAM=$(basename "$0")
+DRY_RUN=0
+VERBOSE=0
+DEBUG=0
+# Suppress log file output (but not stderr output)
+NO_LOG=0
+# Make a log file even for dry runs (for debugging)
+LOG_DRY_RUN=0
+
+EMIT_TIMESTAMP=0
+EMIT_PROGNAME=0
+
+# Nominal timestamp for this script run
+RUN_TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+MY_LOGFILE=''
+
+function now()     { echo $(date +'%Y-%m-%d %H:%M:%S'); }
+function info()    { emit "$*"; }
+function log_vrb() { if is_verbose; then info "$@"; fi; }
+function log_dbg() { if is_debug; then info "debug: $*"; fi; }
+function warning() { emit "WARNING: $*"; }
+function error()   { emit "ERROR: $*"; }
+function emit() {
+    local msg target msgline
+    msg="$1"
+    msgline="${msg}"
+    if [[ $EMIT_PROGNAME = 1 ]]; then
+      msgline="${THIS_PROGRAM:-???}: ${msgline}"
+    fi
+    if [[ $EMIT_TIMESTAMP = 1 ]]; then
+      msgline="$(now): ${msgline}"
+    fi
+    echo >&2 "$msgline"
+}
+function die()      { error "$@"; exit 1; }
+function dry()      { info "dry-run: would:" "$@"; }
+function dry_vrb()  { log_vrb "dry-run: would:" "$@"; }
+function wet() {
+  # Run a command only if this is not a dry run, or just print it if this is a dry run.
+  if is_dry_run; then dry "$@"; else log_vrb 'running:' "$@"; "$@"; fi;
+}
+function wet_vrb() {
+  # Run a command only if this is not a dry run, or just verbose-print it if this is a dry run.
+  if is_dry_run; then dry_vrb "$@"; else log_vrb 'running:' "$@"; "$@"; fi;
+}
+function is_dry_run() { if [[ "${DRY_RUN:-0}" != 0 ]]; then return 0; else return 1; fi; }
+function is_verbose() { if [[ "${VERBOSE:-0}" != 0 ]]; then return 0; else return 1; fi; }
+function is_debug() { if [[ "${DEBUG:-0}" != 0 ]]; then return 0; else return 1; fi; }
+function forbid_dry_run() {
+  if is_dry_run; then
+    die "dry-run is not implemented for this functionality yet. Aborted. Sorry"
+  fi
+}
+function tic()     { date +%s; }
+function toc()     { local t0="$1" t1; t1=$(tic); echo $((t1 - t0)); }
+function s2mmss()  {
+  local sec="$1"
+  local h m s
+  h=0; m=$(($sec / 60)); s=$(($sec % 60));
+  if [[ $m -ge 60 ]]; then
+    h=$(($m / 60)); m=$(($m % 60))
+    printf "%02d:%02d:%02d" $h $m $s;
+  else
+    printf "%02d:%02d" $m $s;
+  fi
+}
+function say_toc() {
+  local label="$1" t0="$2"
+  local te=$(toc "$t0")
+  info $(printf "Elapsed time: %s: %s" "$label" $(s2mmss "$te"))
+}
+function timeit()  {
+  local label="${1}"; shift
+  if [[ $# == 0 ]]; then
+    die "BUG: timeit() called with too few arguments"
+  fi
+  local t0=$(tic)
+  "$@"
+  say_toc "$label" "$t0"
+}
+
+
+
+# ========== Script-specific customization ==========
+
+EMIT_TIMESTAMP=1
+EMIT_PROGNAME=1
+
+
+# ========== Script-specific code ==========
+
+
+# du_sh_and_count_files - do both 'du -sh' and file count, with compact output
+function du_sh_and_count_files() {
+  local -a dirs
+  local dir size n_files width t0 te
+  forbid_dry_run
+  dirs=("$@")
+  width=$(max_strlen "${dirs[@]}" '        ')
+  width=$(( width + 1 ))
+  for dir in "${dirs[@]}"; do
+    dir="${dir%/}"
+    t0=$(tic)
+    printf '%-*s   ' $width "${dir}:"
+    size=$(du -sh "$dir" | cut -f 1)
+    printf '%6s ' "$size"
+    n_files=$(find "$dir" | wc -l)
+    te=$(toc $t0)
+    printf '%10s files + dirs   (%s)' $(thous "$n_files") "$(s2mmss $te)"
+    printf '\n';
+  done
+}
+
+# ========== Utility functions ==========
+
+function max_strlen() {
+  local -a strs
+  local str width
+  strs=("$@")
+  width=0
+  for str in "${strs[@]}"; do
+    if [[ ${#str} -gt $width ]]; then
+      width=${#str}
+    fi
+  done
+  echo $width
+}
+
+# thous- format numbers with thousand-separator commas
+function thous() {
+  local py_script
+  local -a vals
+  if [[ $# = 0 ]]; then
+    vals=($(cat))
+  else
+    vals=("$@")
+  fi
+  py_script='import sys; s = sys.argv[1]; x = float(s) if "." in s else int(s); print(f"{x:,}")'
+  for s in "${vals[@]}"; do
+    python3 -c "$py_script" "$s"
+  done
+}
+
+# ========== Main script logic ==========
+
+FILES=()
+
+function parse_cmdline() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --verbose | -v)    VERBOSE=1 ;;
+      --dry-run)         DRY_RUN=1 ;;
+      --debug)           DEBUG=1 ;;
+      --help|-?|-help)   echo "$HELP_SCREEN"; exit 0 ;;
+      -*)
+        die "Unexpected option: ${arg}" ;;
+      *)
+        FILES+=("$arg")
+    esac
+  done
+
+  readonly DRY_RUN VERBOSE CLOBBER DAMP_RUN ONLY_VARTYPE ONLY_VAR
+}
+
+HELP_SCREEN=''
+IFS= read -r -d '' HELP_SCREEN <<EOHELP || true
+
+${THIS_PROGRAM} - do both 'du -sh' and file count, with compact output and timing
+
+${THIS_PROGRAM} <dir> [<dir> ...]
+    [--dry-run] [--verbose | -v] [--debug]
+
+EOHELP
+
+function main() {
+  parse_cmdline "$@"
+  du_sh_and_count_files "${FILES[@]}"
+}
+
+# ========== Main script ==========
+
+main "$@"
