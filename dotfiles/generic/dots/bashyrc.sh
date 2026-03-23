@@ -221,7 +221,8 @@ alias griin='grep -rIn -i $JX_GRIN_EXCLUDES'
 
 # Git stuff
 
-alias g="git"
+# I picked this "g" alias up from someone else, and don't think I like it. Disabled for now.
+# alias g="git"
 alias gst='git status'
 alias gc='git commit -v'
 alias gco='git checkout'
@@ -238,7 +239,7 @@ gpom() {
 # Open any files marked as “modified” in my default editor.
 # TODO: This looks Mac-specific bc of the 'open' command?
 alias geditchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
-# This clobbers a Prezto 'gbc' alias; I prefer mine.
+# This intentionally clobbers a Prezto 'gbc' alias; I prefer mine.
 alias gbc="git branch | cat"
 
 # I mis-type "code" as "cod" often enough that I prefer it now.
@@ -255,14 +256,16 @@ alias octave-stable="octave-stable -q"  # suppress banner
 # Directory navigation
 
 alias -- -='cd -'
-alias ~="cd ~"
+# Disable this simple "~" alias bc (as of 2026) I think it might interfere with built-in shell stuff
+#alias ~="cd ~"
 alias ..='cd ..'
 alias ...='cd ../..'
-alias ....='cd ../..'
+alias ....='cd ../../..'
 alias cd..='cd ..'
 alias cd...='cd ../..'
 alias cd....='cd ../../..'
-alias pd=pushd
+# Disable pd, bc I don't use it enough to have that shorthand memorized.
+# alias pd=pushd
 
 function mkcd() {
   mkdir -p "$1"
@@ -414,7 +417,8 @@ fi
 
 # Allow for machine- or environment-local overrides
 #
-# TODO: This should maybe be pulled from an XDG local dir instead of a special file?
+# TODO: This should maybe be pulled from an XDG "local" config dir instead of a special file
+# I made up?
 if [[ -f $HOME/.bashyrc-local ]]; then
   source "${HOME}/.bashyrc-local"
 fi

@@ -8,7 +8,7 @@ The idea here is to get as close as possible to being able to sit down at a fres
 
 Caution! This whole thing is a work in progress and it will probably never be "finished". I'm making this repo publicly available so other people can use my code and techniques. But it's not a product, it's not stable in either interface or behavior, and there is no support for it. I'm going to continue to change this stuff to meet my own needs, maybe in non-back-compatible ways, at any time. So you can't just clone the repo, use it directly, and expect it to be stable.
 
-If you want to use this repo, make a copy, read and understand it, and load it in to your own `dotfiles` repo; then if you want, pull from upstream in a controlled, deliberate manner. (Probably not a GitHub fork of my repo; you want your own independent ("canonical") repo).
+If you want to use this repo, make a copy, read and understand it, and load it in to your own `dotfiles` repo; then if you want, pull from upstream in a controlled, deliberate manner. (Probably not a GitHub fork of my repo; you want your own independent ("canonical") repo.)
 
 ## Repo sections
 
@@ -49,7 +49,7 @@ The idea was to save the work of periodically doing git pulls on each computer w
 
 See `dotfiles/README.md` for info in the design of my dotfiles and shell configuration setup.
 
-The `setup-osx-system` and `setup-osx-user` scripts can only have soft dependencies on `setup-osx-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation.
+The `setup-osx-system` and `setup-osx-user` scripts can only have soft dependencies on `setup-osx-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation. And as of 2024, the `setup-osx-*` scripts are most broken, because every new macOS release, Apple seems to remove or break some of the scripting or configurability support in macOS, and I'm too tired to try to keep up with it.
 
 ## License
 
