@@ -196,8 +196,28 @@ alias laa="ls -AGFoh"
 
 alias tree="tree -I '.git|.svn|*.swp'"
 alias duh="du -csh"
-alias grin="grep -r -i -n"
 alias fn='find . -iname'
+
+# grep stuff
+
+# Disable plain "grep" alias, bc as of 2026 I'm leaning toward defining alternate grep
+# functions and aliases with distinct names, and let plain "grep" be the vanilla command.
+# alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
+# grep wrappers and customizations. I'm working on syncing these with my Demex work versions
+# as of 2026-03. A work in progress.
+# "grin" = "grep -rIn"
+# My Demex grin from 2026-02
+# alias grin='grep -rIn --exclude=.git --exclude="*.ipynb"'
+# New grins I'm working on in 2026-03.
+# Word splitting and delayed evaluation on $JX_GRIN_EXCLUDES is intentional.
+# I'm not sure this "{...,...}" glob form actually works. May need multiple args to make it
+# actually work for subdirs recursively.
+JX_GRIN_EXCLUDES='--exclude-dir={.bzr,.cvs,.git,.hg,.svn} --exclude-dir=node_modules --exclude-dir=wp-includes --exclude="*.ipynb"'
+alias grin='grep -rIn $JX_GRIN_EXCLUDES'
+alias griin='grep -rIn -i $JX_GRIN_EXCLUDES'
+# My old "grin" alias from pre 2025, before I refined this more while working at Demex, and
+# learned about -I and decided the "i" in "grin" should be for that instead of "-i".
+# alias grin="grep -r -i -n"
 
 # Git stuff
 
@@ -228,14 +248,9 @@ alias cod=code
 
 alias ffprobe="ffprobe -hide_banner"
 alias gdb="gdb -q"  # suppress banner
-alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
 alias octave="octave -q"  # suppress banner
-if which octave-default &>/dev/null; then
-  alias octave-default="octave-default -q"  # suppress banner
-fi
-if which octave-stable &>/dev/null; then
-  alias octave-stable="octave-stable -q"  # suppress banner
-fi
+alias octave-default="octave-default -q"  # suppress banner
+alias octave-stable="octave-stable -q"  # suppress banner
 
 # Directory navigation
 
