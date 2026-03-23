@@ -372,6 +372,30 @@ fi
 
 }
 
+# Dropbox
+#
+# How the hell do I locate this now, in its "new" OS-supported locations, esp. on macOS?
+#
+# On macOS, ~/Dropbox got moved to ~/Library/CloudStorage/Dropbox in like 2024, and having a
+# symlink to it seems to mess things up, like with Spotlight maybe. Let's try having an alias
+# and a path variable to handle that. And make that setup unconditional (not depending on
+# whether that ~/Library dir exists), to avoid bad paths from the collapse of an undefined
+# $DROPBOX variable etc. I really liked having a ~/Dropbox for keyboard navigation in Finder,
+# but as of 2026-03 I'm going to try to do without, bc I think the symlink may be messing other
+# things up, and bc I want to figure out how this is "supposed to" be used.
+
+if [[ $__uname = "Darwin" ]]; then
+  DROPBOX="$HOME/Library/CloudStorage/Dropbox"
+else
+  # I don't know where Dropbox lives on Linux, Windows, or WSL these days. Handle that later.
+  # But keep the variables defined to avoid collapse.
+  DROPBOX='/I/dont/know/where/Dropbox/lives/on/this/platform'
+fi
+alias dbox='cd $DROPBOX'
+
+if [[ -d $HOME/Library/CloudStorage/Dropbox ]]; then
+else
+fi
 
 # Allow for machine- or environment-local overrides
 #
