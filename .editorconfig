@@ -11,7 +11,8 @@ indent_style = space
 indent_size = 4
 tab_width = 4
 
-[*.sh,*.zsh,*.bash,*.ksh]
+[*.sh,*.zsh,*.bash,*.ksh,install-dotfiles]
+indent_style = space
 indent_size = 2
 
 [Makefile]

@@ -3,6 +3,9 @@
 # This file, called as part of bashrc/bashyrc, does path and env setup for languages
 # which have development environments that aren't part of the "main" system paths.
 
+# shellcheck shell=bash
+# shellcheck disable=SC1091
+
 # Call uname once and stash results for performance
 if [[ -z $__uname ]]; then
   __uname=$(uname)
@@ -113,7 +116,8 @@ function jx-conda-load () {
       if [[ -f "${conda_path_cand}/bin/conda" ]]; then
         # echo "Found ${conda_path_cand}/bin/conda"
         conda_path="$conda_path_cand"
-        conda_setup_code="$('${conda_path}/bin/conda' "shell.${my_shell}" 'hook' 2> /dev/null)"
+        conda_setup_code="$("${conda_path}/bin/conda" "shell.${my_shell}" 'hook' 2> /dev/null)"
+        # shellcheck disable=SC2181
         if [[ $? = 0 ]]; then
           eval "$conda_setup_code"
         else
@@ -153,6 +157,8 @@ fi
 #
 # TODO: Support alternate NVM installation locations, probably including detecting from
 # path or some `nvm --root` query.
+
+# shellcheck disable=SC2120
 function jx-nvm-load() {
   local -a nvm_locn_cands
   local cand found verbose=0
@@ -212,7 +218,8 @@ if [[ $__uname = "Darwin" ]]; then
     # TODO: Add Linux support.
     if ! which matlab &> /dev/null; then
       # Prefer newer versions
-      want_matlab_rels=(R2025a R2024b R2024a R2023b R2023a R2022b R2022a R2021b R2021a R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
+      want_matlab_rels=(R2026b R2026a R2025a R2024b R2024a R2023b R2023a R2022b R2022a R2021b R2021a
+                        R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
       for matlab_rel in "${want_matlab_rels[@]}"; do
         matlab_app="/Applications/MATLAB_${matlab_rel}.app"
         if [[ -f "$matlab_app/bin/matlab" ]]; then

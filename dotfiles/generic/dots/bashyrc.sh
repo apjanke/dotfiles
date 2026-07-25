@@ -3,6 +3,9 @@
 # This has common configuration for interactive bash or zsh shells. So the syntax
 # must be compatible with both.
 
+# shellcheck shell=bash
+# shellcheck disable=SC1091
+
 # Call uname once and stash results for performance
 if [[ -z $__uname ]]; then
   __uname=$(uname)
@@ -42,6 +45,7 @@ function jx-rainbow-me() {
 
 # ls customization
 
+# shellcheck disable=SC2010
 if ls --version 2> /dev/null | grep GNU &> /dev/null; then
   # ls is GNU ls: color on by default
   alias ls="ls --color --quoting-style=literal"
@@ -88,7 +92,7 @@ if [[ $__uname = "Darwin" ]]; then
 
   # manp - view a man page in Preview
   function manp {
-    man -t $@ | open -f -a Preview &
+    man -t "$@" | open -f -a Preview &
   }
 
   # manb - view a man page in the browser
@@ -112,7 +116,8 @@ if [[ $__uname = "Darwin" ]]; then
   # MacPorts puts itself on the path at the system level (I think), so we don't have
   # to load it, just detect whether it's there.
   if which port &>/dev/null; then
-    export JX_MACPORTS_PREFIX=$(dirname $(dirname $(which port)))
+    export JX_MACPORTS_PREFIX
+    JX_MACPORTS_PREFIX=$(dirname "$(dirname "$(which port)")")
   fi
 
   # Homebrew setup
@@ -127,7 +132,7 @@ if [[ $__uname = "Darwin" ]]; then
       '/usr/local'
       '/usr/local/homebrew'
     )
-    for _brew_prefix in "$_cand_brew_prefixes[@]"; do
+    for _brew_prefix in "${_cand_brew_prefixes[@]}"; do
       if [[ -f "${_brew_prefix}/bin/brew" ]]; then
         # Homebrew tries not to replace system commands, so at end of path should be fine?
         export JX_HOMEBREW_PREFIX="$_brew_prefix"
@@ -230,7 +235,7 @@ alias gdc='git diff | cat'
 alias glo='git log --oneline'
 gloc() {
   local n=${1:-10}
-  git log --oneline | head -$n
+  git log --oneline | head "-$n"
 }
 gpom() {
   echo git pull origin master
@@ -273,10 +278,10 @@ function mkcd() {
 }
 
 function wwhich() {
-  if which $1 &>/dev/null; then
-    ls -loG $(which $1)
+  if which "$1" &>/dev/null; then
+    ls -loG "$(which "$1")"
   else
-    which $1
+    which "$1"
   fi
 }
 
@@ -314,6 +319,7 @@ function jx-shell-info() {
     # echo "flag=${flag} OPTARG=${OPTARG:-} OPTIND=${OPTIND}"
     case "${flag}" in
       p) do_long_path=1 ;;
+      *) echo >&2 "jx-shell-info: Unrecognized option: $flag"; return ;;
     esac
   done
 
@@ -322,6 +328,7 @@ function jx-shell-info() {
   # Detect this current shell
   # Hack: assume common shell variables have been neither clobbered nor exported
   if [[ -n $ZSH_ARGZERO ]]; then
+    # shellcheck disable=SC2153
     shell_info="zsh $ZSH_VERSION ($ZSH_ARGZERO)"
   elif [[ -n $BASH ]]; then
     shell_info="bash $BASH_VERSION ($BASH)"
@@ -375,18 +382,19 @@ JX dotfiles variables:
 $(set | grep ^JX_ | sed -e 's/^/  /')
 
 EOS
-if [[ $do_long_path = 1 ]]; then
-  cat <<EOS
+  if [[ $do_long_path = 1 ]]; then
+    # shellcheck disable=SC2001
+    cat <<EOS
 PATH:
   $(echo "$PATH" | sed -e 's/:/\n  /g')
 
 EOS
-else
-  cat <<EOS
+  else
+    cat <<EOS
 PATH: ${PATH}
 
 EOS
-fi
+  fi
 
 }
 
@@ -403,23 +411,23 @@ fi
 # things up, and bc I want to figure out how this is "supposed to" be used.
 
 if [[ $__uname = "Darwin" ]]; then
-  DROPBOX="$HOME/Library/CloudStorage/Dropbox"
+  if [[ -d $HOME/Library/CloudStorage/Dropbox ]]; then
+    DROPBOX="$HOME/Library/CloudStorage/Dropbox"
+  else
+    DROPBOX=''
+  fi
 else
   # I don't know where Dropbox lives on Linux, Windows, or WSL these days. Handle that later.
   # But keep the variables defined to avoid collapse.
   DROPBOX='/I/dont/know/where/Dropbox/lives/on/this/platform'
 fi
-alias dbox='cd $DROPBOX'
-
-if [[ -d $HOME/Library/CloudStorage/Dropbox ]]; then
-else
-fi
+alias dbox='cd "$DROPBOX"'
 
 # Allow for machine- or environment-local overrides
 #
 # TODO: This should maybe be pulled from an XDG "local" config dir instead of a special file
 # I made up?
-if [[ -f $HOME/.bashyrc-local ]]; then
+if [[ -f "${HOME}/.bashyrc-local" ]]; then
   source "${HOME}/.bashyrc-local"
 fi
 

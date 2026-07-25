@@ -7,6 +7,8 @@
 # probably makes things more readable, given how large these startup scripts have
 # gotten.
 
+# shellcheck shell=bash
+
 # Call uname once and stash results for performance
 if [[ -z $__uname ]]; then
   __uname=$(uname)

@@ -2,6 +2,9 @@
 #
 # (interactive bash configuration)
 
+# shellcheck shell=bash
+# shellcheck disable=SC1091
+
 if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
   set -o xtrace
 fi
@@ -16,6 +19,7 @@ fi
 
 # History and interaction
 
+# shellcheck disable=SC2034
 history_control=ignoredups
 export HISTIGNORE="&:ls:ls -la:[bf]g:exit"
 export HISTSIZE=32768   # Longer history (default is only 500)
@@ -40,7 +44,7 @@ fi
 # Homebrew bash-specifics
 
 if type brew &> /dev/null; then
-  for _completion_file in $(brew --prefix)/etc/bash_completion.d/*; do
+  for _completion_file in "$(brew --prefix)"/etc/bash_completion.d/*; do
     source "$_completion_file"
   done
 fi

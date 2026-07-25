@@ -8,12 +8,15 @@
 # if those symlinks are pointing to what looks like this dotfiles repo or a variant
 # of it, so be careful. Does not clobber non-symlink regular files.
 
+#TODO: Figure out how to handle files in subdirs, like .claude/CLAUDE.md, where I only want to link the
+# file and not the whole subdir. Maybe change all the links to per-file, and make the dots subdir special?
+
 set -o errexit
 set -o nounset
 set -o pipefail
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
-PROGRAM_NAME=$(basename $0)
+PROGRAM_NAME=$(basename "$0")
 
 #TODO: Replace this v_echo() with my standard info/warn/die/emit functions.
 function v_echo() {
@@ -23,10 +26,10 @@ function v_echo() {
 }
 
 function symlink() {
-  local source="$1"
-  local target="$2"
+  local source="$1" target="$2"
+  local current_source
   if [[ -L "$target" ]]; then
-    local current_source=$(readlink "$target")
+    current_source=$(readlink "$target")
     if [[ "$current_source" == "$source" ]]; then
       v_echo "Symlink '$target' is already set up"
   	  return
@@ -61,24 +64,29 @@ function detect_os_type() {
 }
 
 function main() {
+  if [[ $OPT_TRACE = 1 ]]; then
+    set -o xtrace
+  fi
   sourcedir=$(dirname "$0")
   dotfiles_repo_dir="$sourcedir"
-  dotdir=$(cd $sourcedir/dotfiles; pwd)
+  dotdir=$(cd "$sourcedir/dotfiles"; pwd)
   todir=$HOME
 
   detect_os_type
 
+  # These files have their names munged to add a leading dot and strip extension.
+  # Makes it easier to work with them in shell and editors.
+  if [[ -e "$dotdir/$OSNAME" ]]; then
+      # shellcheck disable=SC2207
+      dotfiles=( $( (ls "$dotdir/generic"; ls "$dotdir/$OSNAME") | sort | uniq ) )
+  else
+      # shellcheck disable=SC2207
+      dotfiles=($(ls "$dotdir/generic"))
+  fi
   (
     CHANGED=0
-    cd $todir
+    cd "$todir"
 
-    # These files have their names munged to add a leading dot and strip extension.
-    # Makes it easier to work with them in shell and editors.
-    if [[ -e "$dotdir/$OSNAME" ]]; then
-      dotfiles=( $( (ls $dotdir/generic; ls $dotdir/$OSNAME) | sort | uniq ) )
-    else
-      dotfiles=($(ls $dotdir/generic))
-    fi
     for file in "${dotfiles[@]}"; do
       tofile=".${file%\.sh}"
       if [[ -e "$dotdir/$OSNAME/$file" ]]; then
@@ -117,21 +125,23 @@ EOF
 
 # ========== Main script ==========
 
-VERBOSE=0
-OPT_TRACE=0
-#TODO: Add support for long options. Drop getopts; I've decided I don't like it.
-#TODO: Move this cmdline parsing to a function
-while getopts vkxh opt; do
-  case $opt in
-    v) VERBOSE=1 ;;
-    x) OPT_TRACE=1 ;;
-    h) usage; exit 0 ;;
-    \?)
-      echo >&2 "See '$PROGRAM_NAME -h' for usage"
-      exit 1 ;;
-  esac
-done
+function parse_cli() {
+  VERBOSE=0
+  OPT_TRACE=0
+  #TODO: Add support for long options. Drop getopts; I've decided I don't like it.
+  #TODO: Move this cmdline parsing to a function
+  while getopts vxh opt; do
+    case $opt in
+      v) VERBOSE=1 ;;
+      x) OPT_TRACE=1 ;;
+      h) usage; exit 0 ;;
+      \?)
+        echo >&2 "See '$PROGRAM_NAME -h' for usage"
+        exit 1 ;;
+    esac
+  done
+}
 
-
+parse_cli "$@"
 main
 exit 0
