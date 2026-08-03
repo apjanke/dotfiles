@@ -33,8 +33,9 @@ export NVM_DIR="${HOME}/.nvm"
 # NVM is slow to load, so I usually have this off unless I'm actively doing
 # NVM development. The nvm command will still be available if it's system installed;
 # just won't modify the shell setup for it.
-# Enabled for now to get working with VS Code and RogCel MUD project.
-export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-1}"
+# I enable it when I'm working with the RogCel MUD project in VS Code. So if it's on, that's
+# probably why.
+export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-0}"
 
 
 # MacOS specifics
