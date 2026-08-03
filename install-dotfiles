@@ -63,6 +63,19 @@ function detect_os_type() {
   esac
 }
 
+function munge_dotfile_name() {
+  # Turn a flat-tree source filename into the name it installs as in ~.
+  #
+  # Use a case rather than the tidier extglob one-liner ".${1%.@(sh|zsh|bash)}" bc
+  # extglob is off by default in bash and you get wrong names.
+  case "$1" in
+    *.sh)    echo ".${1%.sh}"   ;;
+    *.zsh)   echo ".${1%.zsh}"  ;;
+    *.bash)  echo ".${1%.bash}" ;;
+    *)       echo ".$1"         ;;
+  esac
+}
+
 function main() {
   if [[ $OPT_TRACE = 1 ]]; then
     set -o xtrace
@@ -88,7 +101,7 @@ function main() {
     cd "$todir"
 
     for file in "${dotfiles[@]}"; do
-      tofile=".${file%\.sh}"
+      tofile=$(munge_dotfile_name "$file")
       if [[ -e "$dotdir/$OSNAME/$file" ]]; then
         fromfile="$dotdir/$OSNAME/$file"
       else
