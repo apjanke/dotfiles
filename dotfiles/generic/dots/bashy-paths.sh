@@ -47,5 +47,3 @@ if [[ -d $HOME/.rvm ]]; then
   jx_maybe_add_path "$HOME/.rvm/bin"
 fi
 
-
-unset __uname

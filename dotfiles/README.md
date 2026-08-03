@@ -175,6 +175,7 @@ The shell startup files source files from their final location at `~/.*`, not re
 
 ## TODO
 
+* Replace which/whence/type with `command -v`.
 * Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
 * Move path setup up in to env/login stage.
 * `.*env` files to go with `.*rc` files, or a common `.dots/bashyenv.sh`?

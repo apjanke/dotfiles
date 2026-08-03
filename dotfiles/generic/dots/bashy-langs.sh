@@ -62,7 +62,7 @@ function jx-rbenvmgr-load () {
   be_quiet="$2"
 
   if [[ $envmgr == rbenv ]]; then
-    if which rbenv &>/dev/null; then
+    if command -v rbenv &>/dev/null; then
       if [[ -n "$ZSH_VERSION" ]]; then my_shell="zsh"; else my_shell="bash"; fi
       eval "$(rbenv init - $my_shell)"
     else
@@ -216,7 +216,7 @@ if [[ $__uname = "Darwin" ]]; then
     # TODO: Accept the version as an argument, and add a variable to control whether this
     # gets called automatically.
     # TODO: Add Linux support.
-    if ! which matlab &> /dev/null; then
+    if ! command -v matlab &> /dev/null; then
       # Prefer newer versions
       want_matlab_rels=(R2026b R2026a R2025a R2024b R2024a R2023b R2023a R2022b R2022a R2021b R2021a
                         R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)

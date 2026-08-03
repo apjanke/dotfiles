@@ -5,6 +5,11 @@
 # shellcheck shell=bash
 # shellcheck disable=SC1091
 
+# Pull in profile if not already there - bash doesn't automatically load .profile for
+if [[ -z $JX_ENV_LOADED ]]; then
+  source "$HOME/.profile"
+fi
+
 if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
   set -o xtrace
 fi
@@ -20,16 +25,13 @@ fi
 # History and interaction
 
 # shellcheck disable=SC2034
-history_control=ignoredups
-export HISTIGNORE="&:ls:ls -la:[bf]g:exit"
 export HISTSIZE=32768   # Longer history (default is only 500)
 export HISTFILESIZE="$HISTSIZE"
 export HISTCONTROL=ignoredups
-export HISTIGNORE="ls:ls *:cd:cd -:pwd:exit:date:* --help"
+export HISTIGNORE="&:ls:ls *:ls -la:[bf]g:cd:cd -:pwd:exit:date:* --help"
 shopt -s histappend
 
 set -o ignoreeof
-set -o vi
 shopt -s cdspell
 shopt -s checkwinsize
 
@@ -43,7 +45,7 @@ fi
 
 # Homebrew bash-specifics
 
-if type brew &> /dev/null; then
+if command -v brew &> /dev/null; then
   for _completion_file in "$(brew --prefix)"/etc/bash_completion.d/*; do
     source "$_completion_file"
   done

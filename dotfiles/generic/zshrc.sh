@@ -7,7 +7,7 @@
 # Debugging prompt with timestamp for profiling under `zsh -x`
 #PS4=$'+ %D{%s.%6.} %N:%i> '
 
-if type brew &>/dev/null; then
+if command -v brew &>/dev/null; then
   JX_HOMEBREW_PREFIX=$(brew --prefix)
 fi
 
@@ -114,7 +114,7 @@ setopt no_interactivecomments
 
 # Completion control
 
-if which omz_bindkey &>/dev/null; then
+if command -v omz_bindkey &>/dev/null; then
   function maybe_bindkey() {
     omz_bindkey -t "$@"
   }

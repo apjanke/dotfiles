@@ -21,12 +21,12 @@ export LESS="${LESS:-R}"
 export CLICOLOR=1
 
 export EDITOR="${EDITOR:-vi}"
-if whence code &>/dev/null; then
+if command -v code &>/dev/null; then
   export VISUAL="${VISUAL:-code}"
   export GUIEDITOR="${GUIEDITOR:-code}"
 else
   export VISUAL="${VISUAL:-vi}"
-  if whence gvim &>/dev/null; then
+  if command -v gvim &>/dev/null; then
     export GUIEDITOR="${GUIEDITOR:-gvim}"
   fi
 fi
@@ -53,12 +53,12 @@ elif [[ $__uname = "Darwin" ]] || [[ $__uname = "FreeBSD" ]]; then
   # On BSD, prefer GNU ls for nicer colors
   # (Unsure if I really want to do this, bc of gls' uneven column widths)
   # As of 2023-12, I disabled this for now.
-  # if which gls &>/dev/null && gls --color -d . &>/dev/null; then
+  # if command -v gls &>/dev/null && gls --color -d . &>/dev/null; then
   #   alias ls="gls --color --quoting-style=literal"
   # fi
   :
 fi
-if which gls &>/dev/null; then
+if command -v gls &>/dev/null; then
   alias gls="gls --color"
 fi
 
@@ -115,9 +115,9 @@ if [[ $__uname = "Darwin" ]]; then
 
   # MacPorts puts itself on the path at the system level (I think), so we don't have
   # to load it, just detect whether it's there.
-  if which port &>/dev/null; then
+  if command -v port &>/dev/null; then
     export JX_MACPORTS_PREFIX
-    JX_MACPORTS_PREFIX=$(dirname "$(dirname "$(which port)")")
+    JX_MACPORTS_PREFIX=$(dirname "$(dirname "$(command -v port)")")
   fi
 
   # Homebrew setup
@@ -278,10 +278,10 @@ function mkcd() {
 }
 
 function wwhich() {
-  if which "$1" &>/dev/null; then
-    ls -loG "$(which "$1")"
+  if command -v "$1" &>/dev/null; then
+    ls -loG "$(command -v "$1")"
   else
-    which "$1"
+    command -v "$1"
   fi
 }
 
@@ -338,7 +338,7 @@ function jx-shell-info() {
     shell_info='?'
   fi
 
-  if which java &>/dev/null; then
+  if command -v java &>/dev/null; then
     java_ver=$(java --version | head -1)
     java_ver_str="($java_ver)"
   fi
@@ -352,16 +352,16 @@ Vars:
   EDITOR = ${EDITOR}  VISUAL = ${VISUAL}  GUIEDITOR = ${GUIEDITOR}
 
 Java:
-  java = $(which java 2>/dev/null)  ${java_ver_str}
+  java = $(command -v java 2>/dev/null)  ${java_ver_str}
   JAVA_HOME = ${JAVA_HOME}
 
 EOS
-  if which ruby &>/dev/null; then
+  if command -v ruby &>/dev/null; then
     cat <<EOS
 Ruby:
-  ruby = $(which ruby)  $(ruby --version)
-  rvm = $(which rvm 2>/dev/null)
-  bundle = $(which bundle 2>/dev/null)
+  ruby = $(command -v ruby)  $(ruby --version)
+  rvm = $(command -v rvm 2>/dev/null)
+  bundle = $(command -v bundle 2>/dev/null)
   GEM_HOME = ${GEM_HOME}
   GEM_PATH = ${GEM_PATH}
 
@@ -369,14 +369,14 @@ EOS
   fi
 cat <<EOS
 Python:
-  python = $(which python 2>/dev/null)
+  python = $(command -v python 2>/dev/null)
   PYTHONPATH = ${PYTHONPATH}
 
 ${ruby_info}Commands:
-  conda = $(type conda 2>/dev/null)
-  mamba = $(type mamba 2>/dev/null)
-  brew = $(which brew 2>/dev/null)
-  port = $(which port 2>/dev/null)
+  conda = $(command -v conda 2>/dev/null)
+  mamba = $(command -v mamba 2>/dev/null)
+  brew = $(command -v brew 2>/dev/null)
+  port = $(command -v port 2>/dev/null)
 
 JX dotfiles variables:
 $(set | grep ^JX_ | sed -e 's/^/  /')
