@@ -205,34 +205,34 @@ alias fn='find . -iname'
 
 # grep stuff
 
-# Disable plain "grep" alias, bc as of 2026 I'm leaning toward defining alternate grep
-# functions and aliases with distinct names, and let plain "grep" be the vanilla command.
-# alias grep='grep --exclude-dir={.bzr,.cvs,.git,.hg,.svn}'
-# grep wrappers and customizations. I'm working on syncing these with my Demex work versions
-# as of 2026-03. A work in progress.
-# "grin" = "grep -rIn"
-# My Demex grin from 2026-02
-# alias grin='grep -rIn --exclude=.git --exclude="*.ipynb"'
-# New grins I'm working on in 2026-03.
-# Word splitting and delayed evaluation on $JX_GRIN_EXCLUDES is intentional.
-# I'm not sure this "{...,...}" glob form actually works. May need multiple args to make it
-# actually work for subdirs recursively.
-JX_GRIN_EXCLUDES='--exclude-dir={.bzr,.cvs,.git,.hg,.svn} --exclude-dir=node_modules --exclude-dir=wp-includes --exclude="*.ipynb"'
-alias grin='grep -rIn $JX_GRIN_EXCLUDES'
-alias griin='grep -rIn -i $JX_GRIN_EXCLUDES'
-# My old "grin" alias from pre 2025, before I refined this more while working at Demex, and
-# learned about -I and decided the "i" in "grin" should be for that instead of "-i".
-# alias grin="grep -r -i -n"
+# grin - grep with exclusions
+function grin()  { grep -rIn    "${JX_GRIN_EXCLUDES[@]}" "$@"; }
+function griin() { grep -rIn -i "${JX_GRIN_EXCLUDES[@]}" "$@"; }
+JX_GRIN_EXCLUDES=(
+  --exclude-dir=.git
+  --exclude-dir=.cvs
+  --exclude-dir=.hg
+  --exclude-dir=.svn
+  --exclude-dir=venv
+  --exclude-dir=.venv
+  --exclude-dir=node_modules
+  --exclude-dir=wp-includes
+  --exclude-dir=plans
+  '--exclude=*.ipynb'
+)
 
 # Git stuff
 
 # I picked this "g" alias up from someone else, and don't think I like it. Disabled for now.
 # alias g="git"
 alias gst='git status'
+alias gfpt='git fetch --prune --tags'
 alias gc='git commit -v'
 alias gco='git checkout'
 alias gdc='git diff | cat'
 alias glo='git log --oneline'
+alias glol='git log --oneline'
+alias gpforce='git push --force-with-lease'
 gloc() {
   local n=${1:-10}
   git log --oneline | head "-$n"
