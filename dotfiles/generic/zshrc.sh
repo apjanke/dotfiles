@@ -4,6 +4,8 @@
 # have some OMZisms left over. If you don't recognize something in here, that
 # could be what it is.
 
+# shellcheck shell=zsh
+
 # Debugging prompt with timestamp for profiling under `zsh -x`
 #PS4=$'+ %D{%s.%6.} %N:%i> '
 

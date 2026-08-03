@@ -2,6 +2,8 @@
 # Sets Prezto options.
 #
 
+# shellcheck shell=zsh
+
 #
 # General
 #

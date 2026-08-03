@@ -2,6 +2,8 @@
 #
 # Common bashlike login shell and env configuration.
 
+# shellcheck shell=bash
+
 # Call uname once and stash results for performance
 if [[ -z $__uname ]]; then
   __uname=$(uname)
