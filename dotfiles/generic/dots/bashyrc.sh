@@ -209,15 +209,9 @@ alias fn='find . -iname'
 function grin()  { grep -rIn    "${JX_GRIN_EXCLUDES[@]}" "$@"; }
 function griin() { grep -rIn -i "${JX_GRIN_EXCLUDES[@]}" "$@"; }
 JX_GRIN_EXCLUDES=(
-  --exclude-dir=.git
-  --exclude-dir=.cvs
-  --exclude-dir=.hg
-  --exclude-dir=.svn
-  --exclude-dir=venv
-  --exclude-dir=.venv
-  --exclude-dir=node_modules
+  --exclude-dir=.git --exclude-dir=.cvs --exclude-dir=.hg --exclude-dir=.svn
+  --exclude-dir=venv --exclude-dir=.venv --exclude-dir=node_modules
   --exclude-dir=wp-includes
-  --exclude-dir=plans
   '--exclude=*.ipynb'
 )
 
