@@ -10,7 +10,7 @@
 #
 # I'm not sure if this actually works.
 
-PROGRAM_NAME="$(basename $0)"
+PROGRAM_NAME="$(basename "$0")"
 
 function usage() {
   cat <<EOF
@@ -26,27 +26,6 @@ Options:
 EOF
 }
 
-while getopts xh opt; do
-  case $opt in
-    x)
-      OPT_TRACE=1
-      ;;
-    h)
-      usage
-      exit 0
-      ;;
-    \?)
-      echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."
-      exit 1
-      ;;
-  esac
-done
-
-if [[ -z "$1" ]]; then
-  usage
-  exit 1
-fi
-
 function set-osx-hostname() {
   name="$1"
   sudo scutil --set ComputerName "$name"
@@ -56,12 +35,21 @@ function set-osx-hostname() {
 }
 
 function main() {
+  while getopts xh opt; do
+    case $opt in
+      x)   OPT_TRACE=1 ;;
+      h)   usage; exit 0 ;;
+      \?)  echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."; exit 1 ;;
+    esac
+  done
+  if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
+
+  if [[ -z "$1" ]]; then
+    usage; exit 1
+  fi
+
   set-osx-hostname "$1"
 }
 
-if [[ $OPT_TRACE == 1 ]]; then
-  set -x
-fi
-
-main
+main "$@"
 exit 0

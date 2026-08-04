@@ -20,7 +20,7 @@ echo "Configuring local Desktop to sync with Dropbox"
 
 # Don't reconfigure already-synced folders
 if [[ -h "$DESKTOP" ]]; then
-  "Looks like '$DESKTOP' is already synced (it's a symlink)"
+  echo >&2 "Looks like '$DESKTOP' is already synced (it's a symlink)"
   exit 0
 fi
 

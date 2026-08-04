@@ -13,7 +13,7 @@
 
 set -e
 
-PROGRAM_NAME="$(basename $0)"
+PROGRAM_NAME="$(basename "$0")"
 
 function usage() {
   cat <<EOF
@@ -33,20 +33,10 @@ EOF
 
 while getopts xh opt; do
   case $opt in
-    x)
-      OPT_TRACE=1
-      ;;
-    n)
-      NO_CASKS=1
-      ;;
-    h)
-      usage
-      exit 0
-      ;;
-    \?)
-      echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."
-      exit 1
-      ;;
+    x)   OPT_TRACE=1 ;;
+    n)   NO_CASKS=1 ;;
+    h)   usage; exit 0 ;;
+    \?)  echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."; exit 1 ;;
   esac
 done
 
@@ -55,15 +45,16 @@ function _do() {
   "$@"
 }
 
+# shellcheck disable=SC2329
 function ensure_github_user_fork_remote() {
-  local USERNAME="$1"
-  local REPO="$2"
-  if ! git remote get-url "$USERNAME" &>/dev/null; then
-    _do git remote add "$USERNAME" "https://github.com/${USERNAME}/${REPO}.git"
+  local username="$1" repo="$2"
+  if ! git remote get-url "$username" &>/dev/null; then
+    _do git remote add "$username" "https://github.com/${username}/${repo}.git"
   fi
 }
 
 function main() {
+if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
 
 THISDIR=$(dirname "${BASH_SOURCE[0]}")
 GITHUB_USERNAME=apjanke
@@ -125,7 +116,7 @@ done
 
 # Do casks first so Java gets picked up; it is a dependency of some formulae
 for cask in "${casks[@]}"; do
-  _do brew install --cask $cask
+  _do brew install --cask "$cask"
 done
 
 _do brew install "${formulae[@]}"

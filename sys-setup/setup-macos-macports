@@ -7,7 +7,7 @@
 
 set -e
 
-PROGRAM_NAME="$(basename $0)"
+PROGRAM_NAME="$(basename "$0")"
 
 function usage() {
   cat <<EOF
@@ -25,26 +25,21 @@ EOF
 
 while getopts xh opt; do
   case $opt in
-    x)
-      OPT_TRACE=1
-      ;;
-    h)
-      usage
-      exit 0
-      ;;
-    \?)
-      echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage"
-      exit 1
-      ;;
+    x)   OPT_TRACE=1 ;;
+    h)   usage; exit 0 ;;
+    \?)  echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage"; exit 1 ;;
   esac
 done
 
+# shellcheck disable=SC2329
 function _do() {
   echo "$@"
   "$@"
 }
 
 function main() {
+  if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
+
   THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
   my_macports_cfg_dir="$THISDIR/macports"
   ports=($(cat "$my_macports_cfg_dir/macports-ports-standard"))

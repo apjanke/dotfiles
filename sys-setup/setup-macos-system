@@ -9,7 +9,7 @@
 # abort the whole script
 set -e
 
-PROGRAM_NAME="$(basename $0)"
+PROGRAM_NAME="$(basename "$0")"
 
 function usage() {
   cat <<EOF
@@ -59,7 +59,8 @@ if false; then
     echo " "
     echo "Now, complete the Xcode CLT install in that dialog!"
     echo -n "When done, press enter to continue: "
-    read DUMMY
+    # shellcheck disable=SC2034
+    read -r DUMMY
     echo " "
   elif [[ $rslt == *"already installed"* ]]; then
     echo "Looks like Xcode CLT is already installed."

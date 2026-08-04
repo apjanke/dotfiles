@@ -38,7 +38,8 @@ if [[ ! -e "$omz_repos_dir/ohmyzsh-custom" ]]; then
   (
     cd "$omz_repos_dir"
     # TODO: I think this will only work for public GitHub repos
-    local not_found=$(curl -s https://api.github.com/repos/$MY_GITHUB_USER/ohmyzsh-custom | grep "Not Found")
+    local not_found
+    not_found=$(curl -s https://api.github.com/repos/$MY_GITHUB_USER/ohmyzsh-custom | grep "Not Found")
     if [[ -z "$not_found" ]]; then
       echo "Cloning ohmyzsh-custom"
       git clone https://github.com/$MY_GITHUB_USER/ohmyzsh-custom "$omz_repos_dir/ohmyzsh-custom"
@@ -71,9 +72,9 @@ fi
 # the zsh the user would want is located.
 
 if [[ $(uname) = Darwin ]]; then
-  curr_shell_if_zsh=$(dscl /Search -read "/Users/$USER" UserShell | awk '{print $2}' | grep zsh 2>/dev/null)
+  curr_shell=$(dscl /Search -read "/Users/$USER" UserShell | awk '{print $2}' | grep zsh 2>/dev/null)
 else
-  curr_shell_if_zsh=$(echo "$SHELL" | grep zsh 2>/dev/null)
+  curr_shell=$(echo "$SHELL" | grep zsh 2>/dev/null)
 fi
 if [[ -z "$curr_shell" ]]; then
   echo "NOTE: Your current shell is not zsh. You will need to change it to zsh if you want to use oh-my-zsh."
