@@ -14,7 +14,7 @@ The `install-dotfiles` script will set up the appropriate links in the current u
 
 Caution: `install-dotfiles` will clobber any locally-created files if you have them. It's not careful, and it's intended to be run in a newly created account, or one that already has dotfiles managed this way.
 
-I like to keep both the `dotfiles` and `oh-my-zsh-custom` repo clones in my Dropbox and link to them from there, so that my commonly used interactive machines pick up changes automatically without having to do a `git pull`, and for testing changes on multiple platforms before committing them.
+I like to keep both the `dotfiles` and `ohmyzsh-custom` repo clones in my Dropbox and link to them from there, so that my commonly used interactive machines pick up changes automatically without having to do a `git pull`, and for testing changes on multiple platforms before committing them.
 
 ## Organization
 
@@ -56,7 +56,7 @@ Defined files:
 
 The `.dots/zshrc-(omz|prezto|nocustomizer)` files are alternatives to each other, and exactly one is called, depending on which shell customizer (OMZ, Prezto, or none) you are running in that shell session.
 
-My OMZ customization files are in a separate [apjanke/oh-my-zsh-custom repo](https://github.com/apjanke/oh-my-zsh-custom). This can be installed using the `sys-setup/setup-macos-user` script.
+My OMZ customization files are in a separate [apjanke/ohmyzsh-custom repo](https://github.com/apjanke/ohmyzsh-custom). This can be installed using the `sys-setup/setup-macos-user` script.
 
 In the shell configuration, I try to separate env configuration from interactive-shell configuration, and keep the env configuration part minimal, which seems to be what the Bash and Zsh documentation recommend. The env config goes in `.profile`/`.zprofile`
 

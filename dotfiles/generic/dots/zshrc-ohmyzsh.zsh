@@ -11,15 +11,15 @@ ZSH=${ZSH:-$HOME/.oh-my-zsh}
 
 #APJ_OMZ_DEBUG=1
 if [[ $APJ_OMZ_DEBUG == 1 ]]; then
-  APJ_OMZ_DEBUG_DIR=~/var/oh-my-zsh
+  APJ_OMZ_DEBUG_DIR=~/var/ohmyzsh
   mkdir -p $APJ_OMZ_DEBUG_DIR
   set | sort > $APJ_OMZ_DEBUG_DIR/vars_before_omz.txt
 fi
 
 ZSH_THEME_SCM_CHECK_TIMEOUT=0.5
 #CASE_SENSITIVE=true
-if [[ -d $HOME/.oh-my-zsh-custom && "$DISABLE_OH_MY_ZSH_CUSTOM" != 1 ]]; then
-  ZSH_CUSTOM=$HOME/.oh-my-zsh-custom
+if [[ -d $HOME/.ohmyzsh-custom && "$DISABLE_OH_MY_ZSH_CUSTOM" != 1 ]]; then
+  ZSH_CUSTOM=$HOME/.ohmyzsh-custom
   ZSH_THEME=${ZSH_THEME:-apjanke-01}
 else
   ZSH_THEME=${ZSH_THEME:-robbyrussell}

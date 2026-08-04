@@ -34,16 +34,16 @@ if [[ ! -e "$omz_repos_dir/ohmyzsh" ]]; then
     git fetch --all --tags
   )
 fi
-if [[ ! -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
+if [[ ! -e "$omz_repos_dir/ohmyzsh-custom" ]]; then
   (
     cd "$omz_repos_dir"
     # TODO: I think this will only work for public GitHub repos
-    local not_found=$(curl -s https://api.github.com/repos/$MY_GITHUB_USER/oh-my-zsh-custom | grep "Not Found")
+    local not_found=$(curl -s https://api.github.com/repos/$MY_GITHUB_USER/ohmyzsh-custom | grep "Not Found")
     if [[ -z "$not_found" ]]; then
-      echo "Cloning oh-my-zsh-custom"
-      git clone https://github.com/$MY_GITHUB_USER/oh-my-zsh-custom "$omz_repos_dir/oh-my-zsh-custom"
+      echo "Cloning ohmyzsh-custom"
+      git clone https://github.com/$MY_GITHUB_USER/ohmyzsh-custom "$omz_repos_dir/ohmyzsh-custom"
     else
-      echo "User $MY_GITHUB_USER has no (public) oh-my-zsh-custom repo; skipping."
+      echo "User $MY_GITHUB_USER has no (public) ohmyzsh-custom repo; skipping."
     fi
   )
 fi
@@ -54,15 +54,15 @@ if [[ ! -e ~/.oh-my-zsh ]]; then
 else
   echo "An ~/.oh-my-zsh already exists. Not changing it."
 fi
-if [[ ! -e ~/.oh-my-zsh-custom ]]; then
-  if [[ -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
-    echo "Linking ~/.oh-my-zsh-custom"
-    ln -s "$omz_repos_dir/oh-my-zsh-custom" ~/.oh-my-zsh-custom
+if [[ ! -e ~/.ohmyzsh-custom ]]; then
+  if [[ -e "$omz_repos_dir/ohmyzsh-custom" ]]; then
+    echo "Linking ~/.ohmyzsh-custom"
+    ln -s "$omz_repos_dir/ohmyzsh-custom" ~/.ohmyzsh-custom
   else
-    echo "No oh-my-zsh-custom repo is defined under $omz_repos_dir; skipping linking"
+    echo "No ohmyzsh-custom repo is defined under $omz_repos_dir; skipping linking"
   fi
 else
-  echo "An ~/.oh-my-zsh-custom already exists. Not changing it."
+  echo "An ~/.ohmyzsh-custom already exists. Not changing it."
 fi
 
 # Check that zsh is the default shell.
