@@ -14,10 +14,10 @@ If you want to use this repo, make a copy, read and understand it, and load it i
 
 There are a few different parts to this repo.
 
-* [*dotfiles*](dotfiles/README.md) – Unix-style configuration files for dropping in to your home directory.
-* *bin* – Portable-ish little Unix scripts and programs I want on all my computers.
-* [*sys-setup*](sys-setup/README.md) – System and user configuration scripts that install things and adjust system settings.
-* *settings* – Settings data files.
+- [*dotfiles*](dotfiles/README.md) – Unix-style configuration files for dropping in to your home directory.
+- *bin* – Portable-ish little Unix scripts and programs I want on all my computers.
+- [*sys-setup*](sys-setup/README.md) – System and user configuration scripts that install things and adjust system settings.
+- *settings* – Settings data files.
   * *manual* – Exported and imported settings files from various programs, managed manually.
   * [*iTerm2*](iTerm2/README.md) – Shared data directory for iTerm2's "load settings from folder" preference sync thing.
 
@@ -25,19 +25,19 @@ There are a few different parts to this repo.
 
 To set up the dotfiles:
 
-* Clone this repo locally, to its permanent location.
-* Run the `install-dotfiles` command found in the root of the repo.
+- Clone this repo locally, to its permanent location.
+- Run the `install-dotfiles` command found in the root of the repo.
 
 That will symlink your various `~/.*` files to their definitions in the repo.
 
 To set up a new Mac from scratch using `sys-setup`:
 
-* Clone this repo locally, to its permanent location.
-* Install Xcode and/or the Xcode CLT.
-* In `sys-setup`:
-  * `./setup-osx-homebrew`
-  * `sudo ./setup-osx-system`
-  * `./setup-osx-user`
+- Clone this repo locally, to its permanent location.
+- Install Xcode and/or the Xcode CLT.
+- In `sys-setup`:
+  - `./setup-osx-homebrew`
+  - `sudo ./setup-osx-system`
+  - `./setup-osx-user`
 
 ### Using in Dropbox - not recommended
 

@@ -274,7 +274,7 @@ alias cd....='cd ../../..'
 
 function mkcd() {
   mkdir -p "$1"
-  cd "$1"
+  cd "$1" || return
 }
 
 function wwhich() {
