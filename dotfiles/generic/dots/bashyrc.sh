@@ -203,7 +203,7 @@ alias tree="tree -I '.git|.svn|*.swp'"
 alias duh="du -csh"
 alias fn='find . -iname'
 
-# grep stuff
+# Grepping and finding
 
 # grin - grep with exclusions
 function grin()  { grep -rIn    "${JX_GRIN_EXCLUDES[@]}" "$@"; }
@@ -215,24 +215,32 @@ JX_GRIN_EXCLUDES=(
   '--exclude=*.ipynb'
 )
 
+# Do a find but exclude .git repo directories
+# Generify: expand to cover .svn, .cvs, .venv etc., and rename
+function find-no-git {
+  local dir="$1"; shift
+  local args=( "$@" )
+  find "$dir" \( -type d -name .git -prune \) -o "${args[@]}"
+}
+
+
 # Git stuff
 
-# I picked this "g" alias up from someone else, and don't think I like it. Disabled for now.
-# alias g="git"
-alias gst='git status'
 alias gfpt='git fetch --prune --tags'
 alias gc='git commit -v'
+alias gpforce='git push --force-with-lease'
 alias gco='git checkout'
+
+alias gst='git status'
 alias gdc='git diff | cat'
 alias glo='git log --oneline'
 alias glol='git log --oneline'
-alias gpforce='git push --force-with-lease'
 gloc() {
   local n=${1:-10}
   git log --oneline | head "-$n"
 }
 gpom() {
-  echo git pull origin master
+  echo >&2 git pull origin master
   git pull origin master
 }
 # Open any files marked as “modified” in my default editor.
@@ -254,22 +262,21 @@ alias octave-stable="octave-stable -q"  # suppress banner
 
 # Directory navigation
 
-alias -- -='cd -'
-# Disable this simple "~" alias bc (as of 2026) I think it might interfere with built-in shell stuff
-#alias ~="cd ~"
+alias -- -='cd -'  # '-' = 'cd -'
+alias cd/='cd /'
+# Disable this simple "~" alias bc (as of 2026) I think it might interfere with built-in shell stuff?
+# alias ~="cd ~"
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias cd..='cd ..'
 alias cd...='cd ../..'
 alias cd....='cd ../../..'
+
 # Disable pd, bc I don't use it enough to have that shorthand memorized.
 # alias pd=pushd
 
-function mkcd() {
-  mkdir -p "$1"
-  cd "$1" || return
-}
+function mkcd() { mkdir -p "$1"; cd "$1" || return; }
 
 function wwhich() {
   if command -v "$1" &>/dev/null; then
@@ -277,15 +284,6 @@ function wwhich() {
   else
     command -v "$1"
   fi
-}
-
-# Do a find but exclude .git repo directories
-function find-no-git {
-  local dir="$1"
-  shift
-  local args=( "$@" )
-
-  find "$dir" \( -type d -name .git -prune \) -o "${args[@]}"
 }
 
 # Fancycat
@@ -310,10 +308,9 @@ function jx-shell-info() {
 
   local flag OPTIND do_long_path
   while getopts 'p' flag; do
-    # echo "flag=${flag} OPTARG=${OPTARG:-} OPTIND=${OPTIND}"
     case "${flag}" in
       p) do_long_path=1 ;;
-      *) echo >&2 "jx-shell-info: Unrecognized option: $flag"; return ;;
+      *) echo >&2 "jx-shell-info: Unrecognized option: $flag"; return 1 ;;
     esac
   done
 
@@ -322,8 +319,7 @@ function jx-shell-info() {
   # Detect this current shell
   # Hack: assume common shell variables have been neither clobbered nor exported
   if [[ -n $ZSH_ARGZERO ]]; then
-    # shellcheck disable=SC2153
-    shell_info="zsh $ZSH_VERSION ($ZSH_ARGZERO)"
+    shell_info="zsh ${ZSH_VERSION:-} ($ZSH_ARGZERO)"
   elif [[ -n $BASH ]]; then
     shell_info="bash $BASH_VERSION ($BASH)"
   elif [[ -n $KSH_VERSION ]]; then
@@ -389,7 +385,6 @@ PATH: ${PATH}
 
 EOS
   fi
-
 }
 
 # Dropbox

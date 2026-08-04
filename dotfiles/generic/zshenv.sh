@@ -12,8 +12,8 @@ if [[ -f "$HOME/.profile" ]]; then
   source "$HOME/.profile"
 fi
 
-# zsh-specific env setup follows here
 
+# zsh-specific env setup follows here
 
 # Zsh configurator
 

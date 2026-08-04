@@ -44,8 +44,5 @@ jx_maybe_add_path "$HOME/.local/bin" prepend
 
 # RVM and Ruby
 
-if [[ -d $HOME/.rvm ]]; then
-  # TODO: Should this go to the front, to shadow system installations?
-  jx_maybe_add_path "$HOME/.rvm/bin"
-fi
-
+# TODO: Should this go to the front, to shadow system installations?
+jx_maybe_add_path "$HOME/.rvm/bin"

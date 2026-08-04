@@ -57,9 +57,8 @@ fi
 
 # Load a requested Ruby env mgr
 function jx-rbenvmgr-load () {
-  local envmgr my_shell
-  envmgr="$1"
-  be_quiet="$2"
+  local envmgr="$1" be_quiet="$2"
+  local my_shell
 
   if [[ $envmgr == rbenv ]]; then
     if command -v rbenv &>/dev/null; then
@@ -101,8 +100,7 @@ function jx-conda-load () {
   # This supports both Anaconda and Mamba installations.
   # If no conda installation is found, does not load anything, and silently succeeds.
 
-  local -a conda_prefix_cands
-  local -a conda_impl_cands
+  local -a conda_prefix_cands conda_impl_cands
   local conda_prefix conda_impl conda_path conda_path_cand conda_setup_code my_shell
   conda_prefix_cands=("${HOME}" '/opt/pythons' '/opt' '/usr/local')
   conda_impl_cands=('miniforge3' 'miniforge' 'anaconda3' 'anaconda')
@@ -160,8 +158,12 @@ fi
 
 # shellcheck disable=SC2120
 function jx-nvm-load() {
+  local flag="$1"
   local -a nvm_locn_cands
   local cand found verbose=0
+  if [[ "$flag" == '-v' ]]; then
+    verbose=1
+  fi
 
   #TODO: Maybe adapt NVM's official instructions (from https://github.com/nvm-sh/nvm):
   # export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
@@ -169,9 +171,6 @@ function jx-nvm-load() {
   #   or
   # [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use # This loads nvm, without auto-using the default version
 
-  if [[ "$1" == '-v' ]]; then
-    verbose=1
-  fi
   # TODO: only check Homebrew and MacPorts locations if they're loaded, respectively?
   nvm_locn_cands=(
     # User-local installation (NVM's own recommended installation approach)
