@@ -2,7 +2,7 @@
 
 This directory structure is intended for syncing to multiple machines and platforms, and symlinks used to pull the files in as appropriate. Syncing can be done by Git, Dropbox, or network shares.
 
-This dir is used by being mounted on or synced to multiple machines, and files symlinked in to it, at the level of individual files. (Typically done with Dropbox and/or Git.) Moving files around may break things and require a re-install.
+This dir is used by being mounted on or synced to multiple machines, and files symlinked in to it, at the level of individual files. Moving files around may break things and require a re-install, and is not robustly auto-detected.
 
 ## Installation and usage
 

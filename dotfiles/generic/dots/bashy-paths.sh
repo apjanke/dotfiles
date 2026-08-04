@@ -16,6 +16,8 @@ fi
 
 
 function jx_maybe_add_path() {
+  #TODO: Add "only if not already on path" support
+  #TODO: Conver to '--prepend'
   if [[ -d "$1" ]]; then
     if [[ "$2" = "prepend" ]]; then
       PATH="$1:$PATH";

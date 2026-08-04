@@ -3,6 +3,8 @@
 ## General
 
 - Add more documentation. A Design doc.
+- Tool in zsh to quick switch to a simpler no-emoji theme suitable for copy-paste, in current session.
+- Fix `bash: alias: `cd/': invalid alias name`.
 - `install-dotfiles`
   - Make it safe. Don't replace existing non-symlink files, unless `--clobber` is given. Make backups of clobbered files. Update existing symlinks.
 - Deep symlinks - symlinks for files in subdirs, like .config or .ssh.
@@ -12,10 +14,28 @@
   - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough to work
 - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
+- `jx_maybe_add_path` - conditionalize on "already in `$PATH`", not just dir existence; --prepend option form
+- Rename `~/bin` to `~/bin-dots` to make it clear it's the one in the dotfiles repo?
+- `jx-shell-info`
+  - Distinguish unset variables from blank strings.
+  - Reformat JX dotifles variables to have spaces around " = ".
+  - List presence of optional files, like `~/.*-local`.
+  - Support multi-line JX variables?
+  - Include my special non-JX-prefixed variables, like DROPBOX.
+  - `-v | --verbose` option: show internal `_JX_*` vars, longer formatting
+- A `_jx_do` function to echo a command and then run it.
 - GitHub protection rule to prohibit force-pushing `main`.
+- Make .hgignore_global a symlink to .gitignore_global?
+  - Add support for relative symlinks, like `.hgignore_global -> .gitignore_global`?
 - Detect breakage in installation?
   - In the startup scripts, check for presence of required files linked in to ~ and complain if they're absent? To catch things like needing a fresh `install-dotfiles` run after I add/remove/rename linked files in the repo.
+- `zshrc-ohmyzsh.zsh`
+  - Refactor the APJ_OMZ_DEBUG into functions so the definition is all in one place.
+  - Pll default values for ZSH_THEME up into .zshenv or .profile?
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
+- shellcheck configuration
+  - add a config file, disable rules: dynamic-follow
+  - decide about zsh, and handle bogus `shellcheck shell=zsh` dialect
 - Move path setup up in to env/login stage.
 - `.*env` files to go with `.*rc` files, or a common `.dots/bashyenv.sh`?
 - Review and tighten up the shell file calling order and its documentation here.
