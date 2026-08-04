@@ -228,7 +228,8 @@ function find-no-git {
 
 alias gfpt='git fetch --prune --tags'
 alias gc='git commit -v'
-alias gpforce='git push --force-with-lease'
+# alias gpforce='git push --force-with-lease'
+alias gpushforce='git push --force-with-lease'
 alias gco='git checkout'
 
 alias gst='git status'
