@@ -82,7 +82,7 @@ if [[ $JX_ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
   )
   ZSH_THEME=${JX_OMZ_THEME:-agnosterj}
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
-  plugins=( osx themes )
+  plugins=( macos themes )
   source ~/.dots/zshrc-oh-my-zsh.zsh
 elif [[ $JX_ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.zprezto" ]]; then
   source ~/.dots/zshrc-prezto.zsh
