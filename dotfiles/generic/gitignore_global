@@ -1,40 +1,61 @@
 # Andrew's custom gitignore
 
-*~
+# Typical temp files
 
-# Mac OS X
+*~
+*.diff
+*.err
+*.vi
+*.log
+*.orig
+*.out
+
+# Language droppings & build artifacts
+
+build/
+dist/
+
+# Python
+*.pyc
+__pycache__
+# C/C++
+*.o
+
+# Mac
+
 .DS_Store
 .AppleDouble
 .LSOverride
 ._*
-
-# Windows
-#ignore thumbnails created by Windows
-Thumbs.db
-
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
 
+# Windows
+
+Thumbs.db
+
 # Matlab
+
 *.asv
 *.m~
 
 # NetBeans working files
+
 nbproject/private/
 */nbproject/private/
-build/
 nbbuild/
-dist/
 nbdist/
 nbactions.xml
 nb-configuration.xml
 
 # IntelliJ IDEA working files
+
 #.idea
 cmake-build-debug
 
 # Visual Studio artifacts
+
 *.obj
 *.pdb
 *.user
@@ -52,11 +73,3 @@ cmake-build-debug
 *.ilk
 *.log
 *.sbr
-
-# Typical temp files
-*.diff
-*.err
-*.log
-*.orig
-*.pyc
-*.vi
