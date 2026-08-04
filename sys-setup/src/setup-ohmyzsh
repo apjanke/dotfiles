@@ -11,7 +11,6 @@
 #   * git (May be provided by the system, or Xcode CLT on macOS.)
 #   * curl
 
-
 set -e
 
 MY_GITHUB_USER=apjanke
@@ -28,11 +27,11 @@ mkdir -p "$omz_repos_dir"
 if [[ ! -e "$omz_repos_dir/ohmyzsh" ]]; then
   (
     cd "$omz_repos_dir"
-    echo "Cloning oh-my-zsh"
+    echo "Cloning ohmyzsh"
     git clone https://github.com/$MY_GITHUB_USER/ohmyzsh
     cd ohmyzsh
     git remote add upstream https://github.com/ohmyzsh/ohmyzsh
-    git fetch --all
+    git fetch --all --tags
   )
 fi
 if [[ ! -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
@@ -52,6 +51,8 @@ if [[ ! -e ~/.oh-my-zsh ]]; then
   echo "Linking ~/.oh-my-zsh"
   ln -s "$omz_repos_dir/ohmyzsh" ~/.oh-my-zsh
   echo "Linked ~/.oh-my-zsh. You will need to edit ~/.zshrc to source it."
+else
+  echo "An ~/.oh-my-zsh already exists. Not changing it."
 fi
 if [[ ! -e ~/.oh-my-zsh-custom ]]; then
   if [[ -e "$omz_repos_dir/oh-my-zsh-custom" ]]; then
@@ -60,6 +61,8 @@ if [[ ! -e ~/.oh-my-zsh-custom ]]; then
   else
     echo "No oh-my-zsh-custom repo is defined under $omz_repos_dir; skipping linking"
   fi
+else
+  echo "An ~/.oh-my-zsh-custom already exists. Not changing it."
 fi
 
 # Check that zsh is the default shell.

@@ -1,6 +1,6 @@
 # zshrc-none.zsh
 #
-# zshrc for use when no configurator framework (oh-my-zsh, prezto, etc) is being used
+# zshrc for use when no configurator framework (ohmyzsh, prezto, etc) is being used
 # This contains alternate setup for the things in OMZ that I rely on.
 #
 # Mostly copied from the indicated OMZ files, with my own termsupport changes
@@ -95,6 +95,3 @@ zstyle -e ':completion:*' list-colors 'reply=${(s.:.)LS_COLORS}'
 
 autoload -U compinit
 compinit -i
-
-
-

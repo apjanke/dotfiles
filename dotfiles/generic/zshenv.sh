@@ -17,8 +17,8 @@ fi
 
 # Zsh configurator
 
-# Valid: 'oh-my-zsh', 'prezto', or 'none'
-export JX_ZSH_CONFIGURATOR=${JX_ZSH_CONFIGURATOR:-oh-my-zsh}
+# Valid: 'ohmyzsh', 'prezto', or 'none'
+export JX_ZSH_CONFIGURATOR=${JX_ZSH_CONFIGURATOR:-ohmyzsh}
 export JX_OMZ_THEME=${JX_OMZ_THEME:-agnosterj}
 export JX_PREZTO_THEME=${JX_PREZTO_THEME:-sorin-apj}
 
@@ -28,4 +28,3 @@ export JX_PREZTO_THEME=${JX_PREZTO_THEME:-sorin-apj}
 if [[ -f $HOME/.zshenv-local ]]; then
   source "${HOME}/.zshenv-local"
 fi
-

@@ -55,11 +55,11 @@ fi
 # installed on this system.
 #
 # Controlled by:
-#  $JX_ZSH_CONFIGURATOR - "oh-my-zsh", "prezto", or "none"
+#  $JX_ZSH_CONFIGURATOR - "ohmyzsh", "prezto", or "none"
 #  $JX_OMZ_THEME - theme for OMZ
 #  $JX_PREZTO_THEME - theme for Prezto
 
-if [[ $JX_ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
+if [[ $JX_ZSH_CONFIGURATOR == "ohmyzsh" && -d "$HOME/.oh-my-zsh" ]]; then
   # _OMZ_DEBUG=1
   # _OMZ_DEBUG_SMKX=1
   # DISABLE_OH_MY_ZSH_CUSTOM=1
@@ -83,7 +83,7 @@ if [[ $JX_ZSH_CONFIGURATOR == "oh-my-zsh" && -d "$HOME/.oh-my-zsh" ]]; then
   ZSH_THEME=${JX_OMZ_THEME:-agnosterj}
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
   plugins=( macos themes )
-  source ~/.dots/zshrc-oh-my-zsh.zsh
+  source ~/.dots/zshrc-ohmyzsh.zsh
 elif [[ $JX_ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.zprezto" ]]; then
   source ~/.dots/zshrc-prezto.zsh
 else
@@ -163,4 +163,3 @@ setopt clobber
 if [[ -f ~/.zshrc-local ]]; then
   source ~/.zshrc-local
 fi
-

@@ -829,7 +829,7 @@ fi
 # Oh My Zsh
 ################################################
 
-$MYDIR/src/setup-oh-my-zsh
+$MYDIR/src/setup-ohmyzsh
 
 ################################################
 # Prezto

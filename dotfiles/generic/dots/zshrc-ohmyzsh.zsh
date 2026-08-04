@@ -1,4 +1,4 @@
-# zshrc-oh-my-zsh.zsh
+# zshrc-ohmyzsh.zsh
 #
 # Logic for loading and configuring Oh My Zsh
 
