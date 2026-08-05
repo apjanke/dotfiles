@@ -264,7 +264,6 @@ alias octave-stable="octave-stable -q"  # suppress banner
 # Directory navigation
 
 alias -- -='cd -'  # '-' = 'cd -'
-alias cd/='cd /'
 # Disable this simple "~" alias bc (as of 2026) I think it might interfere with built-in shell stuff?
 # alias ~="cd ~"
 alias ..='cd ..'

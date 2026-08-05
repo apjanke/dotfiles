@@ -4,7 +4,6 @@
 
 - Add more documentation. A Design doc.
 - Tool in zsh to quick switch to a simpler no-emoji theme suitable for copy-paste, in current session.
-- Fix `bash: alias: `cd/': invalid alias name`.
 - `install-dotfiles`
   - Make it safe. Don't replace existing non-symlink files, unless `--clobber` is given. Make backups of clobbered files. Update existing symlinks.
 - Deep symlinks - symlinks for files in subdirs, like .config or .ssh.
