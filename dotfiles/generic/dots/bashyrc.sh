@@ -234,16 +234,13 @@ alias gco='git checkout'
 
 alias gst='git status'
 alias gdc='git diff | cat'
+# 'glol' disabled to avoid shadowing OMZ's own 'glol' alias
+# alias glol='git log --oneline'
+# old 'glo' alias kept for muscle memory reasons while I consider switching to 'glol'
 alias glo='git log --oneline'
-alias glol='git log --oneline'
-gloc() {
-  local n=${1:-10}
-  git log --oneline | head "-$n"
-}
-gpom() {
-  echo >&2 git pull origin master
-  git pull origin master
-}
+glolh() { local n=${1:-20}; git --no-pager log --oneline -n "$n"; }
+alias gloh=glolh
+gpom()  { local cmd=(git pull origin main); echo >&2 "${cmd[*]}"; "${cmd[@]}"; }
 # Open any files marked as “modified” in my default editor.
 # TODO: This looks Mac-specific bc of the 'open' command?
 alias geditchanged='open `git status --porcelain | sed -ne "s/^ M //p"`'
