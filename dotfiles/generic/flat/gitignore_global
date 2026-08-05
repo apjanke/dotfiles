@@ -73,3 +73,7 @@ cmake-build-debug
 *.ilk
 *.log
 *.sbr
+
+# Claude and similar tools
+
+**/.claude/settings.local.json

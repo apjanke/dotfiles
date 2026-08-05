@@ -36,7 +36,7 @@ function jx-rainbow-me() {
   export CLICOLOR=1
   export LSCOLORS=gx
 
-  alias l='ls | lolcat' 
+  alias l='ls | lolcat'
   alias la='ls -la | lolcat'
 }
 
@@ -110,7 +110,7 @@ if [[ $__uname = "Darwin" ]]; then
     # understand what it does.
     # sudo rm -rfv /private/var/log/asl/*.asl
   }
-  
+
   # MacPorts setup
 
   # MacPorts puts itself on the path at the system level (I think), so we don't have
@@ -125,7 +125,7 @@ if [[ $__uname = "Darwin" ]]; then
   function jx-load-homebrew() {
     local -a _cand_brew_prefixes
     local _brew_prefix
-    # This detects the Intel vs. Apple Silicon location, plus non-default locations. 
+    # This detects the Intel vs. Apple Silicon location, plus non-default locations.
     # The default /usr/local on Intel will already be on the default PATH.
     _cand_brew_prefixes=(
       '/opt/homebrew'
@@ -416,4 +416,3 @@ alias dbox='cd "$DROPBOX"'
 if [[ -f "${HOME}/.bashyrc-local" ]]; then
   source "${HOME}/.bashyrc-local"
 fi
-

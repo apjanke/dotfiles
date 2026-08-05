@@ -7,7 +7,7 @@
 - `install-dotfiles`
   - Make it safe. Don't replace existing non-symlink files, unless `--clobber` is given. Make backups of clobbered files. Update existing symlinks.
   - Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
-- Deep symlinks - symlinks for files in subdirs, like .config or .ssh.
+  - When adding the first `deep/_ssh/` or `deep/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_deep`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
 - Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
 - The `dotfiles/` project subdir mixes two things: the sync/install framework and shell-rcfile structure (bash+zsh, multiple configurators) vs. my personal dotfile contents/preferences. Consider splitting the framework part out as its own project/repo, maybe named "dotframe" or "dotframe-jx". Not started.
 - Replace old "APJ_" prefix with "JX_"?

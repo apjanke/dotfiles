@@ -20,6 +20,7 @@ There are a few different parts to this repo.
 - *settings* – Settings data files.
   * *manual* – Exported and imported settings files from various programs, managed manually.
   * [*iTerm2*](iTerm2/README.md) – Shared data directory for iTerm2's "load settings from folder" preference sync thing.
+- *tools* – Scripts for maintaining this repo itself, as opposed to configuring a machine. Currently just `lint`.
 
 ## Overall Installation / Usage
 
@@ -39,6 +40,13 @@ To set up a new Mac from scratch using `sys-setup`:
   - `sudo ./setup-osx-system`
   - `./setup-osx-user`
 
+### Checking the code
+
+There are two checks, both runnable from the repo root and both exiting non-zero on any problem, so they work in CI:
+
+- `./dotfiles/tests/run-tests` – exercises `install-dotfiles` against a throwaway `$HOME`, so it never touches your real one.
+- `tools/lint` – static-checks the shell scripts: shellcheck for bash/sh, and `zsh -n` for zsh, since shellcheck has no zsh dialect.
+
 ### Using in Dropbox - not recommended
 
 I used to keep my "local" clone of this repo in my Dropbox cloud drive, but that didn't work great and I don't do it any more or recommend that others do it. Now I just keep it in a regular repo clone directory outside Dropbox or any other cloud drive.
@@ -50,6 +58,10 @@ The idea was to save the work of periodically doing git pulls on each computer w
 See `dotfiles/README.md` for info in the design of my dotfiles and shell configuration setup.
 
 The `setup-osx-system` and `setup-osx-user` scripts can only have soft dependencies on `setup-osx-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation. And as of 2024, the `setup-osx-*` scripts are most broken, because every new macOS release, Apple seems to remove or break some of the scripting or configurability support in macOS, and I'm too tired to try to keep up with it.
+
+## AI use disclosure
+
+Some of the code in this repo was produced with the assistance of generative AI. Specifically, Claude Code. This AI use started on 8/6/2026 with commit "deep selective linking". The code in the git history prior to that is AI-clean.
 
 ## License
 
