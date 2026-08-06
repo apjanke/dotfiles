@@ -586,7 +586,7 @@ if [[ ! -d "$ITERM_PREFS_DIR" ]]; then
   echo >&2 "WARNING: Not updating iTerm2 shared prefs dir because dir does not exist: '$ITERM_PREFS_DIR'"
   return
 fi
-if ps aux | grep '[i]Term' &>/dev/null; then
+if pgrep -q iTerm; then
   if [[ $(defaults read com.googlecode.iterm2 PrefsCustomFolder) != "$ITERM_PREFS_DIR" ]]; then
     echo >&2 "WARNING: Cannot change iTerm2 preferences shared folder while iTerm2 is running."
     echo >&2 "WARNING: iTerm2 preferences folder was not updated."
