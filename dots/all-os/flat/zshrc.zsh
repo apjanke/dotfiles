@@ -81,11 +81,11 @@ if [[ $JX_ZSH_CONFIGURATOR == "ohmyzsh" && -d "$HOME/.oh-my-zsh" ]]; then
   ZSH_THEME=${JX_OMZ_THEME:-agnosterj}
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
   plugins=( macos themes )
-  source ~/.dots/zshrc-ohmyzsh.zsh
+  source ~/.dotlib/zshrc-ohmyzsh.zsh
 elif [[ $JX_ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.zprezto" ]]; then
-  source ~/.dots/zshrc-prezto.zsh
+  source ~/.dotlib/zshrc-prezto.zsh
 else
-  source ~/.dots/zshrc-nocustomizer.zsh
+  source ~/.dotlib/zshrc-nocustomizer.zsh
 fi
 
 # OMZ & Prezto sometimes alias these for "safety" to versions that prompt
@@ -99,8 +99,8 @@ unalias mv 2>/dev/null
 # This goes after the configurator, so we can override its actions by clobbering.
 
 # Pull in common bash/zsh configuration
-if [[ -f "$HOME/.dots/bashyrc.sh" ]]; then 
-  source "$HOME/.dots/bashyrc.sh"
+if [[ -f "$HOME/.dotlib/bashyrc.sh" ]]; then 
+  source "$HOME/.dotlib/bashyrc.sh"
 fi
 
 # Zsh autocorrect is more trouble than it's worth for me; disable it

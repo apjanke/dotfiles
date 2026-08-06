@@ -81,6 +81,6 @@ fi
 
 # Path setup
 
-if [[ -f $HOME/.dots/bashy-paths.sh ]]; then
-  source "$HOME/.dots/bashy-paths.sh"
+if [[ -f $HOME/.dotlib/bashy-paths.sh ]]; then
+  source "$HOME/.dotlib/bashy-paths.sh"
 fi

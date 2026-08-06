@@ -2,7 +2,7 @@
 #
 # run-tests - exercise install-dotfiles against a throwaway $HOME
 #
-# Usage: ./dotfiles/tests/run-tests
+# Usage: ./dots/tests/run-tests
 #
 # Exits non-zero if any assertion fails, so it is usable from CI.
 #
@@ -117,16 +117,16 @@ function run_tests() {
   new_fake_home
   install_into_fake_home > /dev/null
 
-  assert_symlink_to '.bashrc'    "$REPO/dotfiles/generic/flat/bashrc.sh"  'flat tree: .bashrc links to bashrc.sh'
-  assert_symlink_to '.profile'   "$REPO/dotfiles/generic/flat/profile.sh" 'flat tree: .profile links to profile.sh'
-  assert_symlink_to '.zshrc'     "$REPO/dotfiles/generic/flat/zshrc.zsh"  'munging: .zshrc comes from zshrc.zsh'
-  assert_symlink_to '.hushlogin' "$REPO/dotfiles/generic/flat/hushlogin"  'no extension to strip: .hushlogin'
-  assert_symlink_to '.gitconfig' "$REPO/dotfiles/macos/flat/gitconfig"    'OS-specific file shadows generic: .gitconfig'
-  assert_symlink_to '.dots'      "$REPO/dotfiles/generic/flat/dots"       'a directory in the flat tree links whole: .dots'
+  assert_symlink_to '.bashrc'    "$REPO/dots/all-os/flat/bashrc.sh"  'flat tree: .bashrc links to bashrc.sh'
+  assert_symlink_to '.profile'   "$REPO/dots/all-os/flat/profile.sh" 'flat tree: .profile links to profile.sh'
+  assert_symlink_to '.zshrc'     "$REPO/dots/all-os/flat/zshrc.zsh"  'munging: .zshrc comes from zshrc.zsh'
+  assert_symlink_to '.hushlogin' "$REPO/dots/all-os/flat/hushlogin"  'no extension to strip: .hushlogin'
+  assert_symlink_to '.gitconfig' "$REPO/dots/macos/flat/gitconfig"    'OS-specific file shadows all-os: .gitconfig'
+  assert_symlink_to '.dotlib'    "$REPO/dots/all-os/flat/dotlib"     'a directory in the flat tree links whole: .dotlib'
 
-  assert_symlink_to '.config/btop/btop.conf'   "$REPO/dotfiles/generic/deep/_config/btop/btop.conf"  'deep tree: nested file is linked'
-  assert_symlink_to '.config/fish/config.fish' "$REPO/dotfiles/generic/deep/_config/fish/config.fish" 'deep tree: another nested file'
-  assert_symlink_to '.config/htop/htoprc'      "$REPO/dotfiles/generic/deep/_config/htop/htoprc"     'deep tree: two levels deep'
+  assert_symlink_to '.config/btop/btop.conf'   "$REPO/dots/all-os/deep/_config/btop/btop.conf"  'deep tree: nested file is linked'
+  assert_symlink_to '.config/fish/config.fish' "$REPO/dots/all-os/deep/_config/fish/config.fish" 'deep tree: another nested file'
+  assert_symlink_to '.config/htop/htoprc'      "$REPO/dots/all-os/deep/_config/htop/htoprc"     'deep tree: two levels deep'
   assert_real_dir   '.config'                                                      'deep tree: .config is a real dir, not a link'
   assert_real_dir   '.config/btop'                                                 'deep tree: intermediate dirs are real'
 
@@ -138,7 +138,7 @@ function run_tests() {
   assert_absent '._deep' 'no leftover ._deep from the old carve-out layout'
   assert_absent '.flat'  'the flat/ tree is not itself linked into ~'
 
-  assert_symlink_to 'bin' "$REPO/bin" 'the ~/bin dir links to the repo bin/'
+  assert_symlink_to 'bin' "$REPO/home-bin" 'the ~/bin dir links to the repo home-bin/'
 
   echo "===== the invocation path doesn't leak into the links ====="
   # install_into_fake_home calls the installer by absolute path, so nothing above here
@@ -146,35 +146,35 @@ function run_tests() {
   # used to write a self-referential "./bin" into ~/bin.
   new_fake_home
   ( cd "$REPO" && HOME="$FAKE_HOME" ./install-dotfiles ) > /dev/null 2>&1
-  assert_symlink_to 'bin' "$REPO/bin" 'run as ./install-dotfiles, ~/bin is still absolute'
+  assert_symlink_to 'bin' "$REPO/home-bin" 'run as ./install-dotfiles, ~/bin is still absolute'
   new_fake_home
-  ( cd "$REPO/dotfiles" && HOME="$FAKE_HOME" ../install-dotfiles ) > /dev/null 2>&1
-  assert_symlink_to 'bin' "$REPO/bin" 'run from a subdir as ../install-dotfiles, likewise'
-  assert_symlink_to '.bashrc' "$REPO/dotfiles/generic/flat/bashrc.sh" \
+  ( cd "$REPO/dots" && HOME="$FAKE_HOME" ../install-dotfiles ) > /dev/null 2>&1
+  assert_symlink_to 'bin' "$REPO/home-bin" 'run from a subdir as ../install-dotfiles, likewise'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
       'relative invocation gets the flat tree right too'
 
   echo "===== underscore-to-dot munging ====="
-  mkdir -p "$REPO/dotfiles/generic/deep/_munge-test/completions"
-  echo 'test content' > "$REPO/dotfiles/generic/deep/_munge-test/_leaf"
+  mkdir -p "$REPO/dots/all-os/deep/_munge-test/completions"
+  echo 'test content' > "$REPO/dots/all-os/deep/_munge-test/_leaf"
   # Shaped like the case this escape exists for: a zsh completion function, whose name
   # really does start with an underscore.
-  echo 'compdef stub' > "$REPO/dotfiles/generic/deep/_munge-test/completions/__zcomp"
+  echo 'compdef stub' > "$REPO/dots/all-os/deep/_munge-test/completions/__zcomp"
   install_into_fake_home > /dev/null
-  assert_symlink_to '.munge-test/.leaf' "$REPO/dotfiles/generic/deep/_munge-test/_leaf" \
+  assert_symlink_to '.munge-test/.leaf' "$REPO/dots/all-os/deep/_munge-test/_leaf" \
       'both a dir and a leaf file with a leading _ munge to a leading .'
   assert_symlink_to '.munge-test/completions/_zcomp' \
-      "$REPO/dotfiles/generic/deep/_munge-test/completions/__zcomp" \
+      "$REPO/dots/all-os/deep/_munge-test/completions/__zcomp" \
       'a leading __ escapes to a literal leading _'
-  rm -rf "$REPO/dotfiles/generic/deep/_munge-test"
+  rm -rf "$REPO/dots/all-os/deep/_munge-test"
 
-  echo "===== \$OSNAME shadows generic in the deep tree ====="
+  echo "===== \$OSNAME shadows all-os in the deep tree ====="
   new_fake_home
-  mkdir -p "$REPO/dotfiles/macos/deep/_config/btop"
-  echo 'macos override' > "$REPO/dotfiles/macos/deep/_config/btop/btop.conf"
+  mkdir -p "$REPO/dots/macos/deep/_config/btop"
+  echo 'macos override' > "$REPO/dots/macos/deep/_config/btop/btop.conf"
   install_into_fake_home > /dev/null
-  assert_symlink_to '.config/btop/btop.conf' "$REPO/dotfiles/macos/deep/_config/btop/btop.conf" \
-      'macos/deep overrides generic/deep on a matching target'
-  rm -rf "$REPO/dotfiles/macos/deep/_config"
+  assert_symlink_to '.config/btop/btop.conf' "$REPO/dots/macos/deep/_config/btop/btop.conf" \
+      'macos/deep overrides all-os/deep on a matching target'
+  rm -rf "$REPO/dots/macos/deep/_config"
 
   echo "===== idempotence ====="
   new_fake_home
@@ -182,7 +182,7 @@ function run_tests() {
   out2=$(install_into_fake_home -v)
   assert_contains "$out2" "Symlink '.bashrc' is already set up" 'second run reports flat-tree file unchanged'
   assert_contains "$out2" "Symlink '.config/btop/btop.conf' is already set up" 'second run reports deep-tree file unchanged'
-  if [[ "$(readlink "$FAKE_HOME/.bashrc")" == "$REPO/dotfiles/generic/flat/bashrc.sh" ]]; then
+  if [[ "$(readlink "$FAKE_HOME/.bashrc")" == "$REPO/dots/all-os/flat/bashrc.sh" ]]; then
     ok 'second run left the link pointing where it was'
   else
     fail 'second run left the link pointing where it was'
@@ -203,7 +203,7 @@ function run_tests() {
   new_fake_home
   install_into_fake_home > /dev/null
   before=$(readlink "$FAKE_HOME/.bashrc")
-  stale="$REPO/dotfiles/generic/flat/bashrc.zsh"  # stale rename leftover; both munge to .bashrc
+  stale="$REPO/dots/all-os/flat/bashrc.zsh"  # stale rename leftover; both munge to .bashrc
   echo '# stale leftover from a rename' > "$stale"
   rc=0
   out=$(install_into_fake_home) || rc=$?

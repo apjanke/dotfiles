@@ -14,8 +14,8 @@ If you want to use this repo, make a copy, read and understand it, and load it i
 
 There are a few different parts to this repo.
 
-- [*dotfiles*](dotfiles/README.md) – Unix-style configuration files for dropping in to your home directory.
-- *bin* – Portable-ish little Unix scripts and programs I want on all my computers.
+- [*dots*](dots/README.md) – Unix-style configuration files for dropping in to your home directory.
+- *home-bin* – Portable-ish little Unix scripts and programs I want on all my computers. Linked in as `~/bin`.
 - [*sys-setup*](sys-setup/README.md) – System and user configuration scripts that install things and adjust system settings.
 - *settings* – Settings data files.
   * *manual* – Exported and imported settings files from various programs, managed manually.
@@ -44,7 +44,7 @@ To set up a new Mac from scratch using `sys-setup`:
 
 There are two checks, both runnable from the repo root and both exiting non-zero on any problem, so they work in CI:
 
-- `./dotfiles/tests/run-tests` – exercises `install-dotfiles` against a throwaway `$HOME`, so it never touches your real one.
+- `./dots/tests/run-tests` – exercises `install-dotfiles` against a throwaway `$HOME`, so it never touches your real one.
 - `tools/lint` – static-checks the shell scripts: shellcheck for bash/sh, and `zsh -n` for zsh, since shellcheck has no zsh dialect.
 
 See [doc/STYLE.md](doc/STYLE.md) for the coding conventions these check against, including how to write files that are sourced by both bash and zsh.
@@ -57,7 +57,7 @@ The idea was to save the work of periodically doing git pulls on each computer w
 
 ## Design and implementation notes
 
-See `dotfiles/README.md` for info in the design of my dotfiles and shell configuration setup, and [doc/STYLE.md](doc/STYLE.md) for the shell coding conventions used throughout.
+See `dots/README.md` for info in the design of my dotfiles and shell configuration setup, and [doc/STYLE.md](doc/STYLE.md) for the shell coding conventions used throughout.
 
 The `setup-macos-system` and `setup-macos-user` scripts can only have soft dependencies on `setup-macos-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation. And as of 2024, the `setup-macos-*` scripts are most broken, because every new macOS release, Apple seems to remove or break some of the scripting or configurability support in macOS, and I'm too tired to try to keep up with it.
 

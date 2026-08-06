@@ -15,8 +15,8 @@ if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
 fi
 
 # Pull in common bashlike configuration
-if [[ -f "$HOME/.dots/bashyrc.sh" ]]; then
-  source "$HOME/.dots/bashyrc.sh"
+if [[ -f "$HOME/.dotlib/bashyrc.sh" ]]; then
+  source "$HOME/.dotlib/bashyrc.sh"
 fi
 
 # Bash-specific settings

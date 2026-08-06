@@ -18,19 +18,19 @@ I like to keep both the `dotfiles` and `ohmyzsh-custom` repo clones in my Dropbo
 
 ## Organization
 
-The dot file hierarchies are arranged by OS/platform, under the `dotfiles` directory.
+The dot file hierarchies are arranged by OS/platform, under the `dots` directory.
 
-- `dotfiles/` - Configuration files meant to be installed under the user's home directory
-  - `generic/` – Dot files for any OS, platform, or host. They either are portable, or have OS detection tests and only set OS-specific things as appropriate.
-  - `<osname>/` - Dot files specific to an OS. These take precedence over corresponding generic dot files.
-  - `<osname>/flat/` - Entries map to `~/.<name>`, and are linked whole: a directory here becomes a single symlink, which is how `~/.dots` works. A leading dot is added, and a `.sh`/`.zsh`/`.bash` extension is stripped.
+- `dots/` - Configuration files meant to be installed under the user's home directory
+  - `all-os/` – Dot files for any OS, platform, or host. They either are portable, or have OS detection tests and only set OS-specific things as appropriate.
+  - `<osname>/` - Dot files specific to an OS. These take precedence over corresponding all-os dot files.
+  - `<osname>/flat/` - Entries map to `~/.<name>`, and are linked whole: a directory here becomes a single symlink, which is how `~/.dotlib` works. A leading dot is added, and a `.sh`/`.zsh`/`.bash` extension is stripped.
   - `<osname>/deep/` - A mirror of `$HOME`, for tracking individual files that live inside a subdirectory you don't want to claim as a whole (e.g. one file inside `~/.config/some-app/`). Nesting can go arbitrarily deep; only leaf files get symlinked, and intermediate directories are created as real directories in `~`. A path component starting with `_` installs with a leading `.` instead (e.g. `_config` → `.config`), so this repo never has to hold a literal dotfile that isn't actually meant to control the repo itself. A component that genuinely does start with `.` (like `.gitkeep`) is such a file, and is excluded outright: never linked, and never forces directory creation on its own. A leading `__` escapes to a literal `_`, for names that really do start with an underscore – zsh completion functions like `_git` being the main case.
 
 The two trees are siblings rather than one living inside the other, so that neither scanner can see the other's tree as content to link. An earlier layout put the deep tree at `<osname>/_deep/`, inside the flat namespace, and the flat scanner duly picked it up and created a bogus `~/._deep` symlink pointing at it. As siblings, that failure can't be expressed, rather than having to be guarded against.
 
 The two trees munge names differently, which is also deliberate. In the flat tree, *every* entry becomes a `~/.something`, so the dot is implicit and needs no marker; requiring one would mean `_bashrc.sh`, `_profile.sh`, `_gvimrc`, and so on for all of them, which distinguishes nothing. In `deep/`, only some components are dotted (`_config/btop/btop.conf` – one of three), so it has to be marked explicitly. Extension stripping likewise belongs only to the flat tree: those files are sourced rather than executed, so they carry no shebang, and the extension is the only language hint an editor gets. Files under `deep/` either already have a natural extension (`btop.conf`, `config.fish`) or would carry a shebang, so there is nothing there for stripping to fix.
 
-The files in the `<osname>/` directories (e.g. `macos`) shadow the corresponding files in `generic/` on machines that are of that OS. This is a special-purpose mechanism for where I haven't been able to construct a single portable config file that works on all my OSes (e.g. using switch logic or conditional includes). I'd like to get rid of it entirely. As of 2023, I think I can: looks like `.gitconfig` supports conditional includes based on the OS it's running on; I just wasn't aware of that feature earlier.
+The files in the `<osname>/` directories (e.g. `macos`) shadow the corresponding files in `all-os/` on machines that are of that OS. This is a special-purpose mechanism for where I haven't been able to construct a single portable config file that works on all my OSes (e.g. using switch logic or conditional includes). I'd like to get rid of it entirely. As of 2023, I think I can: looks like `.gitconfig` supports conditional includes based on the OS it's running on; I just wasn't aware of that feature earlier.
 
 ## Dot file design
 
@@ -48,19 +48,19 @@ Defined files:
 
 - `.bashrc` – bash interactive
 - `.zshrc` – zsh interactive
-- `.dots/bashyrc.sh` – common bashlike interactive
+- `.dotlib/bashyrc.sh` – common bashlike interactive
 - `.bash_profile` – bash login
 - `.profile` – common bashlike login
 - `.zprofile` – zsh login
-- `.dots/zshrc-omz.zsh` – zsh when using Oh My Zsh
-- `.dots/zshrc-prezto.sh` – zsh when not using Prezto
-- `.dots/zshrc-nocustomizer.sh` – zsh when not using an shell customizer framework
+- `.dotlib/zshrc-omz.zsh` – zsh when using Oh My Zsh
+- `.dotlib/zshrc-prezto.sh` – zsh when not using Prezto
+- `.dotlib/zshrc-nocustomizer.sh` – zsh when not using an shell customizer framework
 - `.zlogout`, `.bash_logout` – shell-specific logout
-- `.dots/bashylogout.sh` – common bashlike logout
+- `.dotlib/bashylogout.sh` – common bashlike logout
 
 - `.zpreztorc` – Prezto configuration; called by Prezto and not zsh directly
 
-The `.dots/zshrc-(omz|prezto|nocustomizer)` files are alternatives to each other, and exactly one is called, depending on which shell customizer (OMZ, Prezto, or none) you are running in that shell session.
+The `.dotlib/zshrc-(omz|prezto|nocustomizer)` files are alternatives to each other, and exactly one is called, depending on which shell customizer (OMZ, Prezto, or none) you are running in that shell session.
 
 My OMZ customization files are in a separate [apjanke/ohmyzsh-custom repo](https://github.com/apjanke/ohmyzsh-custom). This can be installed using the `sys-setup/setup-macos-user` script.
 
@@ -79,12 +79,12 @@ For bash:
 - `~/.bash_profile` (if login)
   - `~/.profile`
     - `~/.profile-local`
-    - `~/.dots/bashy-paths.sh`
+    - `~/.dotlib/bashy-paths.sh`
   - `~/.bashrc` (or called directly by shell if non-login interactive)
-    - `~/.dots/bashyrc.sh`
-      - `~/.dots/bashy-langs.sh`
+    - `~/.dotlib/bashyrc.sh`
+      - `~/.dotlib/bashy-langs.sh`
 - `~/.bash_logout` (at logout)
-  - `~/.dots/bashylogout.sh`
+  - `~/.dotlib/bashylogout.sh`
 
 When `.bash_profile` exists, it takes precedence over `.profile`, so I have my `.bash_profile` explicitly call `.profile` so that I can keep common non-bash-specific config code there for sharing with zsh and sh, and have bash-specific stuff live in `.bash_profile`.
 
@@ -94,20 +94,20 @@ For zsh:
 - `~/.zprofile` (if login)
   - `~/.profile`
     - `/.profile-local`
-    - `~/.dots/bashy-paths.sh`
+    - `~/.dotlib/bashy-paths.sh`
   - `~/.zprofile-local`
 - `~/.zshrc` (if interactive)
-  - `~/.dots/bashyrc.sh`
-    - `~/.dots/bashy-langs.sh`
+  - `~/.dotlib/bashyrc.sh`
+    - `~/.dotlib/bashy-langs.sh`
 - `~/.zlogin` (if login) (I currently don't define one)
 - `~/.zlogout` (at logout)
-  - `~/.dots/bashylogout.sh`
+  - `~/.dotlib/bashylogout.sh`
 
 Both of these trees may omit some of the additional standard startup scripts that are called by the shells but are not required for use in my custom shell startup sequence.
 
 The [Zsh "startup files" documentation](https://zsh.sourceforge.io/Intro/intro_3.html) says: "`.zprofile` is meant as an alternative to `.zlogin` for ksh fans; the two are not intended to be used together". I am using `.zprofile` not because I use ksh, but because I need the env-setup stuff to run before the rc step so I can have that control conditionalization of my own setup scripts, and I don't think I want all that going in the `.zshenv` that runs on every single shell invocation. It also says "`.zlogin` is not the place for alias definitions, options, environment variable settings, etc.; as a general rule, it should not change the shell environment at all. Rather, it should be used to set the terminal type and run a series of external commands (fortune, msgs, etc)."
 
-Zsh distinguishes between env, login, and rc startup files, but Bash only has a login (`.profile`) vs. rc file split, and no separate env section. So I'm putting the env stuff at the profile level even though the Zsh doco says not to. Maybe I should revise that: factor out my env setup stuff to a common `.dots/bashyenv.sh` file, and have bash `.profile` and `.zshenv` call that, and not have `.zprofile` call `.profile`? Hmmm. Then what exactly does `.profile` mean, and would I have redundant code there?
+Zsh distinguishes between env, login, and rc startup files, but Bash only has a login (`.profile`) vs. rc file split, and no separate env section. So I'm putting the env stuff at the profile level even though the Zsh doco says not to. Maybe I should revise that: factor out my env setup stuff to a common `.dotlib/bashyenv.sh` file, and have bash `.profile` and `.zshenv` call that, and not have `.zprofile` call `.profile`? Hmmm. Then what exactly does `.profile` mean, and would I have redundant code there?
 
 Thought 2023-12: `$PATH` setup should probably stay in the login/profile section instead of the env (`.zshenv`) section so it's not re-applied on every subshell, which would cause the path to get long and messy, and slow things down.
 

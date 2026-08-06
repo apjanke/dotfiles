@@ -8,7 +8,7 @@
 # Their prescribed fix is a `# shellcheck source=path` directive, which assumes the path
 # is knowable. Here it often isn't: the completion loader sources whatever files it finds
 # at runtime, and the *-local hooks are documented as optional and may not exist at all.
-# The rest resolve only after install, under $HOME/.dots. Nothing a source= directive
+# The rest resolve only after install, under $HOME/.dotlib. Nothing a source= directive
 # could say would satisfy these, so per-site disables would just be the same note copied
 # a dozen times.
 disable=SC1090,SC1091

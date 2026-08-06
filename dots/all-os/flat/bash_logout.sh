@@ -4,6 +4,6 @@
 # shellcheck disable=SC1091
 
 # Include common bashlike logout script
-if [[ -f "$HOME/.dots/bashylogout.sh" ]]; then
-  source "$HOME/.dots/bashylogout.sh"
+if [[ -f "$HOME/.dotlib/bashylogout.sh" ]]; then
+  source "$HOME/.dotlib/bashylogout.sh"
 fi

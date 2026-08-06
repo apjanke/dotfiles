@@ -177,8 +177,8 @@ fi
 
 # Languages and dev platforms
 
-if [[ -f "$HOME/.dots/bashy-langs.sh" ]]; then
-  source "$HOME/.dots/bashy-langs.sh"
+if [[ -f "$HOME/.dotlib/bashy-langs.sh" ]]; then
+  source "$HOME/.dotlib/bashy-langs.sh"
 fi
 
 

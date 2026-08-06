@@ -9,13 +9,12 @@
   - Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
   - When adding the first `deep/_ssh/` or `deep/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_deep`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
 - Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
-- The `dotfiles/` project subdir mixes two things: the sync/install framework and shell-rcfile structure (bash+zsh, multiple configurators) vs. my personal dotfile contents/preferences. Consider splitting the framework part out as its own project/repo, maybe named "dotframe" or "dotframe-jx". Not started.
+- The `dots/` project subdir mixes two things: the sync/install framework and shell-rcfile structure (bash+zsh, multiple configurators) vs. my personal dotfile contents/preferences. Consider splitting the framework part out as its own project/repo, maybe named "dotframe" or "dotframe-jx". Not started.
 - `.profile-local` support, e.g. for setting homebrew/macports on a per-box basis.
   - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough to work
 - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
 - `jx_maybe_add_path` - conditionalize on "already in `$PATH`", not just dir existence; --prepend option form
-- Rename `~/bin` to `~/bin-dots` to make it clear it's the one in the dotfiles repo?
 - `jx-shell-info`
   - Distinguish unset variables from blank strings.
   - Reformat JX dotfiles variables to have spaces around " = ".
@@ -33,7 +32,7 @@
   - Pull default values for ZSH_THEME up into .zshenv or .profile?
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
 - Move path setup up in to env/login stage.
-- `.*env` files to go with `.*rc` files, or a common `.dots/bashyenv.sh`?
+- `.*env` files to go with `.*rc` files, or a common `.dotlib/bashyenv.sh`?
 - Review and tighten up the shell file calling order and its documentation here.
 - Look in to the XDG spec and its `~/.config` etc dirs, and see which programs support that now.
 - Factor out user-specific customizations (like the list of "default" user names) to separate files, to make this easier to reuse across users.

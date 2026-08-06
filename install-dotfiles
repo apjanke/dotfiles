@@ -8,11 +8,11 @@
 # if those symlinks are pointing to what looks like this dotfiles repo or a variant
 # of it, so be careful. Does not clobber non-symlink regular files.
 #
-# Two source trees, siblings under each `dotfiles/<osname>/` root. ("generic" applies to
+# Two source trees, siblings under each `dots/<osname>/` root. ("all-os" applies to
 # all OSes; per-OS entries take precedence over it in both trees.)
 #
 #   <osname>/flat/   Entries map to ~/.<name>, linked whole -- a directory here becomes
-#                    one symlink, which is how ~/.dots works. A leading dot is always
+#                    one symlink, which is how ~/.dotlib works. A leading dot is always
 #                    added, and a .sh/.zsh/.bash extension is stripped.
 #   <osname>/deep/   Mirrors $HOME. Parent dirs are created for real, leaf regular files
 #                    are symlinked. Per path component, `_x` installs as `.x` and `__x`
@@ -78,16 +78,16 @@ function detect_os_type() {
 }
 
 function install_dotfiles_flat() {
-  # dotfiles/{generic,$OSNAME}/flat/ -> ~/.foo. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
+  # dots/{all-os,$OSNAME}/flat/ -> ~/.foo. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
   local dotfiles file tofile fromfile seen_targets=""
-  local genericdir="$dotdir/generic/flat" osdir="$dotdir/$OSNAME/flat"
+  local allosdir="$dotdir/all-os/flat" osdir="$dotdir/$OSNAME/flat"
 
   if [[ -d "$osdir" ]]; then
       # shellcheck disable=SC2207
-      dotfiles=( $( (ls "$genericdir"; ls "$osdir") | sort | uniq ) )
+      dotfiles=( $( (ls "$allosdir"; ls "$osdir") | sort | uniq ) )
   else
       # shellcheck disable=SC2207
-      dotfiles=($(ls "$genericdir"))
+      dotfiles=($(ls "$allosdir"))
   fi
 
   # Catch e.g. a stale zshrc.sh next to zshrc.zsh before linking anything.
@@ -106,7 +106,7 @@ function install_dotfiles_flat() {
     if [[ -e "$osdir/$file" ]]; then
       fromfile="$osdir/$file"
     else
-      fromfile="$genericdir/$file"
+      fromfile="$allosdir/$file"
     fi
     symlink "$fromfile" "$tofile"
   done
@@ -126,12 +126,12 @@ function munge_dotfile_name() {
 }
 
 function install_dotfiles_deep() {
-  # dotfiles/{generic,$OSNAME}/deep/, munged via munge_deep_path. $OSNAME overrides
-  # generic on a matching target. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
+  # dots/{all-os,$OSNAME}/deep/, munged via munge_deep_path. $OSNAME overrides all-os
+  # on a matching target. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
   local tier srcdir file relpath tofile dir i found
   local -a targets=() sources=()
 
-  for tier in generic "$OSNAME"; do
+  for tier in all-os "$OSNAME"; do
     srcdir="$dotdir/$tier/deep"
     [[ -d "$srcdir" ]] || continue
     while IFS= read -r -d '' file; do
@@ -183,9 +183,9 @@ function munge_deep_path() {
 }
 
 function install_bin() {
-  # repo bin/ -> ~/bin. Pre: cwd is $HOME. Reads $dotfiles_repo_dir.
+  # repo home-bin/ -> ~/bin. Pre: cwd is $HOME. Reads $dotfiles_repo_dir.
   CHANGED=0
-  symlink "${dotfiles_repo_dir}/bin" "bin"
+  symlink "${dotfiles_repo_dir}/home-bin" "bin"
   if [[ $CHANGED == 1 ]]; then
     echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
   fi
@@ -200,7 +200,7 @@ function main() {
   # ~ points at itself.
   sourcedir=$(cd "$(dirname "$0")" && pwd)
   dotfiles_repo_dir="$sourcedir"
-  dotdir="$sourcedir/dotfiles"
+  dotdir="$sourcedir/dots"
   todir=$HOME
 
   detect_os_type
