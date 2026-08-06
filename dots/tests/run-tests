@@ -124,19 +124,18 @@ function run_tests() {
   assert_symlink_to '.gitconfig' "$REPO/dots/macos/flat/gitconfig"    'OS-specific file shadows all-os: .gitconfig'
   assert_symlink_to '.dotlib'    "$REPO/dots/all-os/flat/dotlib"     'a directory in the flat tree links whole: .dotlib'
 
-  assert_symlink_to '.config/btop/btop.conf'   "$REPO/dots/all-os/deep/_config/btop/btop.conf"  'deep tree: nested file is linked'
-  assert_symlink_to '.config/fish/config.fish' "$REPO/dots/all-os/deep/_config/fish/config.fish" 'deep tree: another nested file'
-  assert_symlink_to '.config/htop/htoprc'      "$REPO/dots/all-os/deep/_config/htop/htoprc"     'deep tree: two levels deep'
-  assert_real_dir   '.config'                                                      'deep tree: .config is a real dir, not a link'
-  assert_real_dir   '.config/btop'                                                 'deep tree: intermediate dirs are real'
+  assert_symlink_to '.config/btop/btop.conf'   "$REPO/dots/all-os/nested/_config/btop/btop.conf"  'nested tree: nested file is linked'
+  assert_symlink_to '.config/fish/config.fish' "$REPO/dots/all-os/nested/_config/fish/config.fish" 'nested tree: another nested file'
+  assert_symlink_to '.config/htop/htoprc'      "$REPO/dots/all-os/nested/_config/htop/htoprc"     'nested tree: two levels deep'
+  assert_real_dir   '.config'                                                      'nested tree: .config is a real dir, not a link'
+  assert_real_dir   '.config/btop'                                                 'nested tree: intermediate dirs are real'
 
-  assert_absent '.gitkeep' 'literal-dot repo file (macos/deep/.gitkeep) is never linked'
+  assert_absent '.gitkeep' 'literal-dot repo file (macos/nested/.gitkeep) is never linked'
 
-  # The trees are siblings so the flat scanner can't see deep/ as an entry to link. This
-  # used to produce a bogus ~/._deep when deep/ lived inside the flat namespace.
-  assert_absent '.deep'  'the deep/ tree is not itself linked into ~'
-  assert_absent '._deep' 'no leftover ._deep from the old carve-out layout'
-  assert_absent '.flat'  'the flat/ tree is not itself linked into ~'
+  # The trees are siblings so the flat scanner can't see nested/ as an entry to link. An
+  # earlier layout put it inside flat/, and the scanner duly linked the whole thing into ~.
+  assert_absent '.nested' 'the nested/ tree is not itself linked into ~'
+  assert_absent '.flat'   'the flat/ tree is not itself linked into ~'
 
   assert_symlink_to 'bin' "$REPO/home-bin" 'the ~/bin dir links to the repo home-bin/'
 
@@ -154,34 +153,34 @@ function run_tests() {
       'relative invocation gets the flat tree right too'
 
   echo "===== underscore-to-dot munging ====="
-  mkdir -p "$REPO/dots/all-os/deep/_munge-test/completions"
-  echo 'test content' > "$REPO/dots/all-os/deep/_munge-test/_leaf"
+  mkdir -p "$REPO/dots/all-os/nested/_munge-test/completions"
+  echo 'test content' > "$REPO/dots/all-os/nested/_munge-test/_leaf"
   # Shaped like the case this escape exists for: a zsh completion function, whose name
   # really does start with an underscore.
-  echo 'compdef stub' > "$REPO/dots/all-os/deep/_munge-test/completions/__zcomp"
+  echo 'compdef stub' > "$REPO/dots/all-os/nested/_munge-test/completions/__zcomp"
   install_into_fake_home > /dev/null
-  assert_symlink_to '.munge-test/.leaf' "$REPO/dots/all-os/deep/_munge-test/_leaf" \
+  assert_symlink_to '.munge-test/.leaf' "$REPO/dots/all-os/nested/_munge-test/_leaf" \
       'both a dir and a leaf file with a leading _ munge to a leading .'
   assert_symlink_to '.munge-test/completions/_zcomp' \
-      "$REPO/dots/all-os/deep/_munge-test/completions/__zcomp" \
+      "$REPO/dots/all-os/nested/_munge-test/completions/__zcomp" \
       'a leading __ escapes to a literal leading _'
-  rm -rf "$REPO/dots/all-os/deep/_munge-test"
+  rm -rf "$REPO/dots/all-os/nested/_munge-test"
 
-  echo "===== \$OSNAME shadows all-os in the deep tree ====="
+  echo "===== \$OSNAME shadows all-os in the nested tree ====="
   new_fake_home
-  mkdir -p "$REPO/dots/macos/deep/_config/btop"
-  echo 'macos override' > "$REPO/dots/macos/deep/_config/btop/btop.conf"
+  mkdir -p "$REPO/dots/macos/nested/_config/btop"
+  echo 'macos override' > "$REPO/dots/macos/nested/_config/btop/btop.conf"
   install_into_fake_home > /dev/null
-  assert_symlink_to '.config/btop/btop.conf' "$REPO/dots/macos/deep/_config/btop/btop.conf" \
-      'macos/deep overrides all-os/deep on a matching target'
-  rm -rf "$REPO/dots/macos/deep/_config"
+  assert_symlink_to '.config/btop/btop.conf' "$REPO/dots/macos/nested/_config/btop/btop.conf" \
+      'macos/nested overrides all-os/nested on a matching target'
+  rm -rf "$REPO/dots/macos/nested/_config"
 
   echo "===== idempotence ====="
   new_fake_home
   install_into_fake_home > /dev/null
   out2=$(install_into_fake_home -v)
   assert_contains "$out2" "Symlink '.bashrc' is already set up" 'second run reports flat-tree file unchanged'
-  assert_contains "$out2" "Symlink '.config/btop/btop.conf' is already set up" 'second run reports deep-tree file unchanged'
+  assert_contains "$out2" "Symlink '.config/btop/btop.conf' is already set up" 'second run reports nested-tree file unchanged'
   if [[ "$(readlink "$FAKE_HOME/.bashrc")" == "$REPO/dots/all-os/flat/bashrc.sh" ]]; then
     ok 'second run left the link pointing where it was'
   else

@@ -11,18 +11,19 @@
 # Two source trees, siblings under each `dots/<osname>/` root. ("all-os" applies to
 # all OSes; per-OS entries take precedence over it in both trees.)
 #
-#   <osname>/flat/   Entries map to ~/.<name>, linked whole -- a directory here becomes
-#                    one symlink, which is how ~/.dotlib works. A leading dot is always
-#                    added, and a .sh/.zsh/.bash extension is stripped.
-#   <osname>/deep/   Mirrors $HOME. Parent dirs are created for real, leaf regular files
-#                    are symlinked. Per path component, `_x` installs as `.x` and `__x`
-#                    escapes to a literal `_x`. Components that really start with a dot
-#                    are this repo's own control files (.gitkeep) and are skipped.
+#   <osname>/flat/     Entries map to ~/.<name>, linked whole -- a directory here becomes
+#                      one symlink, which is how ~/.dotlib works. A leading dot is always
+#                      added, and a .sh/.zsh/.bash extension is stripped.
+#   <osname>/nested/   Mirrors $HOME. Parent dirs are created for real, leaf regular files
+#                      are symlinked. Per path component, `_x` installs as `.x` and `__x`
+#                      escapes to a literal `_x`. Components that really start with a dot
+#                      are this repo's own control files (.gitkeep) and are skipped.
 #
 # Name munging exists so the repo holds no dotfiles of its own except real repo-control
 # ones. The two trees munge differently because they differ: every flat entry becomes a
-# ~/.foo, so the dot is implicit and needs no marker, while in deep/ only some components
-# are dotted, so they have to be marked. See dotfiles/README.md for the longer version.
+# ~/.foo, so the dot is implicit and needs no marker, while in nested/ only some
+# components are dotted, so they have to be marked. See dots/README.md for the longer
+# version.
 
 set -o errexit
 set -o nounset
@@ -125,18 +126,18 @@ function munge_dotfile_name() {
   esac
 }
 
-function install_dotfiles_deep() {
-  # dots/{all-os,$OSNAME}/deep/, munged via munge_deep_path. $OSNAME overrides all-os
+function install_dotfiles_nested() {
+  # dots/{all-os,$OSNAME}/nested/, munged via munge_nested_path. $OSNAME overrides all-os
   # on a matching target. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
   local tier srcdir file relpath tofile dir i found
   local -a targets=() sources=()
 
   for tier in all-os "$OSNAME"; do
-    srcdir="$dotdir/$tier/deep"
+    srcdir="$dotdir/$tier/nested"
     [[ -d "$srcdir" ]] || continue
     while IFS= read -r -d '' file; do
       relpath="${file#"$srcdir"/}"
-      tofile=$(munge_deep_path "$relpath")
+      tofile=$(munge_nested_path "$relpath")
       found=-1
       for i in "${!targets[@]}"; do
         [[ "${targets[$i]}" == "$tofile" ]] && { found=$i; break; }
@@ -164,8 +165,8 @@ function install_dotfiles_deep() {
   done
 }
 
-function munge_deep_path() {
-  # deep-relative path -> installed path, per component: _x -> .x, __x -> _x, x -> x.
+function munge_nested_path() {
+  # nested-relative path -> installed path, per component: _x -> .x, __x -> _x, x -> x.
   local relpath="$1" part out=""
   local IFS=/
   local -a parts
@@ -210,7 +211,7 @@ function main() {
     cd "$todir"
 
     install_dotfiles_flat
-    install_dotfiles_deep
+    install_dotfiles_nested
     install_bin
   )
 
