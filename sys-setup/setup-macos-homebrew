@@ -45,6 +45,19 @@ function _do() {
   "$@"
 }
 
+function _read_lines() {
+  # Read FILE's non-blank lines into the global array $_read_lines_out.
+  #
+  # bash 3.2 (what /bin/bash is on macOS) has no mapfile, and `read -d ''` returns 1 at
+  # EOF, which errexit catches. The `|| [[ -n ... ]]` picks up a last line that has no
+  # trailing newline, which a plain `while read` drops silently.
+  _read_lines_out=()
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ -n "$line" ]]; then _read_lines_out+=("$line"); fi
+  done < "$1"
+}
+
 # shellcheck disable=SC2329
 function ensure_github_user_fork_remote() {
   local username="$1" repo="$2"
@@ -84,9 +97,12 @@ fi
 # Pick what to install
 if [[ -d "$my_brew_cfg_dir" ]]; then
   echo "Found brew config dir at: $my_brew_cfg_dir"
-  taps=($(cat "$my_brew_cfg_dir/brew-taps-standard"))
-  formulae=($(cat "$my_brew_cfg_dir/brew-formulae-standard"))
-  casks=($(cat "$my_brew_cfg_dir/brew-casks-standard"))
+  _read_lines "$my_brew_cfg_dir/brew-taps-standard"
+  taps=("${_read_lines_out[@]}")
+  _read_lines "$my_brew_cfg_dir/brew-formulae-standard"
+  formulae=("${_read_lines_out[@]}")
+  _read_lines "$my_brew_cfg_dir/brew-casks-standard"
+  casks=("${_read_lines_out[@]}")
   if [[ $NO_CASKS = 1 ]]; then
       casks=()
   fi

@@ -138,6 +138,7 @@ function thous() {
   local py_script
   local -a vals
   if [[ $# = 0 ]]; then
+    # shellcheck disable=SC2207  # splitting stdin on any whitespace is the point here
     vals=($(cat))
   else
     vals=("$@")

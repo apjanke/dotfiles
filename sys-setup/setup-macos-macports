@@ -37,12 +37,26 @@ function _do() {
   "$@"
 }
 
+function _read_lines() {
+  # Read FILE's non-blank lines into the global array $_read_lines_out.
+  #
+  # bash 3.2 (what /bin/bash is on macOS) has no mapfile, and `read -d ''` returns 1 at
+  # EOF, which errexit catches. The `|| [[ -n ... ]]` picks up a last line that has no
+  # trailing newline, which a plain `while read` drops silently.
+  _read_lines_out=()
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ -n "$line" ]]; then _read_lines_out+=("$line"); fi
+  done < "$1"
+}
+
 function main() {
   if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
 
   THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
   my_macports_cfg_dir="$THISDIR/macports"
-  ports=($(cat "$my_macports_cfg_dir/macports-ports-standard"))
+  _read_lines "$my_macports_cfg_dir/macports-ports-standard"
+  ports=("${_read_lines_out[@]}")
 
   sudo port selfupdate
   sudo port -N install "${ports[@]}"
