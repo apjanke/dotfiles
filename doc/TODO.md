@@ -33,8 +33,6 @@
 - `zshrc-ohmyzsh.zsh`
   - Pull default values for ZSH_THEME up into .zshenv or .profile?
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
-- shellcheck configuration
-  - add a config file, disable rules: dynamic-follow
 - Move path setup up in to env/login stage.
 - `.*env` files to go with `.*rc` files, or a common `.dots/bashyenv.sh`?
 - Review and tighten up the shell file calling order and its documentation here.

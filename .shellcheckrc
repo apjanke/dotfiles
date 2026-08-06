@@ -1,0 +1,22 @@
+# shellcheck configuration for apjanke's dotfiles repo
+#
+# Applies to every script under this directory: shellcheck searches a script's own
+# directory and each parent for a .shellcheckrc, and uses the first one found.
+
+# SC1090/SC1091 - "can't follow non-constant source" / "not specified as input".
+#
+# Their prescribed fix is a `# shellcheck source=path` directive, which assumes the path
+# is knowable. Here it often isn't: the completion loader sources whatever files it finds
+# at runtime, and the *-local hooks are documented as optional and may not exist at all.
+# The rest resolve only after install, under $HOME/.dots. Nothing a source= directive
+# could say would satisfy these, so per-site disables would just be the same note copied
+# a dozen times.
+disable=SC1090,SC1091
+
+# SC2181 - "check exit code directly with e.g. 'if mycmd;'".
+#
+# Deliberate style choice: a command at the start of its own line, followed by
+# `if [[ $? != 0 ]]`, keeps the command unindented and sets the error handling apart from
+# the happy path. Note SC2155 stays on, and catches the one case where this is actually
+# unsafe -- `local x=$(cmd)` swallows the command's status, so $? would be `local`'s.
+disable=SC2181

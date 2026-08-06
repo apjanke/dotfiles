@@ -47,6 +47,8 @@ There are two checks, both runnable from the repo root and both exiting non-zero
 - `./dotfiles/tests/run-tests` – exercises `install-dotfiles` against a throwaway `$HOME`, so it never touches your real one.
 - `tools/lint` – static-checks the shell scripts: shellcheck for bash/sh, and `zsh -n` for zsh, since shellcheck has no zsh dialect.
 
+See [doc/STYLE.md](doc/STYLE.md) for the coding conventions these check against, including how to write files that are sourced by both bash and zsh.
+
 ### Using in Dropbox - not recommended
 
 I used to keep my "local" clone of this repo in my Dropbox cloud drive, but that didn't work great and I don't do it any more or recommend that others do it. Now I just keep it in a regular repo clone directory outside Dropbox or any other cloud drive.
@@ -55,7 +57,7 @@ The idea was to save the work of periodically doing git pulls on each computer w
 
 ## Design and implementation notes
 
-See `dotfiles/README.md` for info in the design of my dotfiles and shell configuration setup.
+See `dotfiles/README.md` for info in the design of my dotfiles and shell configuration setup, and [doc/STYLE.md](doc/STYLE.md) for the shell coding conventions used throughout.
 
 The `setup-osx-system` and `setup-osx-user` scripts can only have soft dependencies on `setup-osx-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation. And as of 2024, the `setup-osx-*` scripts are most broken, because every new macOS release, Apple seems to remove or break some of the scripting or configurability support in macOS, and I'm too tired to try to keep up with it.
 

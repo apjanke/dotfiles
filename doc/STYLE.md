@@ -1,0 +1,104 @@
+# Style - dotfiles
+
+Shell code conventions for this repo.
+
+I don't care much about `ksh`, and not at all about `dash`/`ash`, so while the
+implementation supports them in many places, I won't bother mentioning them in
+documentation like this.
+
+## Formatting conventions
+
+See `.editorconfig` for formatting conventions. This doc only lists things `.editorconfig`
+cannot express.
+
+### Continuation lines
+
+A statement wrapping onto another line after a trailing `\` indents 4 spaces past the
+first line of the statement.
+
+Doesn't apply where the lines are aligning with *each other* rather than continuing a
+statement – multi-item lists and pipeline stages keep their own alignment.
+
+## Static checking
+
+`tools/lint` from the repo root; exits non-zero on findings.
+
+Uses two checkers, since shellcheck has no zsh dialect, and will give false positives if
+run on zsh. Use:
+
+- **bash/sh** → [shellcheck](https://www.shellcheck.net/)
+- **zsh** → `zsh -n` (syntax only, but the best available)
+
+Checker selection is by extension (`.sh`/`.bash` vs `.zsh`), falling back to the shebang,
+so name files accordingly.
+
+## Multi-mode files (sourced by both bash and zsh)
+
+We have some files which are sourced by both bash and zsh, and they may include some
+zsh-only code, if properly guarded.
+
+Distinguish zsh-only *syntax* from zsh-only *behavior*. Zsh-only **syntax** can't appear
+at all, not even behind a `$ZSH_VERSION` guard, because bash parses the whole file and
+errors out on bad syntax. Aborted execution can leave a half-configured shell; no good.
+Zsh-only **syntax** code must go in a separate `.zsh` file.
+
+**Behavior in bash-parseable syntax** is fine, guarded at runtime. Disable shellcheck on
+it using `# shellcheck disable=all`. If there's more than one line of zsh-only code, stick
+it in a function so you can use a function-scoped `shellcheck disable`. For single lines,
+put the `disable` on that one line. In either case, make sure it's not at the top of the
+file - some other command must come first - so you don't accidentally disable shellcheck
+on the entire file.
+
+```bash
+# shellcheck disable=all
+_zsh_only_setup() {
+  setopt some_zsh_option
+}
+
+if [[ -n ${ZSH_VERSION:-} ]]; then
+  _zsh_only_setup
+fi
+unset -f _zsh_only_setup
+```
+
+This `shellcheck disable` suppresses reporting, not analysis, so a variable used only
+inside isn't then misreported as unused. The `$ZSH_VERSION` guard goes on the call site:
+the function must be *defined* under both shells, *run* only under zsh. Clean it up with
+`unset -f`, not `unfunction`, which is zsh-only.
+
+## Hygienic sourced scripts
+
+Undefine functions and unset non-`local` variables created solely for use during sourcing.
+Otherwise, they leak into the interactive namespace. Deliberate persistent globals are
+exempt, of course.
+
+For functions, use `unfunction` in zsh-only code, and `unset -f` in bash or mixed-mode
+code.
+
+Do not use `2>/dev/null` on unfunction or unset calls. Let that error show and fix its
+cause, detecting existence of conditionally defined functions and variables when
+necessary. Detection: for variables, `[[ -n ${var+x} ]]`; for functions,
+`(( $+functions[f] ))` in zsh, `typeset -f f >/dev/null` in bash or mixed-mode.
+
+## Portability
+
+Either GNU or BSD userland. Use invocations valid for both, or detect at runtime.
+Bash-isms (arrays, `[[ ]]`) are fine; POSIX `sh` purity isn't the goal. But macOS ships
+bash 3.2, which is what `#!/bin/bash` resolves to there, so no bash 4+ features
+(associative arrays, `${var,,}`).
+
+Handle file names with spaces, non-ASCII, and metacharacters: `printf '%s\n'` not `echo`
+for arbitrary strings, `find -print0` with `xargs -0` or `read -r -d ''` for name lists,
+`--` before file name arguments.
+
+## Program output streams
+
+Use stderr for diagnostics, stdout for data output. "Diagnostics" means all of it,
+progress and success included, not just errors. That keeps the data stream clean for
+pipeline consumers, and avoids misordering due to buffering differences between stdout and
+stderr.
+
+When it's unclear which a message is, consider what the program's "work product" is. The
+work product goes on stdout. For `tools/lint` it's the findings, so the "clean" summary is
+commentary → stderr. For `run-tests` it's the pass/fail record itself, so results →
+stdout, where they can be captured and parsed.
