@@ -13,10 +13,7 @@ set -o nounset
 set -o pipefail
 
 cd "$(dirname "$0")/../.."
-REPO=$PWD
-
-TESTS=0
-FAILS=0
+REPO="$PWD"
 
 function ok() {
   TESTS=$((TESTS + 1))
@@ -122,7 +119,7 @@ function run_tests() {
 
   assert_symlink_to '.bashrc'    "$REPO/dotfiles/generic/flat/bashrc.sh"  'flat tree: .bashrc links to bashrc.sh'
   assert_symlink_to '.profile'   "$REPO/dotfiles/generic/flat/profile.sh" 'flat tree: .profile links to profile.sh'
-  assert_symlink_to '.zshrc'     "$REPO/dotfiles/generic/flat/zshrc.sh"   'flat tree: .zshrc links to zshrc.sh'
+  assert_symlink_to '.zshrc'     "$REPO/dotfiles/generic/flat/zshrc.zsh"  'munging: .zshrc comes from zshrc.zsh'
   assert_symlink_to '.hushlogin' "$REPO/dotfiles/generic/flat/hushlogin"  'no extension to strip: .hushlogin'
   assert_symlink_to '.gitconfig' "$REPO/dotfiles/macos/flat/gitconfig"    'OS-specific file shadows generic: .gitconfig'
   assert_symlink_to '.dots'      "$REPO/dotfiles/generic/flat/dots"       'a directory in the flat tree links whole: .dots'
@@ -237,15 +234,21 @@ function run_tests() {
   fi
 }
 
+function print_summary() {
+  echo
+  if [[ $FAILS -eq 0 ]]; then
+    echo "===== all $TESTS assertions passed ====="
+  else
+    echo "===== $FAILS of $TESTS assertions FAILED ====="
+  fi
+}
+
+# ============ Main script ============
+
 REAL_BASHRC_BEFORE=$(real_bashrc_link)   # snapshot before anything runs
+
+TESTS=0
+FAILS=0
 run_tests
-
-# ============ Summary ============
-
-echo
-if [[ $FAILS -eq 0 ]]; then
-  echo "===== all $TESTS assertions passed ====="
-else
-  echo >&2 "===== $FAILS of $TESTS assertions FAILED ====="
-fi
+print_summary
 exit $(( FAILS > 0 ? 1 : 0 ))

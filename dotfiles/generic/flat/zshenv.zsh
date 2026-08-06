@@ -1,7 +1,5 @@
 # zshenv - zsh env configuration
 
-# shellcheck shell=zsh
-
 if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
   set -o xtrace
 fi

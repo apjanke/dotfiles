@@ -15,7 +15,7 @@ tab_width = 4
 indent_style = space
 indent_size = 2
 
-[{install-dotfiles,run-tests,du_sh_and_count,extract-audio-from-mp4,fill-screen,flac2alac}]
+[{install-dotfiles,run-tests,lint,du_sh_and_count,extract-audio-from-mp4,fill-screen,flac2alac}]
 indent_style = space
 indent_size = 2
 

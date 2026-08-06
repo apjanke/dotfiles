@@ -1,0 +1,187 @@
+#!/bin/bash
+#
+# lint - static-check the shell scripts in this repo
+#
+# Usage:
+#   tools/lint              # check everything
+#   tools/lint -l           # just list what would be checked
+#   tools/lint FILE...      # check only these
+#
+# Exits non-zero if either checker reports anything, so it is usable from CI.
+#
+# Scripts are found by extension (.sh/.bash/.ksh/.zsh) or, for extensionless files, by
+# reading the shebang -- the repo has a dozen-plus extensionless bash scripts in bin/,
+# sys-setup/, and the root, and one Perl one, so "has a shebang" is not a sufficient test.
+#
+# Two checkers, because shellcheck has no zsh dialect: it parses zsh as bash and reports
+# artifacts of that rather than real problems (an anonymous `() { ... }` function trips
+# SC1073). So bash/sh goes to shellcheck, and zsh gets `zsh -n`, which is syntax-only but
+# is the best available.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+PROGRAM_PATH="$0"
+PROGRAM_NAME=$(basename "$0")
+readonly PROGRAM_PATH PROGRAM_NAME
+
+function info()  { emit "$*"; }
+function error() { emit "ERROR: $*"; }
+function warn()  { emit "WARNING: $*"; }
+function die()   { error "$*"; exit 1; }
+function emit()  { echo >&2 "${PROGRAM_NAME}: $*"; }
+
+function usage() {
+  cat <<EOF
+$PROGRAM_NAME - static-check the shell scripts in this repo
+
+Usage:
+  $PROGRAM_NAME [-l] [FILE...]
+  $PROGRAM_NAME -h
+
+Options:
+    -l    list the files that would be checked, and exit
+    -h    display help
+
+bash/sh files go to shellcheck; zsh files get 'zsh -n', since shellcheck has no zsh
+dialect.
+EOF
+}
+
+FILE_ARGS=()
+OPT_LIST=0
+
+function parse_cli() {
+  local OPTIND
+  while getopts lh opt; do
+    case $opt in
+      l)   OPT_LIST=1 ;;
+      h)   usage; exit 0 ;;
+      \?)  die "See '$PROGRAM_NAME -h' for usage" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+  FILE_ARGS=("$@")
+}
+
+function main() {
+  local -a sh_targets=() zsh_targets=()
+  local file rc=0
+
+  cd "$(dirname "$PROGRAM_PATH")/.."
+
+  if [[ ${#FILE_ARGS[@]} -gt 0 ]]; then
+    # An explicitly named file gets checked whatever it is; the classifier only picks
+    # which checker to use, defaulting to shellcheck.
+    for file in "${FILE_ARGS[@]}"; do
+      if [[ "$(script_kind "$file")" == zsh ]]; then
+        zsh_targets+=("$file")
+      else
+        sh_targets+=("$file")
+      fi
+    done
+  else
+    while IFS= read -r -d '' file; do sh_targets+=("$file");  done < <(collect_targets sh)
+    while IFS= read -r -d '' file; do zsh_targets+=("$file"); done < <(collect_targets zsh)
+  fi
+
+  if [[ ${#sh_targets[@]} -eq 0 && ${#zsh_targets[@]} -eq 0 ]]; then
+    die "no shell scripts found"
+  fi
+
+  if [[ $OPT_LIST == 1 ]]; then
+    if [[ ${#sh_targets[@]}  -gt 0 ]]; then printf '%s\n' "${sh_targets[@]}";  fi
+    if [[ ${#zsh_targets[@]} -gt 0 ]]; then printf '%s\n' "${zsh_targets[@]}"; fi
+    return 0
+  fi
+
+  if [[ ${#sh_targets[@]} -gt 0 ]]; then
+    run_shellcheck "${sh_targets[@]}" || rc=1
+  fi
+  if [[ ${#zsh_targets[@]} -gt 0 ]]; then
+    run_zsh_syntax_check "${zsh_targets[@]}" || rc=1
+  fi
+  return $rc
+}
+
+function run_shellcheck() {
+  local rc=0
+  shellcheck "$@" || rc=$?
+  if [[ $rc == 0 ]]; then
+    info "shellcheck: clean ($# files)"
+  fi
+  return $rc
+}
+
+function run_zsh_syntax_check() {
+  # zsh -n parses without executing. Syntax only: no style or quoting analysis, so this
+  # is not a shellcheck equivalent. There isn't one -- shellcheck has no zsh dialect --
+  # and this at least catches what breaks shell startup. Less is lost than it looks:
+  # most of shellcheck's value is word-splitting warnings, and zsh doesn't word-split
+  # unquoted expansions in the first place.
+  local file rc=0
+  if ! command -v zsh >/dev/null 2>&1; then
+    warn "zsh not found; skipped $# zsh file(s)"
+    return 0
+  fi
+  for file in "$@"; do
+    zsh -n "$file" || rc=1
+  done
+  if [[ $rc == 0 ]]; then
+    info "zsh -n: clean ($# files)"
+  fi
+  return $rc
+}
+
+function collect_targets() {
+  # collect_targets sh|zsh - emits NUL-delimited paths of that kind, sorted.
+  # Pre: cwd is the repo root.
+  local want="$1" file
+  # /local and /zz-local are gitignored scratch dirs, not part of the project.
+  find . \( -name .git -o -name zz-local -o -name local \) -prune -o -type f -print0 \
+    | while IFS= read -r -d '' file; do
+        if [[ "$(script_kind "$file")" == "$want" ]]; then
+          printf '%s\0' "$file"
+        fi
+      done \
+    | sort -z
+}
+
+function script_kind() {
+  # Echoes "sh" for anything shellcheck can parse, "zsh" for zsh, nothing otherwise.
+  local file="$1" base interp
+  base=${file##*/}
+  case "$base" in
+    *.sh | *.bash | *.ksh) echo sh   ; return ;;
+    *.zsh)                 echo zsh  ; return ;;
+    *.*)                               return ;;   # some other extension; not ours
+  esac
+  interp=$(shebang_interp "$file")
+  case "$interp" in
+    sh | bash | ksh | dash | ash) echo sh  ;;
+    zsh)                          echo zsh ;;
+  esac
+}
+
+function shebang_interp() {
+  # Echoes the interpreter's basename from $1's shebang, or nothing.
+  local first interp
+  local -a words
+  IFS= read -r first < "$1" || return 0
+  case "$first" in '#!'*) ;; *) return 0 ;; esac
+  # shellcheck disable=SC2206  # splitting the shebang line into words is the point
+  words=(${first#\#!})
+  [[ ${#words[@]} -gt 0 ]] || return 0
+  interp=${words[0]##*/}
+  # `#!/usr/bin/env bash`: the real interpreter is the next word.
+  if [[ "$interp" == env && ${#words[@]} -gt 1 ]]; then
+    interp=${words[1]##*/}
+  fi
+  printf '%s\n' "$interp"
+}
+
+# ========== Main script ==========
+
+parse_cli "$@"
+main

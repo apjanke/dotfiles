@@ -1,7 +1,5 @@
 # Prezto shell configurator options
 
-# shellcheck shell=zsh
-
 # General
 
 # Theme to use down below in prompt section

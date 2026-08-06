@@ -235,9 +235,11 @@ EOF
 
 # ========== Main script ==========
 
+VERBOSE=0
+OPT_TRACE=0
+
 function parse_cli() {
-  VERBOSE=0
-  OPT_TRACE=0
+  local OPTIND
   #TODO: Add support for long options. Drop getopts; I've decided I don't like it.
   #TODO: Move this cmdline parsing to a function
   while getopts vxh opt; do
