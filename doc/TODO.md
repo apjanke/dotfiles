@@ -10,7 +10,6 @@
   - When adding the first `deep/_ssh/` or `deep/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_deep`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
 - Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
 - The `dotfiles/` project subdir mixes two things: the sync/install framework and shell-rcfile structure (bash+zsh, multiple configurators) vs. my personal dotfile contents/preferences. Consider splitting the framework part out as its own project/repo, maybe named "dotframe" or "dotframe-jx". Not started.
-- Replace old "APJ_" prefix with "JX_"?
 - Rename "osx" things to "macos"?
 - `.profile-local` support, e.g. for setting homebrew/macports on a per-box basis.
   - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough to work
@@ -20,7 +19,7 @@
 - Rename `~/bin` to `~/bin-dots` to make it clear it's the one in the dotfiles repo?
 - `jx-shell-info`
   - Distinguish unset variables from blank strings.
-  - Reformat JX dotifles variables to have spaces around " = ".
+  - Reformat JX dotfiles variables to have spaces around " = ".
   - List presence of optional files, like `~/.*-local`.
   - Support multi-line JX variables?
   - Include my special non-JX-prefixed variables, like DROPBOX.
@@ -32,8 +31,7 @@
 - Detect breakage in installation?
   - In the startup scripts, check for presence of required files linked in to ~ and complain if they're absent? To catch things like needing a fresh `install-dotfiles` run after I add/remove/rename linked files in the repo.
 - `zshrc-ohmyzsh.zsh`
-  - Refactor the APJ_OMZ_DEBUG into functions so the definition is all in one place.
-  - Pll default values for ZSH_THEME up into .zshenv or .profile?
+  - Pull default values for ZSH_THEME up into .zshenv or .profile?
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
 - shellcheck configuration
   - add a config file, disable rules: dynamic-follow

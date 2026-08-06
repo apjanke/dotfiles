@@ -18,6 +18,7 @@ fi
 # Valid: 'ohmyzsh', 'prezto', or 'none'
 export JX_ZSH_CONFIGURATOR=${JX_ZSH_CONFIGURATOR:-ohmyzsh}
 export JX_OMZ_THEME=${JX_OMZ_THEME:-agnosterj}
+# export JX_OMZ_DEBUG=1
 export JX_PREZTO_THEME=${JX_PREZTO_THEME:-sorin-apj}
 
 # Machine- or environment-local settings.

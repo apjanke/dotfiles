@@ -2,19 +2,26 @@
 #
 # Logic for loading and configuring Oh My Zsh
 
+
+# ===== My custom OMZ debugging support =====
+
+function _jx_omz_debug_start() {
+  JX_OMZ_DEBUG_DIR="${JX_OMZ_DEBUG_DIR:-${HOME}/var/ohmyzsh}"
+  mkdir -p $JX_OMZ_DEBUG_DIR
+  set | sort > $JX_OMZ_DEBUG_DIR/vars_before_omz.txt
+}
+
+function _jx_omz_debug_finish() {
+  set | sort > $JX_OMZ_DEBUG_DIR/vars_after_omz.txt
+  diff -a $JX_OMZ_DEBUG_DIR/vars_before_omz.txt $JX_OMZ_DEBUG_DIR/vars_after_omz.txt > $JX_OMZ_DEBUG_DIR/vars_diff.txt
+}
+
 # ===== Pre-load setup =====
 
 ZSH=${ZSH:-$HOME/.oh-my-zsh}
 
 # bindkey needs to be done before loading OMZ to hack around a load order issue
 bindkey -e
-
-# APJ_OMZ_DEBUG=1
-if [[ $APJ_OMZ_DEBUG == 1 ]]; then
-  APJ_OMZ_DEBUG_DIR=~/var/ohmyzsh
-  mkdir -p $APJ_OMZ_DEBUG_DIR
-  set | sort > $APJ_OMZ_DEBUG_DIR/vars_before_omz.txt
-fi
 
 ZSH_THEME_SCM_CHECK_TIMEOUT=0.5
 #CASE_SENSITIVE=true
@@ -33,22 +40,23 @@ DISABLE_AUTO_UPDATE=true
 
 # ===== Load ohmyzsh =====
 
+if [[ $JX_OMZ_DEBUG == 1 ]]; then _jx_omz_debug_start; fi
+
 source $ZSH/oh-my-zsh.sh
+
+if [[ $JX_OMZ_DEBUG == 1 ]]; then _jx_omz_debug_finish; fi
 
 
 # ===== Post-load setup =====
 
-if [[ $APJ_OMZ_DEBUG == 1 ]]; then
-  set | sort > $APJ_OMZ_DEBUG_DIR/vars_after_omz.txt
-  diff -a $APJ_OMZ_DEBUG_DIR/vars_before_omz.txt $APJ_OMZ_DEBUG_DIR/vars_after_omz.txt > $APJ_OMZ_DEBUG_DIR/vars_diff.txt
-fi
 
 # Undo OMZ stuff I don't actually want
 
-function maybe_unalias() { if alias $1 &> /dev/null; then unalias $1; fi; }
+function _maybe_unalias() { if alias $1 &> /dev/null; then unalias $1; fi; }
 
-maybe_unalias ls
-maybe_unalias grep
-maybe_unalias st
-maybe_unalias stt
-unfunction maybe_unalias
+_maybe_unalias ls
+_maybe_unalias grep
+_maybe_unalias st
+_maybe_unalias stt
+
+unfunction _maybe_unalias

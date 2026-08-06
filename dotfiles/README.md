@@ -138,8 +138,10 @@ These dotfile scripts are themselves controllable by some custom shell/environme
   - `$JX_MACPORTS_PREFIX`
 - Configurators
   - `$JX_ZSH_CONFIGURATOR` – Selects Oh My Zsh, Prezto, or nothing as the Zsh configurator.
-  - `$JX_OMZ_THEME` - Which theme to use in OMZ.
-  - `$JX_PREZTO_THEME` - Which theme to use in Prezto.
+  - `$JX_OMZ_THEME`      - Which theme to use in OMZ.
+  - `$JX_OMZ_DEBUG`      - Activate OMZ startup debugging.
+  - `$JX_OMZ_DEBUG_DIR`  - Output location for OMZ debugging output.
+  - `$JX_PREZTO_THEME`   - Which theme to use in Prezto.
 - Language toolchains
   - `$JX_CONDA_AUTOLOAD` – Automatically load Anaconda at shell startup time?
   - `$JX_CONDA_AUTOACTIVATE` - Automatically activate Anaconda after loading it at shell startup time?
