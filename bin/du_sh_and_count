@@ -12,30 +12,23 @@ set -o nounset
 set -o pipefail
 if [[ "${TRACE:-0}" == "1" ]]; then set -o xtrace; fi
 
-readonly THIS_PROGRAM=$(basename "$0")
+THIS_PROGRAM=$(basename "$0")
+readonly THIS_PROGRAM
 DRY_RUN=0
 VERBOSE=0
 DEBUG=0
-# Suppress log file output (but not stderr output)
-NO_LOG=0
-# Make a log file even for dry runs (for debugging)
-LOG_DRY_RUN=0
 
 EMIT_TIMESTAMP=0
 EMIT_PROGNAME=0
 
-# Nominal timestamp for this script run
-RUN_TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-MY_LOGFILE=''
-
-function now()     { echo $(date +'%Y-%m-%d %H:%M:%S'); }
+function now()     { date +'%Y-%m-%d %H:%M:%S'; }
 function info()    { emit "$*"; }
 function log_vrb() { if is_verbose; then info "$@"; fi; }
 function log_dbg() { if is_debug; then info "debug: $*"; fi; }
 function warning() { emit "WARNING: $*"; }
 function error()   { emit "ERROR: $*"; }
 function emit() {
-    local msg target msgline
+    local msg msgline
     msg="$1"
     msgline="${msg}"
     if [[ $EMIT_PROGNAME = 1 ]]; then
@@ -70,29 +63,29 @@ function toc()     { local t0="$1" t1; t1=$(tic); echo $((t1 - t0)); }
 function s2mmss()  {
   local sec="$1"
   local h m s
-  h=0; m=$(($sec / 60)); s=$(($sec % 60));
+  h=0; m=$((sec / 60)); s=$((sec % 60));
   if [[ $m -ge 60 ]]; then
-    h=$(($m / 60)); m=$(($m % 60))
+    h=$((m / 60)); m=$((m % 60))
     printf "%02d:%02d:%02d" $h $m $s;
   else
     printf "%02d:%02d" $m $s;
   fi
 }
 function say_toc() {
-  local label="$1" t0="$2"
-  local te=$(toc "$t0")
-  info $(printf "Elapsed time: %s: %s" "$label" $(s2mmss "$te"))
+  local label="$1" t0="$2" te
+  te=$(toc "$t0")
+  info "$(printf "Elapsed time: %s: %s" "$label" "$(s2mmss "$te")")"
 }
 function timeit()  {
   local label="${1}"; shift
   if [[ $# == 0 ]]; then
     die "BUG: timeit() called with too few arguments"
   fi
-  local t0=$(tic)
+  local t0
+  t0=$(tic)
   "$@"
   say_toc "$label" "$t0"
 }
-
 
 
 # ========== Script-specific customization ==========
@@ -119,8 +112,8 @@ function du_sh_and_count_files() {
     size=$(du -sh "$dir" | cut -f 1)
     printf '%6s ' "$size"
     n_files=$(find "$dir" | wc -l)
-    te=$(toc $t0)
-    printf '%10s files + dirs   (%s)' $(thous "$n_files") "$(s2mmss $te)"
+    te=$(toc "$t0")
+    printf '%10s files + dirs   (%s)' "$(thous "$n_files")" "$(s2mmss "$te")"
     printf '\n';
   done
 }
@@ -137,7 +130,7 @@ function max_strlen() {
       width=${#str}
     fi
   done
-  echo $width
+  echo "$width"
 }
 
 # thous- format numbers with thousand-separator commas
@@ -176,7 +169,7 @@ function parse_cmdline() {
     esac
   done
 
-  readonly DRY_RUN VERBOSE CLOBBER DAMP_RUN ONLY_VARTYPE ONLY_VAR
+  readonly DRY_RUN VERBOSE
 }
 
 HELP_SCREEN=''

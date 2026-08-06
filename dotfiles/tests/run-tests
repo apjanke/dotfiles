@@ -151,7 +151,7 @@ function run_tests() {
   ( cd "$REPO/dotfiles" && HOME="$FAKE_HOME" ../install-dotfiles ) > /dev/null 2>&1
   assert_symlink_to 'bin' "$REPO/bin" 'run from a subdir as ../install-dotfiles, likewise'
   assert_symlink_to '.bashrc' "$REPO/dotfiles/generic/flat/bashrc.sh" \
-    'relative invocation gets the flat tree right too'
+      'relative invocation gets the flat tree right too'
 
   echo "===== underscore-to-dot munging ====="
   mkdir -p "$REPO/dotfiles/generic/deep/_munge-test/completions"
@@ -161,10 +161,10 @@ function run_tests() {
   echo 'compdef stub' > "$REPO/dotfiles/generic/deep/_munge-test/completions/__zcomp"
   install_into_fake_home > /dev/null
   assert_symlink_to '.munge-test/.leaf' "$REPO/dotfiles/generic/deep/_munge-test/_leaf" \
-    'both a dir and a leaf file with a leading _ munge to a leading .'
+      'both a dir and a leaf file with a leading _ munge to a leading .'
   assert_symlink_to '.munge-test/completions/_zcomp' \
-    "$REPO/dotfiles/generic/deep/_munge-test/completions/__zcomp" \
-    'a leading __ escapes to a literal leading _'
+      "$REPO/dotfiles/generic/deep/_munge-test/completions/__zcomp" \
+      'a leading __ escapes to a literal leading _'
   rm -rf "$REPO/dotfiles/generic/deep/_munge-test"
 
   echo "===== \$OSNAME shadows generic in the deep tree ====="
@@ -173,7 +173,7 @@ function run_tests() {
   echo 'macos override' > "$REPO/dotfiles/macos/deep/_config/btop/btop.conf"
   install_into_fake_home > /dev/null
   assert_symlink_to '.config/btop/btop.conf' "$REPO/dotfiles/macos/deep/_config/btop/btop.conf" \
-    'macos/deep overrides generic/deep on a matching target'
+      'macos/deep overrides generic/deep on a matching target'
   rm -rf "$REPO/dotfiles/macos/deep/_config"
 
   echo "===== idempotence ====="
@@ -218,7 +218,7 @@ function run_tests() {
     ok 'collision changed nothing in ~ (validation runs before linking)'
   else
     fail 'collision changed nothing in ~ (validation runs before linking)' \
-      "was $before, now $(readlink "$FAKE_HOME/.bashrc")"
+        "was $before, now $(readlink "$FAKE_HOME/.bashrc")"
   fi
 
   echo "===== the real \$HOME was never touched ====="
@@ -230,7 +230,7 @@ function run_tests() {
     ok "the real ~/.bashrc is exactly as the tests found it"
   else
     fail "the real ~/.bashrc is exactly as the tests found it" \
-      "was $REAL_BASHRC_BEFORE, now $(real_bashrc_link)"
+        "was $REAL_BASHRC_BEFORE, now $(real_bashrc_link)"
   fi
 }
 

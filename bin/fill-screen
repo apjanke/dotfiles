@@ -3,13 +3,10 @@
 nlines=${1:-1000}
 nchars=${2:-80}
 
-echo nlines $nlines nchars $nchars
-
 line=""
-for ((i=0; i<$nchars; i++)); do
+for (( i=0; i < nchars; i++ )); do
   line="${line}."
 done
-
-for ((i=0; i<$nlines; i++)); do
-  echo $line; 
+for (( i=0; i < nlines; i++ )); do
+  echo $line;
 done

@@ -42,14 +42,14 @@ export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-0}"
 
 if [[ $__uname = "Darwin" ]]; then
 
-  # Default $TMPPREFIX may be insecure
+  # Default $TMPPREFIX may be insecure?
   # TODO: Find a citation for that and whether it's still relevant
-  # And also, OSTYPE says like "darwin23.0", not "D..." - is "==" case sensitive?
-  # Once that's resolved, remove the conditionality and either do it or don't, based
-  # on the same uname-based detection used elsewhere.
-  # And why does it say "zsh" here? Is TMPPREFIX zsh-specific?
+  # And also, OSTYPE says like "darwin23.0", not "D..." - is "==" case sensitive? Once
+  # that's resolved, remove the conditionality and either do it or don't, based on the
+  # same uname-based detection used elsewhere. And why does it say "zsh" here? Is
+  # TMPPREFIX zsh-specific?
   if [[ $OSTYPE == Darwin* ]]; then
-    TMPPREFIX="$TMPDIR/zsh"
+    export TMPPREFIX="$TMPDIR/zsh"
   fi
 
   # MacPorts
@@ -58,13 +58,10 @@ if [[ $__uname = "Darwin" ]]; then
     local bindir
     local -a bindirs
     # In reverse order of addition
-    bindirs=(
-      '/opt/local/sbin'
-      '/opt/local/bin'
-    )
-    for bindir in $bindirs; do
+    bindirs=( '/opt/local/sbin' '/opt/local/bin' )
+    for bindir in "${bindirs[@]}"; do
       if [[ -d "$bindir" ]]; then
-        PATH="${bindir}:$PATH"  
+        PATH="${bindir}:$PATH"
       fi
     done
   }
@@ -87,4 +84,3 @@ fi
 if [[ -f $HOME/.dots/bashy-paths.sh ]]; then
   source "$HOME/.dots/bashy-paths.sh"
 fi
-

@@ -59,4 +59,4 @@ _maybe_unalias grep
 _maybe_unalias st
 _maybe_unalias stt
 
-unfunction _maybe_unalias
+unfunction _maybe_unalias _jx_omz_debug_start _jx_omz_debug_finish

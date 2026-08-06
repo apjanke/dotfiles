@@ -31,7 +31,7 @@ Options:
 EOF
 }
 
-while getopts xh opt; do
+while getopts xnh opt; do
   case $opt in
     x)   OPT_TRACE=1 ;;
     n)   NO_CASKS=1 ;;
@@ -57,7 +57,6 @@ function main() {
 if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
 
 THISDIR=$(dirname "${BASH_SOURCE[0]}")
-GITHUB_USERNAME=apjanke
 my_brew_cfg_dir="$THISDIR/homebrew"
 
 # Prerequisites
@@ -81,12 +80,6 @@ if [[ -z $(which brew) ]]; then
 else
   echo "Homebrew is already installed. Not installing."
 fi
-# Account for varying location of Library; changed introduced around 2020
-if [[ -d "$(brew --prefix)/Homebrew" ]]; then
-  HOMEBREW_LIBRARY="$(brew --prefix)/Homebrew/Library"
-else
-  HOMEBREW_LIBRARY="$(brew --prefix)/Library"
-fi
 
 # Pick what to install
 if [[ -d "$my_brew_cfg_dir" ]]; then
@@ -107,8 +100,6 @@ fi
 
 # Install taps
 for tap in "${taps[@]}"; do
-  tap_base_name="homebrew-$(basename "$tap")"
-  tap_owner_name=$(dirname "$tap")
   _do brew tap "$tap"
 done
 
