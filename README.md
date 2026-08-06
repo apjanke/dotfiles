@@ -36,9 +36,9 @@ To set up a new Mac from scratch using `sys-setup`:
 - Clone this repo locally, to its permanent location.
 - Install Xcode and/or the Xcode CLT.
 - In `sys-setup`:
-  - `./setup-osx-homebrew`
-  - `sudo ./setup-osx-system`
-  - `./setup-osx-user`
+  - `./setup-macos-homebrew`
+  - `sudo ./setup-macos-system`
+  - `./setup-macos-user`
 
 ### Checking the code
 
@@ -59,7 +59,7 @@ The idea was to save the work of periodically doing git pulls on each computer w
 
 See `dotfiles/README.md` for info in the design of my dotfiles and shell configuration setup, and [doc/STYLE.md](doc/STYLE.md) for the shell coding conventions used throughout.
 
-The `setup-osx-system` and `setup-osx-user` scripts can only have soft dependencies on `setup-osx-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation. And as of 2024, the `setup-osx-*` scripts are most broken, because every new macOS release, Apple seems to remove or break some of the scripting or configurability support in macOS, and I'm too tired to try to keep up with it.
+The `setup-macos-system` and `setup-macos-user` scripts can only have soft dependencies on `setup-macos-homebrew`, so that they can be run without it to configure a "clean" machine without a Homebrew installation. And as of 2024, the `setup-macos-*` scripts are most broken, because every new macOS release, Apple seems to remove or break some of the scripting or configurability support in macOS, and I'm too tired to try to keep up with it.
 
 ## AI use disclosure
 

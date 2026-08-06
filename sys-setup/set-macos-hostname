@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# set-osx-hostname - Set the system hostname on macOS.
+# set-macos-hostname - Set the system hostname on macOS, robust-ish-ly.
 #
-# sudo set-osx-hostname <name>
+# sudo set-macos-hostname <name>
 #
-# Sets the hostname in all the various ways you need to on OS X.
-# This is intended to be the equivalent of manually setting it in the
-# System Preferences > Sharing control panel.
+# Sets the hostname in all the various ways you need to on OS X. This is intended to be
+# the equivalent of manually setting it in the System Preferences > Sharing control
+# panel.
 #
 # I'm not sure if this actually works.
 
@@ -26,8 +26,8 @@ Options:
 EOF
 }
 
-function set-osx-hostname() {
-  name="$1"
+function set-macos-hostname() {
+  local name="$1"
   sudo scutil --set ComputerName "$name"
   sudo scutil --set HostName "$name"
   sudo scutil --set LocalHostName "$name"
@@ -48,7 +48,7 @@ function main() {
     usage; exit 1
   fi
 
-  set-osx-hostname "$1"
+  set-macos-hostname "$1"
 }
 
 main "$@"

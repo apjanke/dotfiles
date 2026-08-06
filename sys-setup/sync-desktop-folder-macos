@@ -1,19 +1,22 @@
 #!/bin/bash
 #
-# sync-desktop-folder-osx
+# sync-desktop-folder-macos
 #
-# This script reconfigures the current user's Desktop folder to sync via
-# Dropbox, using my personal Dropbox file layout conventions.
+# This script reconfigures the current user's Desktop folder to sync via Dropbox, using
+# my personal Dropbox file layout conventions.
 #
-# This does not preserve the special icon for the Desktop folder. There's
-# probably a way to do this with Rez/DeRez, but I don't care enough to
-# research it now.
+# This does not preserve the special icon for the Desktop folder. There's probably a way
+# to do this with Rez/DeRez, but I don't care enough to research it now.
+#
+# This script is mostly obsolete now that macOS has its own native Desktop folder
+# syncing and I use that. Also, it uses the old file location for the Dropbox folder;
+# needs to be updated for that.
 
 # TODO: This fails if you have no files in the local Desktop folder
 
 # My directory structure convention
 DROPBOX="$HOME/Dropbox"
-DROPBOX_DESKTOP="$DROPBOX/computer/data/Desktops/OSX/Desktop"
+DROPBOX_DESKTOP="$DROPBOX/computer/data/Desktops/macos/Desktop"
 DESKTOP="$HOME/Desktop"
 
 echo "Configuring local Desktop to sync with Dropbox"

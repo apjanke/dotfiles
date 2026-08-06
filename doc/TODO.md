@@ -10,7 +10,6 @@
   - When adding the first `deep/_ssh/` or `deep/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_deep`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
 - Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
 - The `dotfiles/` project subdir mixes two things: the sync/install framework and shell-rcfile structure (bash+zsh, multiple configurators) vs. my personal dotfile contents/preferences. Consider splitting the framework part out as its own project/repo, maybe named "dotframe" or "dotframe-jx". Not started.
-- Rename "osx" things to "macos"?
 - `.profile-local` support, e.g. for setting homebrew/macports on a per-box basis.
   - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough to work
 - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.

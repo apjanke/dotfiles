@@ -34,7 +34,7 @@ PATH="/usr/local/bin:$PATH"
 
 jx_maybe_add_path "$HOME/bin" prepend
 if [[ $__uname = "Darwin" ]]; then
-  jx_maybe_add_path "$HOME/bin/osx" prepend
+  jx_maybe_add_path "$HOME/bin/macos" prepend
 fi
 # Sheesh. I haven't been able to settle on a conventional local bin location, have I?
 jx_maybe_add_path "$HOME/bin-local" prepend

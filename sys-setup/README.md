@@ -17,18 +17,18 @@ cd
 mkdir -p local repos
 cd repos
 git clone https://github.com/apjanke/dotfiles
-cd dotfiles/sys-setup
 
-./setup-osx-system
-./setup-osx-user
+cd dotfiles/sys-setup
+./setup-macos-system
+./setup-macos-user
 ```
 
 And then, optionally:
 
-* Run `set-osx-hostname <new-name>` if you want to change your computer's name.
-* Run `setup-osx-homebrew` if you're going to use [Mac Homebrew](http://brew.sh/).
+* Run `set-macos-hostname <new-name>` if you want to change your computer's name.
+* Run `setup-macos-homebrew` if you're going to use [Mac Homebrew](http://brew.sh/).
 
-For new users on a previously configured system, you only need to run `setup-osx-uer`.
+For new users on a previously configured system, you only need to run `setup-macos-user`.
 
 ## References
 
