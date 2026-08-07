@@ -185,8 +185,6 @@ fi
 # Aliases and misc interactive stuff
 
 alias cls="clear"
-# recursive grep, excluding big dumb managed subdirs
-alias grepx="grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json"
 
 alias l="ls -oG"
 alias la="ls -a"
@@ -214,6 +212,9 @@ JX_GRIN_EXCLUDES=(
   --exclude-dir=wp-includes
   '--exclude=*.ipynb'
 )
+# recursive grep, excluding big dumb managed subdirs
+# This is prob redundant with, and inferior to, 'grin' now, and can prob be ditched soon.
+alias grepx="grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json"
 
 # Do a find but exclude .git repo directories
 # Generify: expand to cover .svn, .cvs, .venv etc., and rename
