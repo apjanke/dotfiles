@@ -303,11 +303,18 @@ function jx-shell-info() {
   # TODO: Show which order Homebrew and MacPorts are loaded in, in a more
   # concise manner than the $PATH.
 
-  local flag OPTIND do_long_path
-  while getopts 'p' flag; do
-    case "${flag}" in
-      p) do_long_path=1 ;;
-      *) echo >&2 "jx-shell-info: Unrecognized option: $flag"; return 1 ;;
+  # Hand-rolled instead of getopts: this file is sourced by both bash and zsh, and a
+  # while/case/shift loop behaves identically in both. It also drops the `local OPTIND`
+  # that getopts needs here, since bash doesn't reset OPTIND between calls in one shell.
+  local arg do_long_path=0
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --long-path | -p)             do_long_path=1 ;;
+      --help | -help | -h | '-?')   echo "Usage: jx-shell-info [--long-path]"; return 0 ;;
+      *)
+        echo >&2 "jx-shell-info: Unrecognized option: $arg"
+        return 1 ;;
     esac
   done
 

@@ -32,6 +32,8 @@ if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 PROGRAM_NAME=$(basename "$0")
 
+function die() { echo >&2 "$PROGRAM_NAME: ERROR: $*"; exit 1; }
+
 #TODO: Replace this v_echo() with my standard info/warn/die/verbose/emit functions.
 function v_echo() {
   if [[ $VERBOSE == 1 ]]; then
@@ -225,13 +227,13 @@ function usage() {
 $PROGRAM_NAME - install dotfile symlinks to the repo this script is in
 
 Usage:
-  $PROGRAM_NAME [-x] [-v]
-  $PROGRAM_NAME -h
+  $PROGRAM_NAME [--trace] [--verbose]
+  $PROGRAM_NAME --help
 
 Options:
-    -h    display help
-    -v    verbose output
-    -x    trace program execution
+    -h, --help       display help
+    -v, --verbose    verbose output
+    -x, --trace      trace program execution
 EOF
 }
 
@@ -241,19 +243,20 @@ VERBOSE=0
 OPT_TRACE=0
 
 function parse_cli() {
-  local OPTIND
-  #TODO: Add support for long options. Drop getopts; I've decided I don't like it.
-  #TODO: Move this cmdline parsing to a function
-  while getopts vxh opt; do
-    case $opt in
-      v) VERBOSE=1 ;;
-      x) OPT_TRACE=1 ;;
-      h) usage; exit 0 ;;
-      \?)
-        echo >&2 "See '$PROGRAM_NAME -h' for usage"
-        exit 1 ;;
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --verbose | -v)               VERBOSE=1 ;;
+      --trace | -x)                 OPT_TRACE=1 ;;
+      --help | -help | -h | '-?')   usage; exit 0 ;;
+      *)
+        die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
     esac
   done
+
+  readonly VERBOSE OPT_TRACE
 }
 
 parse_cli "$@"

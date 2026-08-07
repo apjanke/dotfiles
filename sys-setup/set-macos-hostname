@@ -11,19 +11,52 @@
 # I'm not sure if this actually works.
 
 PROGRAM_NAME="$(basename "$0")"
+OPT_TRACE=0
+HOSTNAME_ARG=
+
+function die() { echo >&2 "$PROGRAM_NAME: ERROR: $*"; exit 1; }
 
 function usage() {
   cat <<EOF
 $PROGRAM_NAME - Set the hostname on this macOS machine.
 
 Usage:
-  $PROGRAM_NAME [-x] <hostname>
-  $PROGRAM_NAME -h
+  $PROGRAM_NAME [--trace] <hostname>
+  $PROGRAM_NAME --help
 
 Options:
-    -x    trace program execution
-    -h    display help
+    -x, --trace   trace program execution
+    -h, --help    display help
 EOF
+}
+
+function parse_cli() {
+  local arg
+  local -a positionals=()
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --trace | -x)                 OPT_TRACE=1 ;;
+      --help | -help | -h | '-?')   usage; exit 0 ;;
+      --)                           break ;;
+      -*)
+        die "Unexpected option: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+      *)                            positionals+=("$arg") ;;
+    esac
+  done
+  # A hostname after `--` is still a hostname, even if it looks like an option.
+  positionals+=("$@")
+
+  # The old getopts loop never shifted past the options, so `$1` was still the first
+  # option: `set-macos-hostname -x myhost` quietly set the hostname to "-x".
+  if [[ ${#positionals[@]} -ne 1 ]]; then
+    die "Expected exactly one <hostname> argument, got ${#positionals[@]}." \
+        "See '$PROGRAM_NAME --help' for usage"
+  fi
+  HOSTNAME_ARG="${positionals[0]}"
+
+  readonly OPT_TRACE HOSTNAME_ARG
 }
 
 function set-macos-hostname() {
@@ -35,21 +68,11 @@ function set-macos-hostname() {
 }
 
 function main() {
-  while getopts xh opt; do
-    case $opt in
-      x)   OPT_TRACE=1 ;;
-      h)   usage; exit 0 ;;
-      \?)  echo >&2 "ERROR: Invalid argument. See '$PROGRAM_NAME -h' for usage."; exit 1 ;;
-    esac
-  done
   if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
 
-  if [[ -z "$1" ]]; then
-    usage; exit 1
-  fi
-
-  set-macos-hostname "$1"
+  set-macos-hostname "$HOSTNAME_ARG"
 }
 
-main "$@"
+parse_cli "$@"
+main
 exit 0

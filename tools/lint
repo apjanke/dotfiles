@@ -41,12 +41,12 @@ function usage() {
 $PROGRAM_NAME - static-check the shell scripts in this repo
 
 Usage:
-  $PROGRAM_NAME [-l] [FILE...]
-  $PROGRAM_NAME -h
+  $PROGRAM_NAME [--list] [FILE...]
+  $PROGRAM_NAME --help
 
 Options:
-    -l    list the files that would be checked, and exit
-    -h    display help
+    -l, --list    list the files that would be checked, and exit
+    -h, --help    display help
 
 bash/sh files go to shellcheck; zsh files get 'zsh -n', since shellcheck has no zsh
 dialect. bash/sh files are also scanned for constructs requiring a bash newer than 3.2;
@@ -61,16 +61,23 @@ FILE_ARGS=()
 OPT_LIST=0
 
 function parse_cli() {
-  local OPTIND
-  while getopts lh opt; do
-    case $opt in
-      l)   OPT_LIST=1 ;;
-      h)   usage; exit 0 ;;
-      \?)  die "See '$PROGRAM_NAME -h' for usage" ;;
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --list | -l)                  OPT_LIST=1 ;;
+      --help | -help | -h | '-?')   usage; exit 0 ;;
+      --)                           break ;;
+      -*)
+        die "Unexpected option: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+      *)                            FILE_ARGS+=("$arg") ;;
     esac
   done
-  shift $((OPTIND - 1))
-  FILE_ARGS=("$@")
+  # Whatever followed a `--` is a file name, however option-like it looks.
+  FILE_ARGS+=("$@")
+
+  readonly OPT_LIST FILE_ARGS
 }
 
 function main() {
