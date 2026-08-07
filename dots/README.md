@@ -171,7 +171,7 @@ These dotfiles define some special shell functions, including some for working w
   - `jx-rbenvmgr-load` – Loads a Ruby env mgr (like rbenv or rvm) into the shell.
   - `jx-nvm-load` – Load NVM into the shell.
 - Other
-  - `jx_maybe_add_path` – Add a dir to `$PATH` if it's not already there.
+  - `jx_maybe_add_path` – Conditionally add dirs to `$PATH`.
   - `jx-rainbow-me` – Enable fun colorization of `ls` and other commands.
 - Dotfile debugging
   - `jx-shell-info` – Display current shell state related to these dotfiles.

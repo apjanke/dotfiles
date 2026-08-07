@@ -2,7 +2,10 @@
 
 ## General
 
-- `jx_maybe_add_path` - conditionalize on "already in `$PATH`", not just dir existence; --prepend option form
+- Revisit: the environment can reach into non-interactive shells and change how scripts behave. Two vectors, verified 2026-08-06:
+  - `BASH_ENV` - non-interactive bash sources whatever it points at, before running the script. Confirmed it can flip shell options: setting `nullglob` that way changed how an unmatched glob expanded inside a `#!/bin/bash` script. Not currently exposed (nothing here sets `BASH_ENV`, and it's unset in my env), but any script's behavior could be altered from outside if that changed. `BASHOPTS` was also tested and did *not* propagate, despite the bash manual implying it would.
+  - zsh's equivalent is already active by design: zsh reads `.zshenv` for **all** invocations, including non-interactive `zsh -c`, and `setopt` there does apply to scripts. Ours then sources `.profile` → `dotlib/bashy-paths.sh`, so every `zsh -c` pays full `$PATH` setup and inherits whatever options `.zshenv` set. Worth asking whether `.zshenv` should be more minimal, and whether scripts should set the options they depend on rather than assuming defaults.
+- Convert function arg parsing from bash `getopts` to supporting `--blah` style long options. Probably using custom parsing code.
 - `jx-shell-info`
   - Distinguish unset variables from blank strings.
   - Reformat JX dotfiles variables to have spaces around " = ".

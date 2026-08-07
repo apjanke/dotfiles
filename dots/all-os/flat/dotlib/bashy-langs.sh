@@ -50,9 +50,9 @@ fi
 #
 # for MY_RUBY_VER in 2.6.0 2.7.0 3.0.0 3.1.0 3.2.0 3.3.0; do
 #   # Pull in system Ruby Gems
-#   jx_maybe_add_path "/usr/local/lib/ruby/gems/${MY_RUBY_VER}/bin" prepend
+#   jx_maybe_add_path --prepend "/usr/local/lib/ruby/gems/${MY_RUBY_VER}/bin"
 #   # Add version-specific user Ruby Gems binary path
-#   jx_maybe_add_path "$HOME/.gem/ruby/${MY_RUBY_VER}/bin" prepend
+#   jx_maybe_add_path --prepend "$HOME/.gem/ruby/${MY_RUBY_VER}/bin"
 # done
 
 # Load a requested Ruby env mgr

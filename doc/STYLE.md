@@ -42,6 +42,21 @@ at all, not even behind a `$ZSH_VERSION` guard, because bash parses the whole fi
 errors out on bad syntax. Aborted execution can leave a half-configured shell; no good.
 Zsh-only **syntax** code must go in a separate `.zsh` file.
 
+### Silent divergences
+
+Worse than a syntax error, because the code parses and runs in both shells and just does
+something different. Known traps:
+
+- **zsh doesn't word-split unquoted expansions**, even with `IFS` set. `IFS=:; for p in
+  $PATH` walks 24 components in bash and 1 in zsh. Walk the string with `${var%%:*}` /
+  `${var#*:}` instead.
+- **zsh arrays are 1-indexed, bash 0-indexed**, while `${#arr[@]}` reports the same count
+  in both. So `for ((i=0; i<${#arr[@]}; i++))` runs clean in both and silently drops the
+  last element in zsh. Avoid numeric array indexing in shared files; prefer `for x in
+  "${arr[@]}"`, or no arrays at all.
+- **`$var[...]` is array subscripting in zsh**, so `"$out[$item]"` is a parse error there.
+  Brace any expansion followed by a `[`: `"${out}[${item}]"`.
+
 **Behavior in bash-parseable syntax** is fine, guarded at runtime. Disable shellcheck on
 it using `# shellcheck disable=all`. If there's more than one line of zsh-only code, stick
 it in a function so you can use a function-scoped `shellcheck disable`. For single lines,
