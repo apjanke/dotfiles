@@ -41,6 +41,15 @@ function assert_contains() {
   fi
 }
 
+function assert_not_contains() {
+  local haystack="$1" needle="$2" desc="$3"
+  if [[ "$haystack" != *"$needle"* ]]; then
+    ok "$desc"
+  else
+    fail "$desc" "output unexpectedly contained: $needle"
+  fi
+}
+
 function print_summary() {
   echo ''
   if [[ $FAILS -eq 0 ]]; then

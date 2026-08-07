@@ -23,14 +23,17 @@ statement – multi-item lists and pipeline stages keep their own alignment.
 
 `tools/lint` from the repo root; exits non-zero on findings.
 
-Uses two checkers, since shellcheck has no zsh dialect, and will give false positives if
-run on zsh. Use:
+Uses separate checkers, since shellcheck has no zsh dialect, and will give false positives
+if run on zsh. Use:
 
 - **bash/sh** → [shellcheck](https://www.shellcheck.net/)
 - **zsh** → `zsh -n` (syntax only, but the best available)
 
 Checker selection is by extension (`.sh`/`.bash` vs `.zsh`), falling back to the shebang,
 so name files accordingly.
+
+bash/sh files get a third pass, a grep for constructs needing a bash newer than 3.2. See
+"Staying on bash 3.2" below.
 
 ## Multi-mode files (sourced by both bash and zsh)
 
@@ -105,6 +108,48 @@ bash 3.2, which is what `#!/bin/bash` resolves to there, so no bash 4+ features
 Handle file names with spaces, non-ASCII, and metacharacters: `printf '%s\n'` not `echo`
 for arbitrary strings, `find -print0` with `xargs -0` or `read -r -d ''` for name lists,
 `--` before file name arguments.
+
+### Staying on bash 3.2
+
+Nothing static catches a bash 4 feature on its own. shellcheck has no version targeting,
+and `bash -n` under 3.2 exits 0 on all of them – they're *runtime* failures, not parse
+errors, so bash 3.2 parses `${var,,}` happily and only says "bad substitution" when the
+line executes. A bash 4 construct in a branch that rarely runs stays hidden until it runs
+on a Mac.
+
+So `tools/lint` greps for the known ones. It's a blacklist – it knows its table and nothing
+else, so a clean run is not a guarantee. Add entries as new traps turn up.
+
+Escape hatches, where a newer bash is deliberate:
+
+- `# jx-lint-ok: bash4` at the end of a line exempts that line.
+- `# jx-lint-ok-file: bash4`, alone on its own line, exempts the whole file.
+
+The file form is anchored to a line holding nothing else, so that merely documenting the
+directive doesn't exempt the file. `tools/lint` silently skipped itself that way until the
+anchor went in.
+
+### Emulating associative arrays
+
+Bash 3.x does not have associative arrays. So emulate them, using one flat array of
+alternating key/value entries, walked with a stride of 2:
+
+```bash
+tbl=(
+  'key-one'   'value one'
+  'key-two'   'value two'
+)
+for ((i = 0; i < ${#tbl[@]}; i += 2)); do
+  key="${tbl[i]}" value="${tbl[i+1]}"
+done
+```
+
+Subscripts are arithmetic contexts, so the index needs no `$`.
+
+Not two parallel arrays: adding an entry to one and forgetting the other misaligns every
+pair after it, and every lookup past that point is wrong without anything failing. And the
+source code reads better with a single 2-stride array. Check for an odd length up front –
+the one failure mode this form adds.
 
 ## Program output streams
 

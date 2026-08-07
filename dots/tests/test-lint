@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+# test-lint - exercise tools/lint's bash 3.2 compatibility check
+#
+# Usage: ./dots/tests/test-lint   (or via ./dots/tests/run-tests)
+#
+# The check is a regex blacklist, which is exactly the kind of thing that rots silently: a
+# pattern broken by a later edit stops matching and the run still reports clean. So every
+# construct in the table gets a fixture here, and a clean fixture guards the other
+# direction, against a pattern loose enough to fire on ordinary bash 3 code.
+#
+# Assertions look at the message text rather than the exit status, because the fixtures go
+# through shellcheck on the same run, and an unrelated finding there would make a case
+# pass for the wrong reason. (Starting that sentence with the tool's name would have made
+# this comment look like a shellcheck directive, hence the phrasing.)
+#
+# Every construct in the table appears below as fixture data, so this file trips all of
+# them. That is what the whole-file opt-out is for:
+# jx-lint-ok-file: bash4
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+cd "$(dirname "$0")/../.."
+REPO="$PWD"
+
+# shellcheck source=dots/tests/lib.sh
+source "$REPO/dots/tests/lib.sh"
+
+LINT="$REPO/tools/lint"
+FIXTURE_DIR=""   # set up in main(); outside the repo, so a full lint run can't see it
+
+function fixture() {
+  # Writes a runnable fixture script and echoes its absolute path.
+  local name="$1"
+  shift
+  local path="$FIXTURE_DIR/$name.sh"
+  { printf '#!/bin/bash\n'; printf '%s\n' "$@"; } > "$path"
+  printf '%s\n' "$path"
+}
+
+function lint_output() {
+  local path="$1" out
+  # Findings mean a non-zero exit, which is the normal case here.
+  out=$("$LINT" "$path" 2>&1) || true
+  printf '%s\n' "$out"
+}
+
+function assert_flags() {
+  # assert_flags NAME NEEDLE DESCR LINE...
+  local name="$1" needle="$2" descr="$3"
+  shift 3
+  local path
+  path=$(fixture "$name" "$@")
+  assert_contains "$(lint_output "$path")" "$needle" "$descr"
+}
+
+function assert_does_not_flag() {
+  # assert_does_not_flag NAME NEEDLE DESCR LINE...
+  local name="$1" needle="$2" descr="$3"
+  shift 3
+  local path
+  path=$(fixture "$name" "$@")
+  assert_not_contains "$(lint_output "$path")" "$needle" "$descr"
+}
+
+# shellcheck disable=SC2016  # the single-quoted ${...} below is fixture text, not code
+function main() {
+  FIXTURE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.lint.XXXXXX")
+  # shellcheck disable=SC2064  # expand $FIXTURE_DIR now, while it's certainly set
+  trap "rm -rf '$FIXTURE_DIR'" EXIT
+
+  echo "===== bash 4.0 constructs ====="
+  assert_flags assoc 'associative arrays' 'declare -A is flagged' \
+      'declare -A map' 'map[k]=v'
+  assert_flags mapfile 'mapfile' 'mapfile is flagged' \
+      'mapfile -t lines < /dev/null' 'echo "${lines[*]:-}"'
+  assert_flags readarray 'mapfile' 'readarray is flagged' \
+      'readarray -t lines < /dev/null' 'echo "${lines[*]:-}"'
+  assert_flags casemod 'case modification' 'lowercasing expansion is flagged' \
+      'var=Foo' 'echo "${var,,}"'
+  assert_flags casemod-up 'case modification' 'uppercasing expansion is flagged' \
+      'var=Foo' 'echo "${var^^}"'
+  assert_flags pipeboth 'pipe of stdout and stderr' '|& is flagged' \
+      'echo hi |& cat'
+  assert_flags appendboth 'append of stdout and stderr' '&>> is flagged' \
+      'echo hi &>> /dev/null'
+  assert_flags coproc 'coproc' 'coproc is flagged' \
+      'coproc CAT { cat; }' 'echo "${CAT_PID:-}"'
+  assert_flags globstar 'shell options' 'shopt -s globstar is flagged' \
+      'shopt -s globstar'
+  assert_flags fallthrough 'case fallthrough' ';& in a case is flagged' \
+      'case x in' '  x) echo one ;&' '  *) echo two ;;' 'esac'
+
+  echo "===== bash 4.2 and later ====="
+  assert_flags declareg 'declare -g' 'declare -g is flagged' \
+      'declare -g FOO=1'
+  assert_flags testv 'var ]]' '[[ -v ]] is flagged' \
+      'FOO=1' 'if [[ -v FOO ]]; then echo yes; fi'
+  assert_flags printftime 'printf' 'printf time formatting is flagged' \
+      'printf "%(%Y)T\\n" -1'
+  assert_flags nameref 'namerefs' 'declare -n is flagged' \
+      'function f() { local -n ref="$1"; echo "$ref"; }'
+  assert_flags waitn 'wait -n' 'wait -n is flagged' \
+      'sleep 0 &' 'wait -n'
+  assert_flags paramxform 'parameter transformations' '${var@Q} is flagged' \
+      'var=x' 'echo "${var@Q}"'
+  assert_flags epoch 'EPOCHSECONDS' 'bash 5 variables are flagged' \
+      'echo "$EPOCHSECONDS"'
+
+  echo "===== bash 3.2-safe code is left alone ====="
+  # Deliberately close to the patterns: arrays, [[ ]], local -a, a -v flag that is not the
+  # test operator, and the string walking that replaces ${var,,}.
+  assert_does_not_flag clean 'bash 4' 'ordinary bash 3 code is not flagged' \
+      'declare -a items=(a b c)' \
+      'function f() { local -a rest=("$@"); echo "${rest[0]:-}"; }' \
+      'path="/usr/bin:/bin"' \
+      'first="${path%%:*}"' \
+      'if [[ -n "${first:-}" ]]; then echo "$first"; fi' \
+      'grep -v x /dev/null || true' \
+      'echo "${items[@]}" | tr "[:upper:]" "[:lower:]"'
+  assert_does_not_flag clean 'bash 5' 'ordinary bash 3 code trips no bash 5 pattern' \
+      'declare -a items=(a b c)' 'echo "${items[@]}"'
+
+  echo "===== suppression ====="
+  assert_does_not_flag suppressed 'associative arrays' \
+      'a jx-lint-ok line comment suppresses that line' \
+      'declare -A map   # jx-lint-ok: bash4' 'map[k]=v'
+  assert_flags halfsuppressed 'associative arrays' \
+      'a jx-lint-ok comment suppresses only its own line' \
+      'declare -A one   # jx-lint-ok: bash4' 'declare -A two' 'one[k]=v; two[k]=v'
+  assert_does_not_flag filesuppressed 'associative arrays' \
+      'a jx-lint-ok-file comment suppresses the whole file' \
+      '# jx-lint-ok-file: bash4' 'declare -A map' 'map[k]=v'
+  assert_does_not_flag notmarker 'associative arrays' \
+      'the marker is recognized with no space after the colon' \
+      'declare -A map   # jx-lint-ok:bash4' 'map[k]=v'
+
+  echo "===== the linter checks itself ====="
+  # tools/lint's own construct table names these constructs literally, so this is the case
+  # that catches the table flagging itself, or exempting itself to avoid doing so.
+  local out
+  out=$("$LINT" 2>&1) || true
+  assert_contains "$out" 'bash 3.2 compat: clean' 'a full run over the repo is clean'
+  assert_not_contains "$out" 'every file opted out' 'no file has opted itself out'
+}
+
+main
+print_summary
+exit $(( FAILS > 0 ? 1 : 0 ))
