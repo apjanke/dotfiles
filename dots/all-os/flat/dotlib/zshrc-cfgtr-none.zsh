@@ -1,18 +1,21 @@
-# zshrc-none.zsh
+# zshrc-cfgtr-none.zsh
 #
-# zshrc for use when no configurator framework (ohmyzsh, prezto, etc) is being used
-# This contains alternate setup for the things in OMZ that I rely on.
+# zshrc subsection for use when no Zsh configurator framework (ohmyzsh, prezto, etc) is
+# being used. This contains alternate setup for the things in OMZ that I rely on. It
+# only contains the parts which are normally handled by a configurator and need to be
+# done specially in the absence of one; zsh setup done regardless of the configurator in
+# effect goes in zshrc, bashyrc, or the like.
 #
-# Mostly copied from the indicated OMZ files, with my own termsupport changes
+# Mostly copied from the indicated OMZ files, with my own termsupport changes.
 #
 # Stuff that is covered by my other common setup like .zshbashrc is not included
 # here.
 
-# Completion (lib/completion.zsh)
+# Completion (omz lib/completion.zsh)
 
 setopt no_auto_menu
 
-## Command history configuration (lib/history.zsh)
+## Command history configuration (omz lib/history.zsh)
 
 if [[ -z $HISTFILE ]]; then
   HISTFILE=$HOME/.zsh_history
@@ -27,7 +30,7 @@ setopt hist_ignore_dups  # ignore duplication command history list
 setopt hist_ignore_space
 setopt share_history
 
-# lib/termsupport.zsh
+# Terminal support (omz lib/termsupport.zsh)
 
 zmodload zsh/terminfo
 
@@ -46,9 +49,7 @@ function title {
   fi
 }
 
-# lib/theme-and-appearance.zsh
-
-# Key bindings (lib/key-bindings.zsh)
+# Key bindings (omz lib/key-bindings.zsh)
 
 bindkey -e
 
@@ -75,7 +76,7 @@ if [[ "${terminfo[kcbt]}" != "" ]]; then
 fi
 
 
-# Theme
+# Theme (omz lib/theme-and-appearance.zsh)
 
 PS1="%n@%m:%~ $ "
 # Make completion LS_COLORS consistent with main LS_COLORS

@@ -1,6 +1,6 @@
-# zshrc-ohmyzsh.zsh
+# zshrc-cfgtr-ohmyzsh.zsh
 #
-# Logic for loading and configuring Oh My Zsh
+# Logic for loading and configuring Oh My Zsh.
 
 
 # ===== My custom OMZ debugging support =====

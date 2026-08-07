@@ -1,4 +1,4 @@
-# zshrc-prezto.zsh
+# zshrc-cfgtr-prezto.zsh
 #
 # Logic for loading and configuring Prezto.
 #

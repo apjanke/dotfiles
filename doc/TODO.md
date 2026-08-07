@@ -2,7 +2,6 @@
 
 ## General
 
-- Rename: `-cfgtr-` infix for `dotlib/zshrc-<customizer>.zsh`; call it a "configurator" not "customizer".
 - `jx_maybe_add_path` - conditionalize on "already in `$PATH`", not just dir existence; --prepend option form
 - `jx-shell-info`
   - Distinguish unset variables from blank strings.
