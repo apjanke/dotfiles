@@ -135,7 +135,7 @@ function run_zsh_syntax_check() {
 }
 
 function collect_targets() {
-  # collect_targets sh|zsh - emits NUL-delimited paths of that kind, sorted.
+  # Emits NUL-delimited paths of the given kind, sorted. Kind is "sh" or "zsh".
   # Pre: cwd is the repo root.
   local want="$1" file
   # /local and /zz-local are gitignored scratch dirs, not part of the project.
@@ -165,10 +165,11 @@ function script_kind() {
 }
 
 function shebang_interp() {
-  # Echoes the interpreter's basename from $1's shebang, or nothing.
+  # Echoes the interpreter's basename from the file's shebang, or nothing.
+  local file="$1"
   local first interp
   local -a words
-  IFS= read -r first < "$1" || return 0
+  IFS= read -r first < "$file" || return 0
   case "$first" in '#!'*) ;; *) return 0 ;; esac
   # shellcheck disable=SC2206  # splitting the shebang line into words is the point
   words=(${first#\#!})

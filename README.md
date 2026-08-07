@@ -44,7 +44,7 @@ To set up a new Mac from scratch using `sys-setup`:
 
 There are two checks, both runnable from the repo root and both exiting non-zero on any problem, so they work in CI:
 
-- `./dots/tests/run-tests` – exercises `install-dotfiles` against a throwaway `$HOME`, so it never touches your real one.
+- `./dots/tests/run-tests` – runs every `dots/tests/test-*` script. Those install into a throwaway `$HOME`, so they never touch your real one. Pass names to run a subset, e.g. `run-tests bashy-paths`.
 - `tools/lint` – static-checks the shell scripts: shellcheck for bash/sh, and `zsh -n` for zsh, since shellcheck has no zsh dialect.
 
 See [doc/STYLE.md](doc/STYLE.md) for the coding conventions these check against, including how to write files that are sourced by both bash and zsh.

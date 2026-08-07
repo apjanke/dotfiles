@@ -1,253 +1,115 @@
 #!/bin/bash
 #
-# run-tests - exercise install-dotfiles against a throwaway $HOME
+# run-tests - run all the test-* scripts in this directory
 #
-# Usage: ./dots/tests/run-tests
+# Usage: ./dots/tests/run-tests [NAME...]
 #
-# Exits non-zero if any assertion fails, so it is usable from CI.
+# With no arguments, runs every test-* script found here. With arguments, runs just those,
+# named either bare ("bashy-paths") or in full ("test-bashy-paths").
 #
-# Everything happens under a temp dir used as $HOME. Nothing here touches the real one.
+# Runs every script even if an earlier one fails -- a single failure shouldn't hide the
+# state of everything else. Exits non-zero if any script failed, so it is usable from CI.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-cd "$(dirname "$0")/../.."
-REPO="$PWD"
+PROGRAM_NAME=$(basename "$0")
+PROGRAM_DIR=$(dirname "$0")
+readonly PROGRAM_NAME PROGRAM_DIR
 
-function ok() {
-  TESTS=$((TESTS + 1))
-  printf '  ok   %s\n' "$1"
-}
+TESTS_DIR=
+N_PASSED=0
+N_FAILED=0
+FAILED_NAMES=()
+SELECTED_TESTS=()
 
-function fail() {
-  TESTS=$((TESTS + 1))
-  FAILS=$((FAILS + 1))
-  printf '  FAIL %s\n' "$1"
-  if [[ $# -ge 2 ]]; then
-    printf '         %s\n' "$2"
-  fi
-}
+function info()  { emit "$*"; }
+function error() { emit "ERROR: $*"; }
+function die()   { error "$*"; exit 1; }
+function emit()  { echo >&2 "$PROGRAM_NAME: $*"; }
 
-function assert_symlink_to() {
-  # assert_symlink_to <path-under-fake-home> <expected-target> <description>
-  local path="$FAKE_HOME/$1" want="$2" desc="$3" got
-  if [[ ! -L "$path" ]]; then
-    fail "$desc" "not a symlink: $path"
-    return
-  fi
-  got=$(readlink "$path")
-  if [[ "$got" != "$want" ]]; then
-    fail "$desc" "points at $got, wanted $want"
-    return
-  fi
-  if [[ ! -e "$path" ]]; then
-    fail "$desc" "symlink is dangling: $path -> $got"
-    return
-  fi
-  ok "$desc"
-}
 
-function assert_real_dir() {
-  local path="$FAKE_HOME/$1" desc="$2"
-  if [[ -d "$path" && ! -L "$path" ]]; then
-    ok "$desc"
-  else
-    fail "$desc" "not a real directory: $path"
-  fi
-}
-
-function assert_absent() {
-  local path="$FAKE_HOME/$1" desc="$2"
-  if [[ -e "$path" || -L "$path" ]]; then
-    fail "$desc" "exists but should not: $path"
-  else
-    ok "$desc"
-  fi
-}
-
-function assert_contains() {
-  local haystack="$1" needle="$2" desc="$3"
-  if [[ "$haystack" == *"$needle"* ]]; then
-    ok "$desc"
-  else
-    fail "$desc" "output did not contain: $needle"
-  fi
-}
-
-FAKE_HOMES=()
-
-# shellcheck disable=SC2329  # reached via the EXIT trap below; shellcheck doesn't follow it
-function cleanup() {
-  local d
-  for d in ${FAKE_HOMES+"${FAKE_HOMES[@]}"}; do
-    case "$d" in                                            # only ever rm what mktemp made
-      */dotfiles-test.*) rm -rf "$d" ;;
-      *) echo >&2 "refusing to remove unexpected path: $d" ;;
-    esac
+function main() {
+  local test_script rc
+  cd "$PROGRAM_DIR"
+  TESTS_DIR="$PWD"
+  select_test_scripts "$@"
+  # The +"..." guard is for bash 3.2, where expanding an empty array under `set -u` errors.
+  for test_script in ${SELECTED_TESTS[@]+"${SELECTED_TESTS[@]}"}; do
+    heading "$test_script"
+    rc=0
+    if [[ -x "$TESTS_DIR/$test_script" ]]; then
+      "$TESTS_DIR/$test_script" || rc=$?
+    else
+      # Only reachable from the glob, which takes whatever matches; a named test that
+      # isn't executable already died in select_test_scripts. Count it and keep going, so
+      # one broken file doesn't hide the state of everything else.
+      error "not executable, skipping: $test_script ($TESTS_DIR/$test_script)"
+      rc=1
+    fi
+    if [[ $rc == 0 ]]; then
+      N_PASSED=$((N_PASSED + 1))
+    else
+      N_FAILED=$((N_FAILED + 1)); FAILED_NAMES+=("$test_script")
+    fi
+    echo ''
   done
-}
-trap cleanup EXIT
-
-function new_fake_home() {
-  FAKE_HOME=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
-  FAKE_HOMES+=("$FAKE_HOME")
+  print_summary
+  return $(( N_FAILED > 0 ? 1 : 0 ))
 }
 
-function install_into_fake_home() {
-  # errexit off: failures are the caller's to interpret, not ours to abort on.
-  local rc=0
-  set +o errexit
-  HOME="$FAKE_HOME" "$REPO/install-dotfiles" "$@" 2>&1
-  rc=$?
-  set -o errexit
-  return $rc
-}
+function select_test_scripts() {
+  # Populates $SELECTED_TESTS with the test script names to run, in glob (sorted) order.
+  #
+  # Sets a global instead of echoing, because a command substitution would put this in a
+  # subshell, where die()'s exit would kill only the subshell and let the run continue
+  # with an empty list -- reporting success on a bogus test name.
+  local arg name note
+  SELECTED_TESTS=()
 
-function real_bashrc_link() {
-  readlink "$HOME/.bashrc" 2>/dev/null || echo '(not a symlink)'
-}
-
-# ============ Tests ============
-
-function run_tests() {
-  local out out2 before rc stale
-
-  echo "===== a clean install ====="
-  new_fake_home
-  install_into_fake_home > /dev/null
-
-  assert_symlink_to '.bashrc'    "$REPO/dots/all-os/flat/bashrc.sh"  'flat tree: .bashrc links to bashrc.sh'
-  assert_symlink_to '.profile'   "$REPO/dots/all-os/flat/profile.sh" 'flat tree: .profile links to profile.sh'
-  assert_symlink_to '.zshrc'     "$REPO/dots/all-os/flat/zshrc.zsh"  'munging: .zshrc comes from zshrc.zsh'
-  assert_symlink_to '.hushlogin' "$REPO/dots/all-os/flat/hushlogin"  'no extension to strip: .hushlogin'
-  assert_symlink_to '.gitconfig' "$REPO/dots/macos/flat/gitconfig"    'OS-specific file shadows all-os: .gitconfig'
-  assert_symlink_to '.dotlib'    "$REPO/dots/all-os/flat/dotlib"     'a directory in the flat tree links whole: .dotlib'
-
-  assert_symlink_to '.config/btop/btop.conf'   "$REPO/dots/all-os/nested/_config/btop/btop.conf"  'nested tree: nested file is linked'
-  assert_symlink_to '.config/fish/config.fish' "$REPO/dots/all-os/nested/_config/fish/config.fish" 'nested tree: another nested file'
-  assert_symlink_to '.config/htop/htoprc'      "$REPO/dots/all-os/nested/_config/htop/htoprc"     'nested tree: two levels deep'
-  assert_real_dir   '.config'                                                      'nested tree: .config is a real dir, not a link'
-  assert_real_dir   '.config/btop'                                                 'nested tree: intermediate dirs are real'
-
-  assert_absent '.gitkeep' 'literal-dot repo file (macos/nested/.gitkeep) is never linked'
-
-  # The trees are siblings so the flat scanner can't see nested/ as an entry to link. An
-  # earlier layout put it inside flat/, and the scanner duly linked the whole thing into ~.
-  assert_absent '.nested' 'the nested/ tree is not itself linked into ~'
-  assert_absent '.flat'   'the flat/ tree is not itself linked into ~'
-
-  assert_symlink_to 'bin' "$REPO/home-bin" 'the ~/bin dir links to the repo home-bin/'
-
-  echo "===== the invocation path doesn't leak into the links ====="
-  # install_into_fake_home calls the installer by absolute path, so nothing above here
-  # exercises a relative invocation -- which is how the README says to run it, and which
-  # used to write a self-referential "./bin" into ~/bin.
-  new_fake_home
-  ( cd "$REPO" && HOME="$FAKE_HOME" ./install-dotfiles ) > /dev/null 2>&1
-  assert_symlink_to 'bin' "$REPO/home-bin" 'run as ./install-dotfiles, ~/bin is still absolute'
-  new_fake_home
-  ( cd "$REPO/dots" && HOME="$FAKE_HOME" ../install-dotfiles ) > /dev/null 2>&1
-  assert_symlink_to 'bin' "$REPO/home-bin" 'run from a subdir as ../install-dotfiles, likewise'
-  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
-      'relative invocation gets the flat tree right too'
-
-  echo "===== underscore-to-dot munging ====="
-  mkdir -p "$REPO/dots/all-os/nested/_munge-test/completions"
-  echo 'test content' > "$REPO/dots/all-os/nested/_munge-test/_leaf"
-  # Shaped like the case this escape exists for: a zsh completion function, whose name
-  # really does start with an underscore.
-  echo 'compdef stub' > "$REPO/dots/all-os/nested/_munge-test/completions/__zcomp"
-  install_into_fake_home > /dev/null
-  assert_symlink_to '.munge-test/.leaf' "$REPO/dots/all-os/nested/_munge-test/_leaf" \
-      'both a dir and a leaf file with a leading _ munge to a leading .'
-  assert_symlink_to '.munge-test/completions/_zcomp' \
-      "$REPO/dots/all-os/nested/_munge-test/completions/__zcomp" \
-      'a leading __ escapes to a literal leading _'
-  rm -rf "$REPO/dots/all-os/nested/_munge-test"
-
-  echo "===== \$OSNAME shadows all-os in the nested tree ====="
-  new_fake_home
-  mkdir -p "$REPO/dots/macos/nested/_config/btop"
-  echo 'macos override' > "$REPO/dots/macos/nested/_config/btop/btop.conf"
-  install_into_fake_home > /dev/null
-  assert_symlink_to '.config/btop/btop.conf' "$REPO/dots/macos/nested/_config/btop/btop.conf" \
-      'macos/nested overrides all-os/nested on a matching target'
-  rm -rf "$REPO/dots/macos/nested/_config"
-
-  echo "===== idempotence ====="
-  new_fake_home
-  install_into_fake_home > /dev/null
-  out2=$(install_into_fake_home -v)
-  assert_contains "$out2" "Symlink '.bashrc' is already set up" 'second run reports flat-tree file unchanged'
-  assert_contains "$out2" "Symlink '.config/btop/btop.conf' is already set up" 'second run reports nested-tree file unchanged'
-  if [[ "$(readlink "$FAKE_HOME/.bashrc")" == "$REPO/dots/all-os/flat/bashrc.sh" ]]; then
-    ok 'second run left the link pointing where it was'
+  if [[ $# -eq 0 ]]; then
+    # all tests
+    for name in test-*; do
+      # An unmatched glob expands to the pattern itself, so check before taking it.
+      if [[ -e "$name" ]]; then SELECTED_TESTS+=("$name"); fi
+    done
+    if [[ ${#SELECTED_TESTS[@]} -eq 0 ]]; then
+      die "no test scripts found in $TESTS_DIR"
+    fi
   else
-    fail 'second run left the link pointing where it was'
-  fi
-
-  echo "===== a regular file is not clobbered ====="
-  new_fake_home
-  echo 'hand-written, do not touch' > "$FAKE_HOME/.bashrc"
-  out=$(install_into_fake_home)
-  assert_contains "$out" "SKIPPED: File '.bashrc' is a regular file" 'regular file is reported as skipped'
-  if [[ "$(cat "$FAKE_HOME/.bashrc")" == 'hand-written, do not touch' ]]; then
-    ok 'regular file kept its contents'
-  else
-    fail 'regular file kept its contents'
-  fi
-
-  echo "===== the flat-tree collision guard ====="
-  new_fake_home
-  install_into_fake_home > /dev/null
-  before=$(readlink "$FAKE_HOME/.bashrc")
-  stale="$REPO/dots/all-os/flat/bashrc.zsh"  # stale rename leftover; both munge to .bashrc
-  echo '# stale leftover from a rename' > "$stale"
-  rc=0
-  out=$(install_into_fake_home) || rc=$?
-  rm -f "$stale"
-  if [[ $rc -ne 0 ]]; then
-    ok 'collision makes the installer exit non-zero'
-  else
-    fail 'collision makes the installer exit non-zero' "exited 0"
-  fi
-  assert_contains "$out" 'both install as' 'collision is explained in the error'
-  if [[ "$(readlink "$FAKE_HOME/.bashrc")" == "$before" ]]; then
-    ok 'collision changed nothing in ~ (validation runs before linking)'
-  else
-    fail 'collision changed nothing in ~ (validation runs before linking)' \
-        "was $before, now $(readlink "$FAKE_HOME/.bashrc")"
-  fi
-
-  echo "===== the real \$HOME was never touched ====="
-  # Compare against a snapshot taken before any test ran, rather than against the current
-  # repo layout. Comparing to the layout conflates two things, and trips on a rearranged
-  # tree or a home that just needs a re-install -- neither of which says anything about
-  # whether the tests escaped their fake $HOME, which is the only thing this guards.
-  if [[ "$(real_bashrc_link)" == "$REAL_BASHRC_BEFORE" ]]; then
-    ok "the real ~/.bashrc is exactly as the tests found it"
-  else
-    fail "the real ~/.bashrc is exactly as the tests found it" \
-        "was $REAL_BASHRC_BEFORE, now $(real_bashrc_link)"
+    # named requested tests
+    for arg in "$@"; do
+      case "$arg" in
+        test-*) name="$arg" ;;
+        *)      name="test-$arg" ;;
+      esac
+      if [[ ! -x "$TESTS_DIR/$name" ]]; then
+        note=''
+        if [[ -e "$TESTS_DIR/$name" ]]; then note=' (file exists but is not executable)'; fi
+        die "no such test script: $name${note} ($TESTS_DIR/$name)"
+      fi
+      SELECTED_TESTS+=("$name")
+    done
   fi
 }
 
 function print_summary() {
-  echo
-  if [[ $FAILS -eq 0 ]]; then
-    echo "===== all $TESTS assertions passed ====="
+  local n_total=$((N_PASSED + N_FAILED))
+  if [[ $N_FAILED -eq 0 ]]; then
+    heading "all $n_total test scripts passed"
   else
-    echo "===== $FAILS of $TESTS assertions FAILED ====="
+    heading "$N_FAILED of $n_total test scripts FAILED: ${FAILED_NAMES[*]}"
   fi
 }
 
-# ============ Main script ============
+function heading() {
+  local msg="$*"
+  local bar="##########"
+  echo "${bar} ${msg} ${bar}"
+}
 
-REAL_BASHRC_BEFORE=$(real_bashrc_link)   # snapshot before anything runs
 
-TESTS=0
-FAILS=0
-run_tests
-print_summary
-exit $(( FAILS > 0 ? 1 : 0 ))
+# ========== Main script ==========
+
+main "$@"
