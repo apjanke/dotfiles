@@ -14,8 +14,14 @@
 # individual commands to the terminal. A "defaults-write" call may be replaced with
 # "defaults write" at the command line.
 
-# Disable exit-on-error because some of these defaults-writes will fail on Mojave
-#set -e
+# Load JXL. See "Loading JXL" in dots/README.md.
+source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
+    || { echo >&2 "ERROR: failed to load jxl-lib.sh"; exit 1; }
+
+# errexit stays off: some of these defaults-writes fail on Mojave, and the run should
+# carry on past them.
+jxl::init_script --no-errexit
+jxl::use_short_names
 
 MYDIR="$( dirname "${BASH_SOURCE[0]}" )"
 DROPBOX="$HOME/Dropbox"
@@ -25,12 +31,8 @@ SERIALS_DIR="$DROPBOX/records/licenses and serials"
 WALLPAPER_FILE="/Library/Desktop Pictures/Wave.jpg"
 : "${ITERM_PREFERENCES_SET:=12pt}"
 
-PROGRAM_NAME="$(basename "$0")"
 DO_KILL=0
-VERBOSE=0
 OPT_TRACE=0
-
-function die() { echo >&2 "$PROGRAM_NAME: ERROR: $*"; exit 1; }
 
 function usage() {
   cat <<EOF
@@ -41,10 +43,9 @@ Usage:
   $PROGRAM_NAME --help
 
 Options:
-  -h, --help      display help
-  -v, --verbose   verbose output
-  -k, --kill      kill affected programs after updating settings
-  -x, --trace     trace program execution
+    -k, --kill      kill affected programs after updating settings
+    -x, --trace     trace program execution
+$(jxl::std_options_help)
 
 Environment:
   ITERM_PREFERENCES_SET  - name of preferences set (leaf shared preferences dir)
@@ -57,16 +58,17 @@ function parse_cli() {
   while [[ $# -ge 1 ]]; do
     arg="$1"; shift
     case "$arg" in
-      --verbose | -v)               VERBOSE=1 ;;
       --kill | -k)                  DO_KILL=1 ;;
       --trace | -x)                 OPT_TRACE=1 ;;
-      --help | -help | -h | '-?')   usage; exit 0 ;;
       *)
-        die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
     esac
   done
 
-  readonly VERBOSE DO_KILL OPT_TRACE
+  readonly DO_KILL OPT_TRACE
 }
 
 function CFPreferencesAppSynchronize() {
@@ -84,7 +86,8 @@ function changed-something() {
 }
 
 function v_echo() {
-  if [[ $VERBOSE == 1 ]]; then
+  # --verbose is JXL's now, so ask it rather than keeping a second copy of the flag.
+  if is_verbose; then
     echo "$@"
   fi
 }

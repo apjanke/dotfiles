@@ -24,6 +24,11 @@ N_FAILED=0
 FAILED_NAMES=()
 SELECTED_TESTS=()
 
+# Its own message helpers on purpose: the runner takes no dependency on JXL, so that it
+# still works when JXL is what is broken. A test harness that cannot run until the code
+# under test is healthy is not much of a harness.
+#
+# shellcheck disable=SC2329  # info is part of that set, whether or not this file uses it
 function info()  { emit "$*"; }
 function error() { emit "ERROR: $*"; }
 function die()   { error "$*"; exit 1; }

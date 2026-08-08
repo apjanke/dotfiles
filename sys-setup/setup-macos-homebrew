@@ -11,13 +11,15 @@
 # has brew installed, though you may see (lots of) spurious warning messages. Each run
 # does git fetches, so it requires a network connection even if everything is already set up.
 
-set -e
+# Load JXL. See "Loading JXL" in dots/README.md.
+source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
+    || { echo >&2 "ERROR: failed to load jxl-lib.sh"; exit 1; }
 
-PROGRAM_NAME="$(basename "$0")"
+jxl::init_script
+jxl::use_short_names
+
 OPT_TRACE=0
 NO_CASKS=0
-
-function die() { echo >&2 "$PROGRAM_NAME: ERROR: $*"; exit 1; }
 
 function usage() {
   cat <<EOF
@@ -28,9 +30,9 @@ Usage:
   $PROGRAM_NAME --help
 
 Options:
-    -x, --trace      trace program execution
-    -h, --help       display help
-    -n, --no-casks   do not install any Casks
+    -x, --trace     trace program execution
+    -n, --no-casks  do not install any Casks
+$(jxl::std_options_help)
 EOF
 }
 
@@ -42,9 +44,11 @@ function parse_cli() {
     case "$arg" in
       --trace | -x)                 OPT_TRACE=1 ;;
       --no-casks | -n)              NO_CASKS=1 ;;
-      --help | -help | -h | '-?')   usage; exit 0 ;;
       *)
-        die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
     esac
   done
 
@@ -109,11 +113,11 @@ fi
 if [[ -d "$my_brew_cfg_dir" ]]; then
   echo "Found brew config dir at: $my_brew_cfg_dir"
   _read_lines "$my_brew_cfg_dir/brew-taps-standard"
-  taps=("${_read_lines_out[@]}")
+  taps=( ${_read_lines_out[@]+"${_read_lines_out[@]}"} )
   _read_lines "$my_brew_cfg_dir/brew-formulae-standard"
-  formulae=("${_read_lines_out[@]}")
+  formulae=( ${_read_lines_out[@]+"${_read_lines_out[@]}"} )
   _read_lines "$my_brew_cfg_dir/brew-casks-standard"
-  casks=("${_read_lines_out[@]}")
+  casks=( ${_read_lines_out[@]+"${_read_lines_out[@]}"} )
   if [[ $NO_CASKS = 1 ]]; then
       casks=()
   fi
@@ -126,18 +130,18 @@ else
 fi
 
 # Install taps
-for tap in "${taps[@]}"; do
+for tap in ${taps[@]+"${taps[@]}"}; do
   _do brew tap "$tap"
 done
 
 # Install formulae and casks
 
 # Do casks first so Java gets picked up; it is a dependency of some formulae
-for cask in "${casks[@]}"; do
+for cask in ${casks[@]+"${casks[@]}"}; do
   _do brew install --cask "$cask"
 done
 
-_do brew install "${formulae[@]}"
+_do brew install ${formulae[@]+"${formulae[@]}"}
 
 echo ""
 echo "Homebrew setup complete."

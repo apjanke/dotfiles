@@ -11,7 +11,9 @@
 #   * git (May be provided by the system, or Xcode CLT on macOS.)
 #   * curl
 
-set -e
+set -o errexit
+set -o nounset
+set -o pipefail
 
 MY_GITHUB_USER=apjanke
 

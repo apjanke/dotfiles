@@ -5,14 +5,16 @@
 # This should be run under sudo so it can properly detect the Spotlight
 # configuration store.
 
-# Be conservative, and also so aborting a sudo with Ctrl-C will
-# abort the whole script
-set -e
+# Load JXL. See "Loading JXL" in dots/README.md.
+source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
+    || { echo >&2 "ERROR: failed to load jxl-lib.sh"; exit 1; }
 
-PROGRAM_NAME="$(basename "$0")"
+# errexit on, per jxl::init_script's default: aborting a sudo with Ctrl-C should take
+# the whole script with it.
+jxl::init_script
+jxl::use_short_names
+
 OPT_TRACE=0
-
-function die() { echo >&2 "$PROGRAM_NAME: ERROR: $*"; exit 1; }
 
 function usage() {
   cat <<EOF
@@ -23,8 +25,8 @@ Usage:
   $PROGRAM_NAME --help
 
 Options:
-    -x, --trace   trace program execution
-    -h, --help    display help
+    -x, --trace     trace program execution
+$(jxl::std_options_help)
 EOF
 }
 
@@ -35,9 +37,11 @@ function parse_cli() {
     arg="$1"; shift
     case "$arg" in
       --trace | -x)                 OPT_TRACE=1 ;;
-      --help | -help | -h | '-?')   usage; exit 0 ;;
       *)
-        die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
     esac
   done
 
