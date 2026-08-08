@@ -43,6 +43,7 @@
 - Homebrew/MacPorts loading
   - "auto" option for loading only one or the other of Homebrew or MacPorts if they both exist. Right now, set `$JX_USE_{HOMEBREW,MACPORTS}` both to true, and you get both loaded if they both exist.
      - That prob means switching to a single variable to control package managers, with values `homebrew`, `macports`, `auto`, `both`, and `none`. And the default should prob be `auto`. Along with another variable that sets the preferred one for `auto` for the case that both exist.
+- Change `myip` from an alias to a function, and make the `pbcopy` optional (that's a Mac-only thing). Maybe add support for the Linux equivalent of `pbcopy` in it.
 
 ### Big "framework + config" repo split?
 
