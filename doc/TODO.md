@@ -57,7 +57,7 @@
 
 ## Aliases and functions
 
-- Add `grhino` alias for `grep -rhno` (and maybe that respects the `grin` exclusions?).
+- Have `grhino` respect the `grin` exclusions?
 
 ## Details
 
