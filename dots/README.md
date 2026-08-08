@@ -178,6 +178,37 @@ These dotfiles define some special shell functions, including some for working w
 
 Plus a bunch of small functions and aliases that act more like short commands, which I'm not going to document here. See the source code for those.
 
+### Loading JXL
+
+JXL is the shared shell library, `dotlib/jxl-lib.sh`. It gets loaded two different ways, and the load lines themselves are kept to one line so this is where the reasoning lives.
+
+**Shell rc files** load it from the installed copy, and only from there:
+
+```bash
+# JXL, for the command functions further down
+if ! source "$HOME/.dotlib/jxl-lib.sh"; then
+```
+
+`$HOME/.dotlib` and never a repo-relative path, so an installed `$HOME` stands on its own and keeps working if the checkout moves or goes away. The tradeoff is that an rc file can end up paired with a different version of JXL than it was written against – acceptable for the rc files, not for scripts (below).
+
+There is no `-e` or `-r` test first: the shell already prints a precise diagnostic, distinguishing "No such file or directory" from "Permission denied" better than a hand-written check would, and it's deliberately left visible.
+
+The exit status is worth trusting only because `jxl-lib.sh` ends in a bare `true`, the way a Perl module ends in `1;`. Without that, `source` returns the status of whatever statement happened to come last in the file, so "did it load?" would be answered by accident. Testing it inside `if !` also keeps a caller running under `errexit` alive.
+
+On failure the rc file **complains and carries on** rather than returning. Several things below the load need JXL and will be broken without it, but the rest of the file is still worth having: a shell missing a few `jx-*` commands beats one with no aliases, no `$EDITOR`, and no prompt.
+
+**Shebang scripts** load it from the repo instead, by a path relative to their own location:
+
+```bash
+source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" || exit 1
+```
+
+Always the repo copy, never `~/.dotlib`, so a script can never be paired with a mismatched library version. The repo is always reachable: these scripts live in it, and `~/bin` is a symlink into it, so if the script ran at all the checkout is present.
+
+`pwd -P` because `~/bin` is that symlink – the path up to the repo root has to be relative to the physical directory, not the logical one. The relative prefix varies with how deep the script sits, so this line is not identical everywhere. `$0` rather than `${BASH_SOURCE[0]}` because these are only ever run, never sourced.
+
+`|| exit 1` so a broken checkout fails on one clear line instead of cascading into `jxl::init_script: command not found` and everything after it. `errexit` cannot cover this, since turning it on is `jxl::init_script`'s job and that has not run yet.
+
 ## Miscellaneous
 
 Symlinking is split across two sibling trees under each OS root, per the "Organization" section above: `<osname>/flat/` links whole entries one level deep, and `<osname>/nested/` mirrors `$HOME` for tracking individual files nested inside a directory (like one file under `~/.config/some-app/`) without claiming the rest of that directory.

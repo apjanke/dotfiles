@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# test-bashyrc - exercise dotlib/bashyrc.sh, the shared interactive rc file
+#
+# Usage: ./dots/tests/test-bashyrc   (or via ./dots/tests/run-tests)
+#
+# Runs under every shell build select_test_shells finds, since this file is sourced by both
+# bash and zsh.
+#
+# Sourced against a throwaway $HOME, so the real one is never read or written. That also
+# lets the missing-JXL path be exercised: point $HOME somewhere with no .dotlib in it.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+cd "$(dirname "$0")/../.."
+REPO="$PWD"
+
+# shellcheck source=dots/tests/lib.sh
+source "$REPO/dots/tests/lib.sh"
+trap cleanup_fake_homes EXIT
+
+BASHYRC="$REPO/dots/all-os/flat/dotlib/bashyrc.sh"
+
+function source_bashyrc() {
+  # Echoes the combined output of sourcing bashyrc.sh under the given shell, with $HOME
+  # pointed at a throwaway dir. The trailing snippet can probe what got defined.
+  local shell="$1" home="$2" snippet="${3:-}"
+  HOME="$home" "$shell" -c "
+    source '$BASHYRC'
+    $snippet
+  " 2>&1 || true
+}
+
+function assert_all_shells_bashyrc() {
+  local home="$1" snippet="$2" want="$3" desc="$4"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(source_bashyrc "$sh" "$home" "$snippet")
+    if [[ "$got" != *"$want"* ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted to contain '$want'"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+# shellcheck disable=SC2016  # single-quoted $... is code for the inner shell
+function main() {
+  select_test_shells
+  print_test_env
+
+  echo "===== with JXL installed ====="
+  # A fake home whose .dotlib points at the repo's, exactly as install-dotfiles links it.
+  new_fake_home
+  local good_home="$FAKE_HOME"
+  ln -sfn "$REPO/dots/all-os/flat/dotlib" "$good_home/.dotlib"
+
+  assert_all_shells_bashyrc "$good_home" 'echo "v=${_JXL_VERSION:-none}"' 'v=0.1.0' \
+      'bashyrc loads JXL when it is installed'
+  assert_all_shells_bashyrc "$good_home" 'echo done' 'done' \
+      'a good load produces no complaint'
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(source_bashyrc "$sh" "$good_home" 'true')
+    if [[ "$got" == *ERROR* ]]; then
+      fail 'a good load produces no complaint' "${sh##*/}: got '$got'"
+      return
+    fi
+  done
+  ok 'no ERROR on the happy path'
+
+  echo "===== with JXL missing ====="
+  new_fake_home   # no .dotlib in this one at all
+  assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'bashyrc.sh: ERROR:' \
+      'a missing JXL is reported'
+  # The shell's own diagnostic, which we deliberately do not suppress. Lowercased needle:
+  # bash says "No such file or directory", zsh says "no such file or directory".
+  assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'o such file or directory' \
+      "the shell's own diagnostic is left visible"
+  assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'will not work' \
+      'the report says what the consequence is'
+  # The point of complaining rather than returning: the rest of the file still loads.
+  assert_all_shells_bashyrc "$FAKE_HOME" \
+      'if typeset -f jx-rainbow-me >/dev/null 2>&1; then echo defined; else echo missing; fi' \
+      'defined' 'the rest of bashyrc still loads without JXL'
+
+  echo "===== with JXL present but unreadable ====="
+  new_fake_home
+  mkdir -p "$FAKE_HOME/.dotlib"
+  : > "$FAKE_HOME/.dotlib/jxl-lib.sh"
+  chmod 000 "$FAKE_HOME/.dotlib/jxl-lib.sh"
+  assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'bashyrc.sh: ERROR:' \
+      'an unreadable JXL is reported too'
+  # Case again: bash "Permission denied", zsh "permission denied".
+  assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'ermission denied' \
+      'the shell distinguishes unreadable from missing, so we need not'
+  chmod 644 "$FAKE_HOME/.dotlib/jxl-lib.sh"   # so cleanup can remove it
+}
+
+main
+print_summary
+exit $(( FAILS > 0 ? 1 : 0 ))

@@ -6,10 +6,10 @@
 # shellcheck shell=bash
 # shellcheck disable=SC1091
 
-# JXL, for the command functions further down. Sourcing is idempotent, so it does not
-# matter whether something else got here first.
-if [[ -f "$HOME/.dotlib/jxl-lib.sh" ]]; then
-  source "$HOME/.dotlib/jxl-lib.sh"
+# JXL, for the command functions further down. See "Loading JXL" in dots/README.md.
+if ! source "$HOME/.dotlib/jxl-lib.sh"; then
+  echo >&2 "bashyrc.sh: ERROR: Failed loading JXL from ~/.dotlib/jxl-lib.sh." \
+      "The jx-* commands will not work. Need to run install-dotfiles?"
 fi
 
 # Call uname once and stash results for performance
@@ -440,7 +440,11 @@ alias dbox='cd "$DROPBOX"'
 # Allow for machine- or environment-local overrides
 #
 # TODO: This should maybe be pulled from an XDG "local" config dir instead of a special file
-# I made up?
+# I made up? Or do both?
 if [[ -f "${HOME}/.bashyrc-local" ]]; then
   source "${HOME}/.bashyrc-local"
 fi
+
+# Cleanup
+
+unset __uname

@@ -25,10 +25,12 @@
 # components are dotted, so they have to be marked. See dots/README.md for the longer
 # version.
 
-set -o errexit
-set -o nounset
-set -o pipefail
-if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+# Load JXL. See "Loading JXL" in dots/README.md.
+source "$(cd "$(dirname "$0")" && pwd -P)/dots/all-os/flat/dotlib/jxl-lib.sh" \
+    || { echo >&2 "ERROR: failed to load jxl-lib.sh"; exit 1; }
+
+jxl::init_script
+jxl::use_short_names
 
 
 function usage() {
@@ -40,13 +42,12 @@ Usage:
   $PROGRAM_NAME --help
 
 Options:
-    -h, --help       display help
-    -v, --verbose    verbose output
-    -x, --trace      trace program execution
+    -x, --trace     trace program execution
+$(jxl::std_options_help)
 EOF
 }
 
-VERBOSE=0 DEBUG=0 OPT_TRACE=0
+OPT_TRACE=0
 
 ANY_CHANGED=0 ALREADY=0 SKIPPED=0 FAILED=0
 
@@ -80,9 +81,17 @@ function main() {
     rc=1
     info "FAILED linking $FAILED files."
   fi
-  info "$msg"
+  # Only when there is something to say: an unconditional info prints a blank line.
+  if [[ -n "$msg" ]]; then
+    info "$msg"
+  fi
 
   info "Dotfiles are now linked to $dotdir."
+  # Last, so it is the line still on screen. Everything above describes what a real run
+  # would have done, and read on its own would be misleading.
+  if is_dry_run; then
+    info 'DRY-RUN: This was a dry run. No data was actually written.'
+  fi
   exit "$rc"
 }
 
@@ -102,32 +111,17 @@ function parse_cli() {
   while [[ $# -ge 1 ]]; do
     arg="$1"; shift
     case "$arg" in
-      --verbose | -v)               VERBOSE=1 ;;
-      --trace | -x)                 OPT_TRACE=1 ;;
-      --help | -help | -h | '-?')   usage; exit 0 ;;
+      --trace | -x)   OPT_TRACE=1 ;;
       *)
-        die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
     esac
   done
 
-  readonly VERBOSE OPT_TRACE
+  readonly OPT_TRACE
 }
-
-# ========== Generic boilerplate and utilities ==========
-
-PROGRAM_NAME=$(basename "$0")
-
-function info()    { emit "$*"; }
-function log_vrb() { if is_verbose; then info "$@"; fi; }
-function log_dbg() { if is_debug; then info "debug: $*"; fi; }
-function warning() { emit "WARNING: $*"; }
-function error()   { emit "ERROR: $*"; }
-function die()     { error "$@"; exit 1; }
-function emit()    { echo >&2 "$*"; }
-
-function is_verbose() { if [[ "${VERBOSE:-0}" != 0 ]]; then return 0; else return 1; fi; }
-function is_debug() { if [[ "${DEBUG:-0}" != 0 ]]; then return 0; else return 1; fi; }
-
 
 # ========== Script-specific code ==========
 
@@ -156,7 +150,10 @@ function symlink() {
     SKIPPED=$((SKIPPED + 1))
   else
     # Main case: do the linking
-    if ln -sfn "$source" "$target"; then
+    # wet_vrb, not wet: on a dry run the raw `ln` line is verbose-only detail, while the
+    # "Linked:" message below is the preview worth seeing. Running the normal logging path
+    # is half the value of a dry run -- it exercises those branches too.
+    if wet_vrb ln -sfn "$source" "$target"; then
       ANY_CHANGED=1; THIS_CHANGED=1
       info "Linked: $descr"
     else
@@ -261,10 +258,10 @@ function install_dotfiles_nested() {
     tofile="${targets[$i]}"
     dir=$(dirname "$tofile")
     if [[ "$dir" != "." && ! -d "$dir" ]]; then
-      mkdir -p "$dir"
+      wet_vrb mkdir -p "$dir"
       log_vrb "Created directory '$dir'"
       case "$dir" in
-        .ssh | .ssh/* | .gnupg | .gnupg/*) chmod 700 "$dir" ;;  # sshd StrictModes
+        .ssh | .ssh/* | .gnupg | .gnupg/*) wet_vrb chmod 700 "$dir" ;;  # sshd StrictModes
       esac
     fi
     symlink "${sources[$i]}" "$tofile"

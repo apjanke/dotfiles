@@ -125,6 +125,7 @@ fi
 
 # ========== Entry points ==========
 
+# shellcheck disable=SC2120  # takes its own options; callers pass none, by design
 function jxl::init_script() {
   # Set up a shebang script: shell options, $PROGRAM_NAME, and the standard state.
   #
@@ -678,6 +679,7 @@ function jxl::_is_function() {
 
 # ========== Short names ==========
 
+# shellcheck disable=SC2120  # takes its own options; callers pass none, by design
 function jxl::use_short_names() {
   # Define unprefixed wrappers -- info, die, wet -- for the jxl:: functions.
   #
@@ -903,3 +905,9 @@ function jxl::_call_stack() {
 if [[ "${JXL_DEBUG:-${DEBUG:-0}}" != 0 ]]; then
   jxl::emit "debug: JXL ${_JXL_VERSION} loaded from ${_JXL_LIB_PATH}"
 fi
+
+# Borrowed from Perl's `1;` at the end of a module: `source` returns the status of the
+# LAST command in the file, so without this the caller's "did it load?" check would be at
+# the mercy of whatever statement happened to come last. Now a zero status means control
+# reached the bottom of this file.
+true

@@ -4,26 +4,11 @@
 #
 # See the HELP_SCREEN variable in the source code for details.
 
-# Find JXL: the repo copy first, so an edited checkout is what runs, then the installed
-# one. Walking up rather than using a fixed relative path, because scripts sit at
-# different depths. `pwd -P` because ~/bin is a symlink to this directory.
-_jxl_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
-while [[ "$_jxl_dir" != / && ! -f "$_jxl_dir/dots/all-os/flat/dotlib/jxl-lib.sh" ]]; do
-  _jxl_dir=$(dirname "$_jxl_dir")
-done
-if [[ -f "$_jxl_dir/dots/all-os/flat/dotlib/jxl-lib.sh" ]]; then
-  source "$_jxl_dir/dots/all-os/flat/dotlib/jxl-lib.sh"
-elif [[ -f "$HOME/.dotlib/jxl-lib.sh" ]]; then
-  source "$HOME/.dotlib/jxl-lib.sh"
-else
-  echo >&2 "$(basename "$0"): cannot find jxl-lib.sh"
-  exit 1
-fi
-unset _jxl_dir
+# Load JXL. See "Loading JXL" in dots/README.md.
+source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
+    || { echo >&2 "ERROR: failed to load jxl-lib.sh"; exit 1; }
 
-# shellcheck disable=SC2119  # these take their own options, not the script's arguments
 jxl::init_script
-# shellcheck disable=SC2119
 jxl::use_short_names
 _JXL_EMIT_TIMESTAMP=1
 _JXL_EMIT_PROGNAME=1

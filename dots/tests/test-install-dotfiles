@@ -36,7 +36,7 @@ function real_bashrc_link() {
 # ============ Tests ============
 
 function run_tests() {
-  local out out2 before rc stale
+  local out out2 before rc stale leftovers
 
   echo "===== a clean install ====="
   new_fake_home
@@ -124,6 +124,33 @@ function run_tests() {
     ok 'regular file kept its contents'
   else
     fail 'regular file kept its contents'
+  fi
+
+  echo "===== --dry-run ====="
+  new_fake_home
+  # `|| true` because this script runs under errexit and the helper returns the
+  # installer's exit status: a non-zero run would abort here instead of failing the
+  # assertions below, which is precisely when we most want them to report.
+  out=$(install_into_fake_home --dry-run) || true
+  # A dry run runs the normal logging path on purpose: the real "Linked:" output is the
+  # preview, and it exercises those branches. The raw `ln` line stays verbose-only.
+  assert_contains "$out" 'Linked: .bashrc' 'dry run previews the normal log output'
+  assert_not_contains "$out" 'dry-run: would: ln' \
+      'the raw command is verbose-only detail, not shown by default'
+  assert_contains "$out" 'DRY-RUN: This was a dry run. No data was actually written.' \
+      'dry run ends with an unmistakable trailer'
+  out2=$(install_into_fake_home --dry-run --verbose) || true
+  assert_contains "$out2" 'dry-run: would: ln -sfn' \
+      'a verbose dry run does show the raw commands'
+  # No `find | head` here: head closes the pipe early, and under errexit + pipefail the
+  # SIGPIPE aborts the whole test run rather than failing this one assertion -- which
+  # would hide the failure at exactly the moment it mattered.
+  leftovers=$(find "$FAKE_HOME" -mindepth 1 2>/dev/null || true)
+  if [[ -z "$leftovers" ]]; then
+    ok 'dry run leaves the target home completely untouched'
+  else
+    fail 'dry run leaves the target home completely untouched' \
+        "created: $(printf '%s' "$leftovers" | tr '\n' ' ')"
   fi
 
   echo "===== the flat-tree collision guard ====="
