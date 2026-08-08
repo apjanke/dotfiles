@@ -5,13 +5,16 @@
 - Revisit: the environment can reach into non-interactive shells and change how scripts behave. Two vectors, verified 2026-08-06:
   - `BASH_ENV` - non-interactive bash sources whatever it points at, before running the script. Confirmed it can flip shell options: setting `nullglob` that way changed how an unmatched glob expanded inside a `#!/bin/bash` script. Not currently exposed (nothing here sets `BASH_ENV`, and it's unset in my env), but any script's behavior could be altered from outside if that changed. `BASHOPTS` was also tested and did *not* propagate, despite the bash manual implying it would.
   - zsh's equivalent is already active by design: zsh reads `.zshenv` for **all** invocations, including non-interactive `zsh -c`, and `setopt` there does apply to scripts. Ours then sources `.profile` → `dotlib/bashy-paths.sh`, so every `zsh -c` pays full `$PATH` setup and inherits whatever options `.zshenv` set. Worth asking whether `.zshenv` should be more minimal, and whether scripts should set the options they depend on rather than assuming defaults.
-- `jx-shell-info`
-  - Distinguish unset variables from blank strings.
-  - Reformat JX dotfiles variables to have spaces around " = ".
+- `jx-shell-info` things
+  - Add indicators for whether env (exported) variables vs. shell variables, and array or associative variables. For array variables, make sure all their elements are printed.
+  - Distinguish unset variables from blank strings. Don't bother showing unset JX_* variables at all unless `--verbose` is on.
+  - Reformat JX dotfiles variables disply to have spaces around " = ".
   - List presence of optional files, like `~/.*-local`.
   - Support multi-line JX variables?
   - Include my special non-JX-prefixed variables, like DROPBOX.
   - `-v | --verbose` option: show internal `_JX_*` vars, longer formatting
+  - Pretty-print the path, with spaces between elements instead of ':' separators, quoting elements which contain spaces. And maybe hard word-wrap at terminal width or some standard col width, maybe with an option to specify a certain col width.
+  - Add an option to dump JXL info too (by calling a new `jxl::show_shell_info()` function), probably `--jxl` or `--show-jxl`.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
@@ -51,6 +54,12 @@
 - Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
 - Factor out user-specific customizations (like the list of "default" user names) to separate files, to make this easier to reuse across users.
 - Load Ruby stuff from alternate locations and different platforms.
+
+## Testing
+
+- Test under both Bash 3.x and 4.x/5.x if available. E.g. on my Macs, /bin/bash is Bash 3.x, but Bash 5.x is usually available from Homebrew at /usr/local/bin/bash.
+  - And the Homebrew bash 5.x is usualy the one in front on my path, so unqualified `bash` gets you 5.x!
+  - May want to test against both system zsh and Homebrew zsh too, though that'll be a small version difference, like 5.9 vs. 5.9.2.
 
 ## Specific programs
 

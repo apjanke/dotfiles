@@ -6,6 +6,12 @@
 # shellcheck shell=bash
 # shellcheck disable=SC1091
 
+# JXL, for the command functions further down. Sourcing is idempotent, so it does not
+# matter whether something else got here first.
+if [[ -f "$HOME/.dotlib/jxl-lib.sh" ]]; then
+  source "$HOME/.dotlib/jxl-lib.sh"
+fi
+
 # Call uname once and stash results for performance
 if [[ -z $__uname ]]; then
   __uname=$(uname)
@@ -299,36 +305,50 @@ alias dadjoke="curl https://icanhazdadjoke.com --silent; echo"
 # Dotfiles debugging tools
 
 function jx-shell-info() {
-  # Dump some info about this shell and its configuration
+  # Thin wrapper: jxl::run_command owns the JXL locals, so adding one later touches the
+  # library instead of every command function. Default isolation runs the impl in a
+  # subshell, which is right here -- this command only reports, and never changes the
+  # shell it is called from.
+  local do_long_path=0
+  local -a _JXL_COMMAND_INFO=(
+    usage_headline 'Dump some info about this shell and its configuration'
+    synopsis_args  '[--long-path | -p]'
+    options        '    -p, --long-path   print the PATH one entry per line'
+  )
+  jxl::run_command jx::shell_info "$@"
+}
 
-  # TODO: Show which order Homebrew and MacPorts are loaded in, in a more
-  # concise manner than the $PATH.
-
-  # Hand-rolled instead of getopts: this file is sourced by both bash and zsh, and a
-  # while/case/shift loop behaves identically in both. It also drops the `local OPTIND`
-  # that getopts needs here, since bash doesn't reset OPTIND between calls in one shell.
-  local arg do_long_path=0
+function jx::shell_info_parse_cli() {
+  # Gets whatever jxl::run_command did not consume; hands back what it does not want.
+  local arg
+  local -a leftover=()
   while [[ $# -ge 1 ]]; do
     arg="$1"; shift
     case "$arg" in
-      --long-path | -p)             do_long_path=1 ;;
-      --help | -help | -h | '-?')   echo "Usage: jx-shell-info [--long-path]"; return 0 ;;
-      *)
-        echo >&2 "jx-shell-info: Unrecognized option: $arg"
-        return 1 ;;
+      --long-path | -p)   do_long_path=1 ;;
+      *)                  leftover+=("$arg") ;;
     esac
   done
+  _JXL_CLI_ARGS=( ${leftover[@]+"${leftover[@]}"} )
+}
+
+function jx::shell_info() {
+  # TODO: Show which order Homebrew and MacPorts are loaded in, in a more
+  # concise manner than the $PATH.
 
   local shell_info java_ver java_ver_str ruby_info
 
   # Detect this current shell
   # Hack: assume common shell variables have been neither clobbered nor exported
-  if [[ -n $ZSH_ARGZERO ]]; then
-    shell_info="zsh ${ZSH_VERSION:-} ($ZSH_ARGZERO)"
-  elif [[ -n $BASH ]]; then
-    shell_info="bash $BASH_VERSION ($BASH)"
-  elif [[ -n $KSH_VERSION ]]; then
-    shell_info="ksh $KSH_VERSION"
+  #
+  # Every reference needs a :- default: the identifying variable of one shell is by
+  # definition unset in the others, and JXL runs command impls under nounset.
+  if [[ -n ${ZSH_ARGZERO:-} ]]; then
+    shell_info="zsh ${ZSH_VERSION:-} (${ZSH_ARGZERO:-})"
+  elif [[ -n ${BASH:-} ]]; then
+    shell_info="bash ${BASH_VERSION:-} (${BASH:-})"
+  elif [[ -n ${KSH_VERSION:-} ]]; then
+    shell_info="ksh ${KSH_VERSION:-}"
   else
     shell_info='?'
   fi
@@ -344,11 +364,11 @@ Shell state from jx dotfiles:
 Shell: ${shell_info} on $(uname -m)
 
 Vars:
-  EDITOR = ${EDITOR}  VISUAL = ${VISUAL}  GUIEDITOR = ${GUIEDITOR}
+  EDITOR = ${EDITOR:-}  VISUAL = ${VISUAL:-}  GUIEDITOR = ${GUIEDITOR:-}
 
 Java:
-  java = $(command -v java 2>/dev/null)  ${java_ver_str}
-  JAVA_HOME = ${JAVA_HOME}
+  java = $(command -v java 2>/dev/null)  ${java_ver_str:-}
+  JAVA_HOME = ${JAVA_HOME:-}
 
 EOS
   if command -v ruby &>/dev/null; then
@@ -357,17 +377,17 @@ Ruby:
   ruby = $(command -v ruby)  $(ruby --version)
   rvm = $(command -v rvm 2>/dev/null)
   bundle = $(command -v bundle 2>/dev/null)
-  GEM_HOME = ${GEM_HOME}
-  GEM_PATH = ${GEM_PATH}
+  GEM_HOME = ${GEM_HOME:-}
+  GEM_PATH = ${GEM_PATH:-}
 
 EOS
   fi
 cat <<EOS
 Python:
   python = $(command -v python 2>/dev/null)
-  PYTHONPATH = ${PYTHONPATH}
+  PYTHONPATH = ${PYTHONPATH:-}
 
-${ruby_info}Commands:
+${ruby_info:-}Commands:
   conda = $(command -v conda 2>/dev/null)
   mamba = $(command -v mamba 2>/dev/null)
   brew = $(command -v brew 2>/dev/null)
@@ -386,7 +406,7 @@ PATH:
 EOS
   else
     cat <<EOS
-PATH: ${PATH}
+PATH: ${PATH:-}
 
 EOS
   fi
