@@ -1,4 +1,4 @@
-# .bash_profile - Bash login shell configuration 
+# .bash_profile - Bash login shell configuration
 #
 # Bash-specific login shell configuration.
 
@@ -13,10 +13,8 @@ fi
 if [[ -f "$HOME/.profile" ]]; then source "$HOME/.profile"; fi
 
 # Include interactive bash settings
-if [[ -r "$HOME/.bashrc" ]]; then source "$HOME/.bashrc"; fi
+if [[ -f "$HOME/.bashrc" ]]; then source "$HOME/.bashrc"; fi
 
 # Bash-specific stuff
 
 # (nothing here currently)
-
-

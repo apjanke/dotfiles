@@ -20,6 +20,13 @@
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
   - Consider `: ${MY_VAR:=default}` expansion form.
+- `install-dotfiles` doesn't clobber an existing regular (non-symlink) `~/.profile`, which is
+  intentional - the idea was to let a plain local file supersede the dotfiles-managed one,
+  per-file. But `.dotlib/bashyrc.sh`'s per-machine local-loading loop now hard-depends on the
+  `jx::*`/`_jx_source_maybe` functions defined in `.profile` (added 2026-08-08), so a
+  superseding non-JX-aware `.profile` silently breaks that loop. Revisit: maybe factor those
+  function definitions out of `.profile` into their own file, so `bashyrc.sh` doesn't depend
+  on `.profile` having actually run.
 - Top-down function order code layout.
 - Detect breakage in installation? (e.g. an `install-dotfiles --doctor` or `--check` option)
   - In the startup scripts, check for presence of required files linked in to ~ and complain if they're absent? To catch things like needing a fresh `install-dotfiles` run after I add/remove/rename linked files in the repo.

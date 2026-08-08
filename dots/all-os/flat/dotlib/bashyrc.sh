@@ -437,13 +437,16 @@ else
 fi
 alias dbox='cd "$DROPBOX"'
 
-# Allow for machine- or environment-local overrides
+# Per-machine/site local definitions
 #
-# TODO: This should maybe be pulled from an XDG "local" config dir instead of a special file
-# I made up? Or do both?
-if [[ -f "${HOME}/.bashyrc-local" ]]; then
-  source "${HOME}/.bashyrc-local"
-fi
+# jx::* and _jx_source_maybe are defined in .profile, which always runs before this file.
+#
+# TODO: This should maybe also pulled from an XDG "local" config dir instead of just special
+# files I made up?
+for __where in site user local; do
+  _jx_source_maybe "${HOME}/.bashyrc-${__where}"
+done
+unset __where
 
 # Cleanup
 

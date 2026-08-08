@@ -5,7 +5,8 @@ if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
 fi
 
 # Include common bashlike env configuration, which is in the bash profile
-# I put common bash and zsh env setup in m .profile, not a bashyenv.sh
+# (I put common bash and zsh env setup in my .profile, not a bashyenv.sh.)
+# Intentionally not guarded by a $JX_ENV_LOADED check, so manual re-sourcing gets it.
 if [[ -f "$HOME/.profile" ]]; then
   source "$HOME/.profile"
 fi
@@ -21,9 +22,12 @@ export JX_OMZ_THEME=${JX_OMZ_THEME:-agnosterj}
 # export JX_OMZ_DEBUG=1
 export JX_PREZTO_THEME=${JX_PREZTO_THEME:-sorin-apj}
 
-# Machine- or environment-local settings.
+# Per-machine/site local definitions
 # Call this last so it can override previously-set stuff by clobbering it.
+#
+# jx::* and _jx_source_maybe are defined in .profile, sourced above.
 
-if [[ -f $HOME/.zshenv-local ]]; then
-  source "${HOME}/.zshenv-local"
-fi
+for __where in site user local; do
+  _jx_source_maybe "$HOME/.zshenv-${__where}"
+done
+unset __where
