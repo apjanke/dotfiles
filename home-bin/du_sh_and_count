@@ -81,12 +81,12 @@ function du_sh_and_count_files() {
   width=$(( width + 1 ))
   for dir in "${dirs[@]}"; do
     dir="${dir%/}"
-    t0=$(jxl::tic)
+    t0=$(tick)
     printf '%-*s   ' $width "${dir}:"
     size=$(du -sh "$dir" | cut -f 1)
     printf '%6s ' "$size"
     n_files=$(find "$dir" | wc -l)
-    te=$(jxl::toc "$t0")
+    te=$(tock "$t0")
     printf '%10s files + dirs   (%s)' "$(jxl::thous "$n_files")" "$(s2mmss "$te")"
     printf '\n'
   done

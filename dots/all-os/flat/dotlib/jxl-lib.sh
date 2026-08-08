@@ -170,6 +170,9 @@ function jxl::run_command() {
       # where any failure should stop the rest. Only `isolation inline` impls must avoid
       # it -- there it would take the user's shell down.
       (
+        # Order matters: the baseline reset restores every option to its default, so it
+        # has to come before the three JXL wants set a particular way.
+        jxl::_normalize_shell_options
         set +o errexit
         set -o nounset
         set -o pipefail
@@ -262,6 +265,55 @@ function jxl::_run_command_body() {
   fi
 
   "$_jxl_impl"
+}
+
+function jxl::_normalize_shell_options() {
+  # Reset the shell to a known baseline before a command impl runs.
+  #
+  # SUBSHELL MODE ONLY -- every one of these is a global change, so in inline mode they
+  # would follow the user home. A command function inherits the interactive session's
+  # options, and a caller who set any of these has silently changed how the impl's code
+  # behaves.
+  #
+  # The rule: reset what silently changes the MEANING of the impl's code, and leave what
+  # the caller set deliberately. So nocasematch goes -- it quietly makes every `case` in
+  # this file match case-insensitively -- while xtrace and verbose stay, since someone
+  # mid-`set -x` is debugging on purpose, and so does noclobber, which is a guard rail
+  # against clobbering a file and should apply to a JXL command like anything else.
+  local had_noclobber=0
+  if [[ -o noclobber ]]; then had_noclobber=1; fi
+
+  if [[ -n "${ZSH_VERSION:-}" ]]; then
+    # zsh hands us the whole job in one builtin: back to zsh defaults, undoing
+    # `emulate sh`, ksh_arrays, sh_word_split and the rest. It is thorough enough to take
+    # noclobber with it, so put that back.
+    emulate -R zsh
+    if [[ $had_noclobber == 1 ]]; then set -o noclobber; fi
+    return 0
+  fi
+
+  # bash has no equivalent, so spell it out. Chosen for impact, not completeness:
+  #   allexport   would export every assignment, including the _JXL_* internals that the
+  #               whole VERBOSE/DEBUG design depends on NOT being exported
+  #   nocasematch makes `case` and `[[ == ]]` case-insensitive, everywhere
+  #   noglob / nullglob / failglob / dotglob / nocaseglob / extglob   change what a glob
+  #               matches, or whether an unmatched one is empty, itself, or fatal
+  #   xpg_echo    changes what `echo` does with backslashes
+  #   posix / keyword / onecmd   change parsing or control flow outright
+  set +o allexport
+  set +o noglob
+  set +o keyword
+  set +o onecmd
+  set +o posix
+  set -o braceexpand
+
+  # 2>/dev/null because globstar and lastpipe do not exist in bash 3.2, and naming a
+  # missing option is an error there rather than a no-op.
+  local opt
+  for opt in nullglob failglob dotglob nocaseglob nocasematch extglob xpg_echo \
+             expand_aliases globstar lastpipe; do
+    shopt -u "$opt" 2>/dev/null || true
+  done
 }
 
 function jxl::_seed_std_vars() {
@@ -431,8 +483,10 @@ function jxl::forbid_dry_run() {
 
 # ========== Timing ==========
 
-function jxl::tic() { date +%s; }
-function jxl::toc() { local t0="$1" t1; t1=$(jxl::tic); echo $((t1 - t0)); }
+# tick/tock rather than tic/toc: /usr/bin/tic is the terminfo compiler, and these get
+# short-name wrappers that would otherwise shadow it.
+function jxl::tick() { date +%s; }
+function jxl::tock() { local t0="$1" t1; t1=$(jxl::tick); echo $((t1 - t0)); }
 
 function jxl::s2mmss() {
   local sec="$1"
@@ -446,9 +500,9 @@ function jxl::s2mmss() {
   fi
 }
 
-function jxl::say_toc() {
+function jxl::say_tock() {
   local label="$1" t0="$2" te
-  te=$(jxl::toc "$t0")
+  te=$(jxl::tock "$t0")
   jxl::info "$(printf 'Elapsed time: %s: %s' "$label" "$(jxl::s2mmss "$te")")"
 }
 
@@ -458,9 +512,9 @@ function jxl::timeit() {
     jxl::die "BUG: jxl::timeit called with too few arguments"
   fi
   local t0
-  t0=$(jxl::tic)
+  t0=$(jxl::tick)
   "$@"
-  jxl::say_toc "$label" "$t0"
+  jxl::say_tock "$label" "$t0"
 }
 
 
@@ -623,13 +677,13 @@ function jxl::use_short_names() {
     esac
   done
 
-  # tic, toc, and thous are deliberately absent: tic is /usr/bin/tic from terminfo, and
-  # all three are names worth leaving free for interactive use. Call jxl::tic and friends.
+  # thous is deliberately absent -- it is a name worth leaving free, since it often gets
+  # defined by hand for interactive use. Call jxl::thous when a script needs it.
   local -a names=(
     info warning error die emit log_vrb log_dbg
     is_verbose is_debug is_dry_run
     dry dry_vrb wet wet_vrb forbid_dry_run
-    s2mmss say_toc timeit max_strlen
+    tick tock s2mmss say_tock timeit max_strlen
   )
 
   local name kind defined='' redefined='' shadowed_alias='' shadowed_cmd='' skipped=''
@@ -666,17 +720,11 @@ function jxl::use_short_names() {
   if [[ -z "$redefined$shadowed_alias$shadowed_cmd" ]]; then
     msg="$msg Nothing redefined or shadowed."
   else
-    if [[ -n "$redefined" ]]; then
-      msg="$msg Redefined functions: ${redefined}."
-    fi
-    if [[ -n "$shadowed_alias" ]]; then
-      msg="$msg Shadowed aliases: ${shadowed_alias}."
-    fi
-    if [[ -n "$shadowed_cmd" ]]; then
-      msg="$msg Shadowed commands: ${shadowed_cmd}."
-    fi
+    [[ -n "$redefined" ]]      && msg="$msg Redefined functions: ${redefined}."
+    [[ -n "$shadowed_alias" ]] && msg="$msg Shadowed aliases: ${shadowed_alias}."
+    [[ -n "$shadowed_cmd" ]]   && msg="$msg Shadowed commands: ${shadowed_cmd}."
   fi
-  if [[ -n "$skipped" ]]; then msg="$msg Skipped (--safe): ${skipped}."; fi
+  [[ -n "$skipped" ]] && msg="$msg Skipped (--safe): ${skipped}."
   jxl::log_dbg "$msg"
 }
 

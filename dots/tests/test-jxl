@@ -52,6 +52,30 @@ function assert_all_shells() {
   ok "$desc"
 }
 
+function assert_one_family() {
+  # assert_one_family bash|zsh SNIPPET WANT DESC
+  #
+  # For behavior the two families could not share an expected value for even in
+  # principle -- zsh has no shopt, bash has no emulate, and their defaults for an
+  # unmatched glob differ (bash leaves the pattern, zsh errors).
+  local family="$1" snippet="$2" want="$3" desc="$4"
+  local sh got ran=0
+  for sh in "${TEST_SHELLS[@]}"; do
+    case "${sh##*/}" in "$family") ;; *) continue ;; esac
+    ran=1
+    got=$(run_in "$sh" "$snippet")
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${family} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  if [[ $ran == 0 ]]; then
+    fail "$desc" "no ${family} build found to test under"
+    return
+  fi
+  ok "$desc"
+}
+
 # A command function used by several cases below. Kept in one string so the isolation and
 # argument-parsing tests all exercise the same shape a real command has.
 #
@@ -221,6 +245,53 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     }
     set -o errexit
     jx-demo' 'errexit=off' 'an impl starts without errexit even when the caller had it on'
+
+  echo "===== hostile shell options do not reach the impl ====="
+  # A command function inherits the interactive session's options. These are the ones that
+  # change what the impl's own code MEANS, not just how it looks.
+  assert_all_shells "$DEMO"'
+    shopt -s nocasematch 2>/dev/null || setopt nocasematch 2>/dev/null || true
+    function jx::demo() { case ABC in abc) echo loose ;; *) echo strict ;; esac; }
+    jx-demo' 'strict' 'nocasematch does not reach the impl'
+  assert_all_shells "$DEMO"'
+    set -o allexport
+    function jx::demo() { SOME_THING=1; env | grep -c "^SOME_THING=" || true; }
+    jx-demo' '0' 'allexport does not reach the impl, so assignments stay unexported'
+  # Split by family: bash's default for an unmatched glob is the literal pattern, zsh's is
+  # to error, so "did nullglob leak" has no expected value the two could share.
+  assert_one_family bash "$DEMO"'
+    shopt -s nullglob
+    function jx::demo() { a=(zzz-no-such-glob*); echo "${#a[@]}"; }
+    jx-demo' '1' 'nullglob does not reach the impl'
+  assert_one_family zsh "$DEMO"'
+    setopt null_glob
+    function jx::demo() { a=(zzz-no-such-glob*); echo "${#a[@]}"; }
+    jx-demo 2>&1 | grep -c "no matches found"' '1' \
+      'null_glob does not reach the impl'
+  # noclobber is the exception: a guard rail the caller set on purpose, so it is carried
+  # through rather than reset. Under zsh that means putting it back after `emulate -R`,
+  # which would otherwise take it along with everything else.
+  assert_all_shells "$DEMO"'
+    set -o noclobber
+    function jx::demo() { if [[ -o noclobber ]]; then echo kept; else echo lost; fi; }
+    jx-demo' 'kept' 'noclobber is preserved, since the caller set it deliberately'
+  assert_all_shells "$DEMO"'
+    set +o noclobber
+    function jx::demo() { if [[ -o noclobber ]]; then echo on; else echo off; fi; }
+    jx-demo' 'off' 'noclobber stays off when the caller did not set it'
+
+  echo "===== zsh emulation mode is normalized ====="
+  # zsh-only: bash has no `emulate`, and the two shells cannot agree on an expected value
+  # here by construction -- ${a[1]} is the first element under zsh defaults and the second
+  # everywhere else, which is exactly the confusion being guarded against.
+  assert_one_family zsh "$DEMO"'
+    setopt ksh_arrays
+    function jx::demo() { a=(x y z); echo "${a[1]}"; }
+    jx-demo' 'x' 'a session ksh_arrays does not reach the impl'
+  assert_one_family zsh "$DEMO"'
+    emulate sh
+    function jx::demo() { a=(x y z); echo "${a[1]}"; }
+    jx-demo' 'x' 'a session running emulate sh does not reach the impl'
 
   echo "===== VERBOSE and DEBUG are read-only interface ====="
   assert_all_shells "$DEMO"'
