@@ -5,13 +5,13 @@
 - `jx-shell-info` things
   - Add indicators for whether env (exported) variables vs. shell variables, and array or associative variables. For array variables, make sure all their elements are printed.
   - Distinguish unset variables from blank strings. Don't bother showing unset JX_* variables at all unless `--verbose` is on.
-  - Reformat JX dotfiles variables disply to have spaces around " = ".
-  - List presence of optional files, like `~/.*-local`.
-  - Support multi-line JX variables?
-  - Include my special non-JX-prefixed variables, like DROPBOX.
-  - `-v | --verbose` option: show internal `_JX_*` vars, longer formatting
-  - Pretty-print the path, with spaces between elements instead of ':' separators, quoting elements which contain spaces. And maybe hard word-wrap at terminal width or some standard col width, maybe with an option to specify a certain col width.
-  - Add an option to dump JXL info too (by calling a new `jxl::show_shell_info()` function), probably `--jxl` or `--show-jxl`.
+  - Reformat the JX_* variables display to have spaces around " = ".
+  - Support multi-line values for JX variables - need to replace the simple `set | grep` with using `set | grep` or something else to just get the variable names, and then produce the output with normal variable string interpolation.
+  - Include my special non-JX-prefixed variables, like DROPBOX. Needs to use a specific list of enumerated variables.
+  - List presence of optional files, like `~/.{bashrc,zshenv}-{site,local}`.
+  - `-v | --verbose` option: show internal `_JX_*` vars, longer formatting.
+  - Pretty-print the path from `$PATH`, with spaces between elements instead of ':' separators, quoting elements which contain spaces. And maybe hard word-wrap at terminal width or some standard col width, maybe with an option to specify a certain col width. Add an option to display `$PATH` verbatim instead.
+  - Add an option (probably `--jxl` or `--show-jxl`) to dump JXL info too (by calling a new `jxl::show_shell_info()` function), within `jx-shell-info`'s output.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
