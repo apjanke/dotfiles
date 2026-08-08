@@ -1,0 +1,14 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "permissions": {
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(./install-dotfiles:*)",
+      "Bash(install-dotfiles:*)"
+    ]
+  }
+}
