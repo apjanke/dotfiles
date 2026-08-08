@@ -4,11 +4,13 @@
 #
 # Usage: ./dots/tests/test-jxl   (or via ./dots/tests/run-tests)
 #
-# Every case runs under BOTH bash and zsh and both must agree. The library is sourced by
-# rc files in either shell, and the things that differ between them here are all silent:
-# array subscript bases, empty-array expansion under nounset, and whether a `local` on
-# an exported variable leaks to child processes. A single-shell test would miss exactly
-# the bugs this library exists to prevent.
+# Every case runs under every shell build select_test_shells finds -- system bash 3.2 and
+# Homebrew bash 5.x, system and Homebrew zsh -- and all of them must agree. The library is
+# sourced by rc files in either shell, and the things that differ are all silent: array
+# subscript bases, empty-array expansion under nounset, whether a `local` on an exported
+# variable leaks to child processes, and bash 4 syntax that 3.2 accepts at parse time and
+# only rejects when the line runs. A single-shell run would miss exactly the bugs this
+# library exists to prevent.
 
 set -o errexit
 set -o nounset
@@ -35,17 +37,19 @@ function run_in() {
   " 2>&1 || true
 }
 
-function assert_both_shells() {
-  local snippet="$1" want="$2" desc="$3" got_bash got_zsh
-  got_bash=$(run_in bash "$snippet")
-  got_zsh=$(run_in zsh "$snippet")
-  if [[ "$got_bash" != "$want" ]]; then
-    fail "$desc" "bash: got '$got_bash', wanted '$want'"
-  elif [[ "$got_zsh" != "$want" ]]; then
-    fail "$desc" "zsh: got '$got_zsh', wanted '$want'"
-  else
-    ok "$desc"
-  fi
+function assert_all_shells() {
+  # Every shell in $TEST_SHELLS must agree. Reports the first that disagrees, naming its
+  # version -- "bash disagreed" is not much use with two bash builds in play.
+  local snippet="$1" want="$2" desc="$3"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_in "$sh" "$snippet")
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
 }
 
 # A command function used by several cases below. Kept in one string so the isolation and
@@ -74,108 +78,111 @@ function jx::demo_parse_cli() {
 
 # shellcheck disable=SC2016  # the single-quoted snippets are code for the inner shell
 function main() {
+  select_test_shells
+  print_test_env
+
   echo "===== messaging ====="
-  assert_both_shells 'jxl::info hello 2>/dev/null; echo done' 'done' \
+  assert_all_shells 'jxl::info hello 2>/dev/null; echo done' 'done' \
       'info writes nothing to stdout'
-  assert_both_shells 'jxl::info hello 2>&1 >/dev/null' 'hello' \
+  assert_all_shells 'jxl::info hello 2>&1 >/dev/null' 'hello' \
       'info writes the message to stderr'
-  assert_both_shells 'jxl::error boom 2>&1 >/dev/null' 'ERROR: boom' \
+  assert_all_shells 'jxl::error boom 2>&1 >/dev/null' 'ERROR: boom' \
       'error is prefixed'
-  assert_both_shells \
+  assert_all_shells \
       'PROGRAM_NAME=prog; _JXL_EMIT_PROGNAME=1; jxl::info hi 2>&1 >/dev/null' \
       'prog: hi' '_JXL_EMIT_PROGNAME prefixes the program name'
 
   echo "===== verbosity and dry run ====="
-  assert_both_shells '_JXL_VERBOSE=0; jxl::log_vrb quiet 2>&1; echo end' 'end' \
+  assert_all_shells '_JXL_VERBOSE=0; jxl::log_vrb quiet 2>&1; echo end' 'end' \
       'log_vrb is silent when not verbose'
-  assert_both_shells '_JXL_VERBOSE=1; jxl::log_vrb loud 2>&1 >/dev/null' 'loud' \
+  assert_all_shells '_JXL_VERBOSE=1; jxl::log_vrb loud 2>&1 >/dev/null' 'loud' \
       'log_vrb speaks when verbose'
-  assert_both_shells \
+  assert_all_shells \
       '_JXL_DRY_RUN=1; jxl::wet echo SHOULD-NOT-RUN 2>/dev/null; echo end' 'end' \
       'wet does not run the command on a dry run'
-  assert_both_shells '_JXL_DRY_RUN=0; jxl::wet echo ran 2>/dev/null' 'ran' \
+  assert_all_shells '_JXL_DRY_RUN=0; jxl::wet echo ran 2>/dev/null' 'ran' \
       'wet runs the command otherwise'
 
   echo "===== array accessors ====="
-  assert_both_shells 'a=(zero one two); jxl::array_at v a 0; echo "$v"' 'zero' \
+  assert_all_shells 'a=(zero one two); jxl::array_at v a 0; echo "$v"' 'zero' \
       'array_at is 0-based in both shells'
-  assert_both_shells 'a=(zero one two); jxl::array_at v a 2; echo "$v"' 'two' \
+  assert_all_shells 'a=(zero one two); jxl::array_at v a 2; echo "$v"' 'two' \
       'array_at reaches the last element'
-  assert_both_shells 'a=(x "b c" y); jxl::array_at v a 1; echo "[$v]"' '[b c]' \
+  assert_all_shells 'a=(x "b c" y); jxl::array_at v a 1; echo "[$v]"' '[b c]' \
       'array_at preserves spaces'
-  assert_both_shells 'a=(x "-lead" y); jxl::array_at v a 1; echo "[$v]"' '[-lead]' \
+  assert_all_shells 'a=(x "-lead" y); jxl::array_at v a 1; echo "[$v]"' '[-lead]' \
       'array_at preserves a leading dash'
-  assert_both_shells 'a=(x "s*t\$u" y); jxl::array_at v a 1; echo "[$v]"' '[s*t$u]' \
+  assert_all_shells 'a=(x "s*t\$u" y); jxl::array_at v a 1; echo "[$v]"' '[s*t$u]' \
       'array_at preserves glob and dollar characters'
-  assert_both_shells \
+  assert_all_shells \
       'a=(one two); jxl::array_at v a 9 2>/dev/null || echo "rc=$?"' 'rc=1' \
       'array_at rejects an out-of-range index'
-  assert_both_shells 'a=(one two three); jxl::array_len n a; echo "$n"' '3' \
+  assert_all_shells 'a=(one two three); jxl::array_len n a; echo "$n"' '3' \
       'array_len counts elements'
-  assert_both_shells 'set -o nounset; e=(); jxl::array_len n e; echo "$n"' '0' \
+  assert_all_shells 'set -o nounset; e=(); jxl::array_len n e; echo "$n"' '0' \
       'an empty array under nounset does not explode'
 
   echo "===== emulated associative arrays ====="
-  assert_both_shells 't=(k1 v1 k2 v2); jxl::assocarray_at x t k2; echo "$x"' 'v2' \
+  assert_all_shells 't=(k1 v1 k2 v2); jxl::assocarray_at x t k2; echo "$x"' 'v2' \
       'assocarray_at finds a key'
-  assert_both_shells 't=(k1 "a value" k2 v2); jxl::assocarray_at x t k1; echo "[$x]"' \
+  assert_all_shells 't=(k1 "a value" k2 v2); jxl::assocarray_at x t k1; echo "[$x]"' \
       '[a value]' 'assocarray_at preserves spaces in values'
-  assert_both_shells \
+  assert_all_shells \
       't=(k1 v1); jxl::assocarray_at x t nope 2>/dev/null || echo "rc=$?"' \
       'rc=1' 'assocarray_at returns 1 for a missing key'
-  assert_both_shells \
+  assert_all_shells \
       't=(k1 v1 k2); jxl::assocarray_at x t k1 2>/dev/null || echo "rc=$?"' \
       'rc=2' 'assocarray_at rejects an odd-length table'
-  assert_both_shells 't=(k1 v1); jxl::assocarray_has t k1 && echo yes' 'yes' \
+  assert_all_shells 't=(k1 v1); jxl::assocarray_has t k1 && echo yes' 'yes' \
       'assocarray_has finds a key'
-  assert_both_shells 't=(k1 v1); jxl::assocarray_has t nope || echo no' 'no' \
+  assert_all_shells 't=(k1 v1); jxl::assocarray_has t nope || echo no' 'no' \
       'assocarray_has reports a missing key quietly'
-  assert_both_shells \
+  assert_all_shells \
       'set -o nounset; t=(k1 v1)
        jxl::assocarray_at x t nope 2>&1 >/dev/null | head -1' \
       'ERROR: jxl::assocarray_at: $t has no key: nope' \
       'a missing key reports an error under nounset'
 
   echo "===== command functions: arguments ====="
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo "long=$do_long verbose=$_JXL_VERBOSE"; }
     jx-demo' 'long=0 verbose=0' 'a command function runs with defaults'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo "long=$do_long verbose=$_JXL_VERBOSE"; }
     jx-demo --long --verbose' 'long=1 verbose=1' \
       'the runner parses standard options and the command parses its own'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo SHOULD-NOT-RUN; }
     jx-demo --bogus 2>/dev/null || echo "rc=$?"' 'rc=1' \
       'an unconsumed argument is rejected before the impl runs'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo NOPE; }
     jx-demo --help 2>&1 | grep -c -- "--verbose"' '1' \
       'help includes the shared standard options block'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo NOPE; }
     jx-demo --help 2>&1 | grep -c "jx-demo - Demo"' '1' \
       'help uses the headline and the auto-detected command name'
 
   echo "===== command functions: isolation ====="
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { LEAKED=yes; }
     LEAKED=no; jx-demo; echo "$LEAKED"' 'no' \
       'subshell mode contains the impl'"'"'s variable assignments'
   # No `|| true` on the jx-demo call: bash suppresses errexit through the whole dynamic
   # extent of a command in a && / || list, including inside functions it calls, so the
   # guard would disable the very thing under test.
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { set -o errexit; false; echo NOT-REACHED; }
     jx-demo
     if [[ -o errexit ]]; then echo LEAKED; else echo clean; fi' 'clean' \
       'subshell mode contains errexit set by the impl'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { jxl::die "fatal"; }
     jx-demo 2>/dev/null || echo "rc=$?"; echo alive' \
       'rc=1
 alive' 'jxl::die in subshell mode does not kill the calling shell'
-  assert_both_shells '
+  assert_all_shells '
     function jx-inline() {
       local -a _JXL_COMMAND_INFO=( isolation inline )
       jxl::run_command jx::inline "$@"
@@ -183,7 +190,7 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     function jx::inline() { PERSISTED=yes; }
     PERSISTED=no; jx-inline; echo "$PERSISTED"' 'yes' \
       'inline mode lets the impl change the calling shell'
-  assert_both_shells '
+  assert_all_shells '
     function jx-inline() {
       local -a _JXL_COMMAND_INFO=( isolation inline )
       jxl::run_command jx::inline "$@"
@@ -196,19 +203,19 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
   echo "===== command functions: shell options are normalized ====="
   # A subshell inherits every option from its parent, so without normalizing, an impl
   # would behave differently depending on what the user had set interactively.
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() {
       if [[ -o nounset ]]; then echo "nounset=on"; else echo "nounset=off"; fi
     }
     set +o nounset
     jx-demo' 'nounset=on' 'an impl gets nounset even when the caller had it off'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() {
       if [[ -o pipefail ]]; then echo "pipefail=on"; else echo "pipefail=off"; fi
     }
     set +o pipefail
     jx-demo' 'pipefail=on' 'an impl gets pipefail even when the caller had it off'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() {
       if [[ -o errexit ]]; then echo "errexit=on"; else echo "errexit=off"; fi
     }
@@ -216,47 +223,47 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     jx-demo' 'errexit=off' 'an impl starts without errexit even when the caller had it on'
 
   echo "===== VERBOSE and DEBUG are read-only interface ====="
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { env | grep "^VERBOSE=" || echo "VERBOSE=<absent>"; }
     export VERBOSE=0
     jx-demo --verbose' 'VERBOSE=0' \
       '--verbose does not leak into the environment of child processes'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo "$_JXL_VERBOSE"; }
     export VERBOSE=1
     jx-demo' '1' 'an exported VERBOSE is inherited as the internal verbosity'
-  assert_both_shells "$DEMO"'
+  assert_all_shells "$DEMO"'
     function jx::demo() { echo "$_JXL_VERBOSE"; }
     export VERBOSE=1 JXL_VERBOSE=0
     jx-demo' '0' 'JXL_VERBOSE overrides VERBOSE'
 
   echo "===== short names and the include guard ====="
-  assert_both_shells 'typeset -f info >/dev/null 2>&1 && echo defined || echo undefined' \
+  assert_all_shells 'typeset -f info >/dev/null 2>&1 && echo defined || echo undefined' \
       'undefined' 'sourcing alone does not claim the short names'
-  assert_both_shells 'jxl::use_short_names; info hi 2>&1 >/dev/null' 'hi' \
+  assert_all_shells 'jxl::use_short_names; info hi 2>&1 >/dev/null' 'hi' \
       'use_short_names defines the wrappers on request'
-  assert_both_shells 'jxl::use_short_names --dry-run 2>/dev/null
+  assert_all_shells 'jxl::use_short_names --dry-run 2>/dev/null
     if jxl::_is_function info; then echo defined; else echo undefined; fi' 'undefined' \
       '--dry-run defines nothing'
-  assert_both_shells 'function info() { echo MINE; }
+  assert_all_shells 'function info() { echo MINE; }
     jxl::use_short_names --safe 2>/dev/null
     info' 'MINE' '--safe refuses to clobber an existing function'
-  assert_both_shells '_JXL_DEBUG=1; jxl::use_short_names 2>&1 >/dev/null | head -1' \
+  assert_all_shells '_JXL_DEBUG=1; jxl::use_short_names 2>&1 >/dev/null | head -1' \
       'debug: Defined short-name JXL functions. Shadowed commands: info.' \
       'use_short_names reports what it shadowed'
-  assert_both_shells 'jxl::use_short_names 2>/dev/null
+  assert_all_shells 'jxl::use_short_names 2>/dev/null
     if jxl::_is_function tic; then echo claimed; else echo left-alone; fi' 'left-alone' \
       'tic is left alone, since /usr/bin/tic is a real command'
 
   echo "===== version and load notice ====="
-  assert_both_shells 'echo "$_JXL_VERSION"' '0.1.0' 'sourcing sets the version'
-  assert_both_shells 'echo "${_JXL_VERSION_ARR[*]}"' '0 1 0' \
+  assert_all_shells 'echo "$_JXL_VERSION"' '0.1.0' 'sourcing sets the version'
+  assert_all_shells 'echo "${_JXL_VERSION_ARR[*]}"' '0 1 0' \
       'the version is also available pre-split'
-  assert_both_shells 'JXL_DEBUG=1; source "'"$LIB"'" 2>&1 | head -1' '' \
+  assert_all_shells 'JXL_DEBUG=1; source "'"$LIB"'" 2>&1 | head -1' '' \
       'the load notice stays quiet on a guarded re-source'
 
   echo "===== command info drives the log format ====="
-  assert_both_shells '
+  assert_all_shells '
     function jx-t() {
       local -a _JXL_COMMAND_INFO=( emit_progname 1 )
       jxl::run_command jx::t "$@"
@@ -264,19 +271,19 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     function jx::t() { jxl::info hello; }
     jx-t 2>&1 >/dev/null' 'jx-t: hello' \
       '_JXL_COMMAND_INFO emit_progname sets the message format'
-  assert_both_shells 'source "'"$LIB"'"; echo "$_JXL_VERSION"' '0.1.0' \
+  assert_all_shells 'source "'"$LIB"'"; echo "$_JXL_VERSION"' '0.1.0' \
       'sourcing twice is a no-op'
 
   echo "===== sourcing does not pollute the shell ====="
   # jxl-lib.sh is sourced into every interactive shell by bashyrc.sh, so $_JXL_VERSION had
   # better be the only thing it leaves behind. Everything else is per-invocation state.
-  assert_both_shells '
+  assert_all_shells '
     for v in _JXL_VERBOSE _JXL_DEBUG _JXL_DRY_RUN _JXL_WANT_HELP \
              _JXL_EMIT_PROGNAME _JXL_EMIT_TIMESTAMP PROGRAM_NAME; do
       eval "if [[ -n \${$v+x} ]]; then echo \"$v IS SET\"; fi"
     done
     echo clean' 'clean' 'sourcing sets nothing but _JXL_VERSION'
-  assert_both_shells '
+  assert_all_shells '
     function jx-inline() {
       local -a _JXL_COMMAND_INFO=( isolation inline )
       jxl::run_command jx::inline "$@"

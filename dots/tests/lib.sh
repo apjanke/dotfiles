@@ -8,6 +8,77 @@
 TESTS=0
 FAILS=0
 
+# ---- shell discovery, for tests that must pass under every shell we support ----
+
+# Absolute paths of the shells to test under; filled in by select_test_shells.
+TEST_SHELLS=()
+
+# shellcheck disable=SC2016  # the single-quoted $... is code for the shell being probed
+function shell_version() {
+  # Echoes a short version string for the given shell, or nothing if it will not run.
+  local sh="$1"
+  case "${sh##*/}" in
+    zsh)  "$sh" -c 'echo "${ZSH_VERSION:-}"'  2>/dev/null ;;
+    *)    "$sh" -c 'echo "${BASH_VERSION:-}"' 2>/dev/null ;;
+  esac
+}
+
+function select_test_shells() {
+  # One entry per distinct shell build worth exercising.
+  #
+  # Testing plain `bash` is not enough, and was actively misleading: Homebrew is ahead of
+  # the system directories on $PATH, so unqualified `bash` gets 5.x and the suite was
+  # never running the bash 3.2 at /bin/bash that #!/bin/bash actually gets on macOS.
+  #
+  # Candidates cover both Homebrew prefixes, since these repos run on x64 and arm64 Macs
+  # alike, plus MacPorts. Dedup is per shell name and version, so several paths to one
+  # build cost nothing, while system zsh 5.9 and Homebrew zsh 5.9.2 both get a turn.
+  local name cand ver key seen=''
+  local -a candidates
+  # Standard install locations, checked whether or not they are on $PATH -- a build that
+  # is installed but not first, or not on the path at all, still needs testing.
+  local -a std_dirs=(
+    /bin                # macOS system shells; /bin/bash is the 3.2 to stay compatible
+                        # with
+    /usr/local/bin      # Homebrew on x64, and the usual spot for a local build
+    /opt/homebrew/bin   # Homebrew on arm64
+    /opt/local/bin      # MacPorts
+  )
+
+  TEST_SHELLS=()
+  for name in bash zsh; do
+    candidates=()
+    for cand in "${std_dirs[@]}"; do
+      candidates+=("$cand/$name")
+    done
+    # Then everything on $PATH: `which -a`, not `command -v`, to get every hit rather
+    # than just the first.
+    while IFS= read -r cand; do
+      if [[ -n "$cand" ]]; then candidates+=("$cand"); fi
+    done < <(which -a "$name" 2>/dev/null || true)
+
+    for cand in "${candidates[@]}"; do
+      if [[ ! -x "$cand" ]]; then continue; fi
+      ver=$(shell_version "$cand")
+      if [[ -z "$ver" ]]; then continue; fi
+      key="${name}:${ver}"
+      case " $seen " in *" $key "*) continue ;; esac
+      seen="$seen $key"
+      TEST_SHELLS+=("$cand")
+    done
+  done
+}
+
+function print_test_env() {
+  # One line naming the OS and every shell in play, so a failure report says which builds
+  # actually ran rather than leaving it to be guessed.
+  local sh line=''
+  for sh in ${TEST_SHELLS[@]+"${TEST_SHELLS[@]}"}; do
+    line="${line:+${line} | }${sh##*/} $(shell_version "$sh") ${sh}"
+  done
+  echo "----- $(uname -rs) | ${line} -----"
+}
+
 function ok() {
   TESTS=$((TESTS + 1))
   printf '  ok   %s\n' "$1"

@@ -4,10 +4,11 @@
 #
 # Usage: ./dots/tests/test-bashy-paths   (or via ./dots/tests/run-tests)
 #
-# Every case runs under BOTH bash and zsh, and both must agree. That file is sourced by
-# both shells, and the ways they differ here are all silent ones -- zsh not word-splitting
-# $PATH, arrays indexing from 1 rather than 0 -- so a single-shell test would miss exactly
-# the bugs worth catching.
+# Every case runs under every shell build select_test_shells finds -- system bash 3.2 and
+# Homebrew bash 5.x, system and Homebrew zsh -- and all of them must agree. That file is
+# sourced by both shells, and the ways they differ are all silent ones: zsh not
+# word-splitting $PATH, arrays indexing from 1 rather than 0, bash 4 syntax that 3.2
+# rejects only at runtime. A single-shell run would miss exactly the bugs worth catching.
 
 set -o errexit
 set -o nounset
@@ -37,21 +38,26 @@ function run_case() {
   " 2>/dev/null
 }
 
-function assert_both_shells() {
-  local base="$1" snippet="$2" want="$3" desc="$4" got_bash got_zsh
-  got_bash=$(run_case bash "$base" "$snippet")
-  got_zsh=$(run_case zsh "$base" "$snippet")
-  if [[ "$got_bash" != "$want" ]]; then
-    fail "$desc" "bash: got '$got_bash', wanted '$want'"
-  elif [[ "$got_zsh" != "$want" ]]; then
-    fail "$desc" "zsh: got '$got_zsh', wanted '$want'"
-  else
-    ok "$desc"
-  fi
+function assert_all_shells() {
+  # Every shell in $TEST_SHELLS must agree. Reports the first that disagrees, naming its
+  # version -- "bash disagreed" is not much use when two bash builds are in play.
+  local base="$1" snippet="$2" want="$3" desc="$4"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_case "$sh" "$base" "$snippet")
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
 }
 
 function main() {
   local d out rc
+
+  select_test_shells
+  print_test_env
 
   # Real directories, since jx_maybe_add_path skips anything that doesn't exist.
   TEST_DIRS=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.paths.XXXXXX")
@@ -61,45 +67,46 @@ function main() {
   local A="$TEST_DIRS/aaa" B="$TEST_DIRS/bbb" C="$TEST_DIRS/ccc" M="$TEST_DIRS/MixedCase"
 
   echo "===== adding ====="
-  assert_both_shells "/usr/bin:/bin" "jx_maybe_add_path --prepend '$A'" \
+  assert_all_shells "/usr/bin:/bin" "jx_maybe_add_path --prepend '$A'" \
       "$A:/usr/bin:/bin" 'prepend adds at the front'
-  assert_both_shells "/usr/bin:/bin" "jx_maybe_add_path --append '$A'" \
+  assert_all_shells "/usr/bin:/bin" "jx_maybe_add_path --append '$A'" \
       "/usr/bin:/bin:$A" 'append adds at the back'
-  assert_both_shells "/usr/bin:/bin" "jx_maybe_add_path '$A'" \
+  assert_all_shells "/usr/bin:/bin" "jx_maybe_add_path '$A'" \
       "/usr/bin:/bin:$A" 'append is the default'
-  assert_both_shells "/usr/bin:/bin" "jx_maybe_add_path --prepend '$TEST_DIRS/nope'" \
+  assert_all_shells "/usr/bin:/bin" "jx_maybe_add_path --prepend '$TEST_DIRS/nope'" \
       "/usr/bin:/bin" 'a nonexistent dir is skipped'
 
   echo "===== already present ====="
-  assert_both_shells "$A:/usr/bin" "jx_maybe_add_path --prepend '$A'" \
+  assert_all_shells "$A:/usr/bin" "jx_maybe_add_path --prepend '$A'" \
       "$A:/usr/bin" 'present at front, prepend is a no-op'
-  assert_both_shells "/usr/bin:$A" "jx_maybe_add_path --prepend '$A'" \
+  assert_all_shells "/usr/bin:$A" "jx_maybe_add_path --prepend '$A'" \
       "/usr/bin:$A" 'present elsewhere, no --move leaves it alone'
 
   echo "===== --move ====="
-  assert_both_shells "/usr/bin:$A:/bin" "jx_maybe_add_path --move --prepend '$A'" \
+  assert_all_shells "/usr/bin:$A:/bin" "jx_maybe_add_path --move --prepend '$A'" \
       "$A:/usr/bin:/bin" '--move --prepend pulls it to the front'
-  assert_both_shells "/usr/bin:$A:/bin" "jx_maybe_add_path --move --append '$A'" \
+  assert_all_shells "/usr/bin:$A:/bin" "jx_maybe_add_path --move --append '$A'" \
       "/usr/bin:/bin:$A" '--move --append pushes it to the back'
-  assert_both_shells "$A:/usr/bin" "jx_maybe_add_path --move --prepend '$A'" \
+  assert_all_shells "$A:/usr/bin" "jx_maybe_add_path --move --prepend '$A'" \
       "$A:/usr/bin" '--move when already at the front changes nothing'
-  assert_both_shells "/usr/bin:$A" "jx_maybe_add_path --move --append '$A'" \
+  assert_all_shells "/usr/bin:$A" "jx_maybe_add_path --move --append '$A'" \
       "/usr/bin:$A" '--move when already at the back changes nothing'
 
   echo "===== multiple dirs ====="
   # Documented semantics: same as calling once per dir, so --prepend reverses them.
-  assert_both_shells "/usr/bin" "jx_maybe_add_path --prepend '$A' '$B' '$C'" \
+  assert_all_shells "/usr/bin" "jx_maybe_add_path --prepend '$A' '$B' '$C'" \
       "$C:$B:$A:/usr/bin" '--prepend with several dirs lands in reverse argument order'
-  assert_both_shells "/usr/bin" "jx_maybe_add_path --append '$A' '$B' '$C'" \
+  assert_all_shells "/usr/bin" "jx_maybe_add_path --append '$A' '$B' '$C'" \
       "/usr/bin:$A:$B:$C" '--append with several dirs keeps argument order'
 
   echo "===== case sensitivity ====="
   local m_lower="$TEST_DIRS/mixedcase"
-  assert_both_shells "$m_lower:/usr/bin" "jx_maybe_add_path --case yes --prepend '$M'" \
+  assert_all_shells "$m_lower:/usr/bin" "jx_maybe_add_path --case yes --prepend '$M'" \
       "$M:$m_lower:/usr/bin" '--case yes treats a case-variant as a different entry'
-  assert_both_shells "$m_lower:/usr/bin" "jx_maybe_add_path --case no --prepend '$M'" \
+  assert_all_shells "$m_lower:/usr/bin" "jx_maybe_add_path --case no --prepend '$M'" \
       "$m_lower:/usr/bin" '--case no sees the case-variant as already present'
-  assert_both_shells "/usr/bin:$m_lower" "jx_maybe_add_path --case no --move --prepend '$M'" \
+  assert_all_shells "/usr/bin:$m_lower" \
+      "jx_maybe_add_path --case no --move --prepend '$M'" \
       "$m_lower:/usr/bin" 'a case-insensitive --move keeps the original entry spelling'
 
   echo "===== argument errors ====="

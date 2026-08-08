@@ -31,7 +31,8 @@
 - `install-dotfiles`
   - Make it safer.
     - Don't replace existing non-symlink files, unless `--clobber --yes-really` is given. Make backups of clobbered files. Only update existing symlinks iff they already point somewhere under this repo (which indicates they are dotfiles-managed); do not update symlinks pointing elsewhere.
-  - Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
+  - Safely handle case-insensitive filesystems and link target files that differ only in case. Maybe include option to normalize them to the current case of the files in the repo, or even do that by default.
+- Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
   - When adding the first `nested/_ssh/` or `nested/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_nested`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
 - Namespace-prefix more internal variables, like `__jx_uname` instead of `__uname`, and add more `unset`/`unfunction` cleanup.
 - Fix everything to work with `sudo bash`.
@@ -54,12 +55,6 @@
 - Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
 - Factor out user-specific customizations (like the list of "default" user names) to separate files, to make this easier to reuse across users.
 - Load Ruby stuff from alternate locations and different platforms.
-
-## Testing
-
-- Test under both Bash 3.x and 4.x/5.x if available. E.g. on my Macs, /bin/bash is Bash 3.x, but Bash 5.x is usually available from Homebrew at /usr/local/bin/bash.
-  - And the Homebrew bash 5.x is usualy the one in front on my path, so unqualified `bash` gets you 5.x!
-  - May want to test against both system zsh and Homebrew zsh too, though that'll be a small version difference, like 5.9 vs. 5.9.2.
 
 ## Specific programs
 
