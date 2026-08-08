@@ -326,6 +326,34 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     if jxl::_is_function tic; then echo claimed; else echo left-alone; fi' 'left-alone' \
       'tic is left alone, since /usr/bin/tic is a real command'
 
+  echo "===== show_var ====="
+  assert_all_shells 'JX_S=hi; jxl::show_var JX_S' '  JX_S                    = hi' \
+      'show_var renders a plain scalar with no sigil'
+  assert_all_shells 'jxl::show_var JX_MISSING' '  JX_MISSING              (unset)' \
+      'show_var reports an unset name'
+  assert_all_shells \
+      'export JX_E=1; jxl::show_var JX_E "$(export -p)"' '  JX_E                 ^  = 1' \
+      'show_var marks an exported scalar with ^'
+  assert_all_shells 'JX_S=1; jxl::show_var JX_S "$(export -p)"' \
+      '  JX_S                    = 1' \
+      'show_var puts no ^ on an unexported scalar, even when EXPORTS is given'
+  assert_all_shells "a=(one two); jxl::show_var a" "  a                    @  = ( one two )" \
+      'show_var marks an array with @ and renders every element'
+  assert_all_shells 'a=(x "c d"); jxl::show_var a' "  a                    @  = ( x 'c d' )" \
+      'show_var quotes an array element containing a space'
+  assert_all_shells \
+      'a=(x y); export a; jxl::show_var a "$(export -p)"' \
+      '  a                    @^ = ( x y )' \
+      'show_var combines @ and ^ for an exported array, type sigil first'
+  assert_all_shells 'JX_M=$(printf "one\ntwo"); jxl::show_var JX_M' \
+      "$(printf '  JX_M                    = one\n      two')" \
+      'show_var indents continuation lines of a multi-line value'
+  # zsh-only snippet: bash 3.2 has no associative arrays. Safe -- assert_one_family only
+  # ever runs this under zsh.
+  zsh_assoc_snippet='typeset -A t=(k v); jxl::show_var t'  # jx-lint-ok: bash4
+  assert_one_family zsh "$zsh_assoc_snippet" "  t                    %  = ( [k]=v )" \
+      'show_var marks a zsh associative array with %'
+
   echo "===== show_shell_info ====="
   assert_all_shells 'jxl::show_shell_info | head -1' "JXL $(cat <<<'0.1.0')" \
       'show_shell_info leads with the version'
@@ -358,8 +386,8 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     jxl::show_shell_info | grep -c "defined but NOT JXL: info"' '1' \
       'show_shell_info distinguishes a foreign definition from a JXL wrapper'
   assert_all_shells 'export VERBOSE=1
-    jxl::show_shell_info | grep -c "VERBOSE *= 1   (exported)"' \
-      '1' 'show_shell_info marks exported interface variables'
+    jxl::show_shell_info | grep -c "VERBOSE *\^ *= 1"' \
+      '1' 'show_shell_info marks exported interface variables with the ^ sigil'
 
   echo "===== version and load notice ====="
   assert_all_shells 'echo "$_JXL_VERSION"' '0.1.0' 'sourcing sets the version'

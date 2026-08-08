@@ -3,15 +3,11 @@
 ## General
 
 - `jx-shell-info` things
-  - Add indicators for whether env (exported) variables vs. shell variables, and array or associative variables. For array variables, make sure all their elements are printed.
-  - Distinguish unset variables from blank strings. Don't bother showing unset JX_* variables at all unless `--verbose` is on.
-  - Reformat the JX_* variables display to have spaces around " = ".
-  - Support multi-line values for JX variables - need to replace the simple `set | grep` with using `set | grep` or something else to just get the variable names, and then produce the output with normal variable string interpolation.
-  - Include my special non-JX-prefixed variables, like DROPBOX. Needs to use a specific list of enumerated variables.
-  - List presence of optional files, like `~/.{bashrc,zshenv}-{site,local}`.
-  - `-v | --verbose` option: show internal `_JX_*` vars, longer formatting.
-  - Pretty-print the path from `$PATH`, with spaces between elements instead of ':' separators, quoting elements which contain spaces. And maybe hard word-wrap at terminal width or some standard col width, maybe with an option to specify a certain col width. Add an option to display `$PATH` verbatim instead.
-  - Add an option (probably `--jxl` or `--show-jxl`) to dump JXL info too (by calling a new `jxl::show_shell_info()` function), within `jx-shell-info`'s output.
+  - Pretty-print `$PATH` by default: space-separated, elements containing spaces quoted,
+    wrapped to `${COLUMNS:-80}` (`COLUMNS` is unset non-interactively and `tput cols` needs
+    `$TERM`, so the fallback matters). Keep `-p`/`--long-path` for one-entry-per-line. Add
+    `--raw-path` for the current verbatim one-line form, and `--width N` to override the
+    wrap column.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
@@ -25,6 +21,8 @@
   function definitions out of `.profile` into their own file, so `bashyrc.sh` doesn't depend
   on `.profile` having actually run.
 - Top-down function order code layout.
+- Terminal colorization: basic support in JXL for colorization of output with basic ANSI terminal control escape codes, for use by command functions.
+  - Should detect whether outputting to a TTY, and only colorize if it's a TTY. May need to get a bit fancy about this so command substitution can still produce terminal escape sequences for eventual interpolation in string output which will be going to a TTY. Maybe just a variable that indicates "my output is going to a TTY", that's set at command start time and read by the TTY colorization functions.
 - Revisit: the environment can reach into non-interactive shells and change how scripts behave. Two vectors, verified 2026-08-06:
   - `BASH_ENV` - non-interactive bash sources whatever it points at, before running the script. Confirmed it can flip shell options: setting `nullglob` that way changed how an unmatched glob expanded inside a `#!/bin/bash` script. Not currently exposed (nothing here sets `BASH_ENV`, and it's unset in my env), but any script's behavior could be altered from outside if that changed. `BASHOPTS` was also tested and did *not* propagate, despite the bash manual implying it would.
   - zsh's equivalent is already active by design: zsh reads `.zshenv` for **all** invocations, including non-interactive `zsh -c`, and `setopt` there does apply to scripts. Ours then sources `.profile` → `dotlib/bashy-paths.sh`, so every `zsh -c` pays full `$PATH` setup and inherits whatever options `.zshenv` set. Worth asking whether `.zshenv` should be more minimal, and whether scripts should set the options they depend on rather than assuming defaults.
@@ -67,6 +65,10 @@
 
 - Look in to the XDG spec and its `~/.config` etc dirs, and see which programs support that now.
 - Is there some way to *forcibly* prevent `conda init` from modifying the user and system init files, even when the user manually runs `conda init`?
+
+## Aliases and functions
+
+- Add `grhino` alias for `grep -rhno` (and maybe that respects the `grin` exclusions?).
 
 ## Details
 

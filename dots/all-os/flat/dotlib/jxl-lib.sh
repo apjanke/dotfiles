@@ -789,14 +789,14 @@ function jxl::show_shell_info() {
   printf 'Caller-set interface:\n'
   local v
   for v in VERBOSE DEBUG JXL_VERBOSE JXL_DEBUG TRACE JXL_NO_READONLY; do
-    jxl::_show_var "$v" "$exports"
+    jxl::show_var "$v" "$exports"
   done
   printf '\n'
 
   printf 'Invocation state:\n'
   for v in PROGRAM_NAME _JXL_VERBOSE _JXL_DEBUG _JXL_DRY_RUN _JXL_WANT_HELP \
            _JXL_EMIT_PROGNAME _JXL_EMIT_TIMESTAMP; do
-    jxl::_show_var "$v" "$exports"
+    jxl::show_var "$v" "$exports"
   done
   printf '\n'
 
@@ -808,20 +808,136 @@ function jxl::show_shell_info() {
   jxl::_show_short_names
 }
 
-function jxl::_show_var() {
-  # jxl::_show_var NAME EXPORT_LIST -- one line of "name = value", or "(unset)".
-  local name="$1" exports="$2" set_marker val note=''
+function jxl::show_var() {
+  # jxl::show_var NAME [EXPORTS [WIDTH]] -- one report line: "NAME SIGILS = value", or
+  # "NAME (unset)". Used by jxl::show_shell_info and by jx::shell_info's variable listing.
+  #
+  # EXPORTS is the pre-fetched output of `export -p`; pass it once per report rather than
+  # forking per variable. Omit it to skip the exported sigil. WIDTH is the name column
+  # width (see jxl::max_strlen); default 20.
+  #
+  # Sigils, in a fixed two-column field so "=" stays aligned: @ array, % associative array,
+  # ^ exported -- type first, then export, so both sigil-bearing and plain names line up in
+  # the same leftmost column. A multi-line value gets its continuation lines indented so
+  # they cannot be mistaken for the next variable.
+  local _name="$1" _exports="${2:-}" _width="${3:-20}"
+  local _set _kind _sigils
 
-  eval "set_marker=\${${name}+set}"
-  if [[ "${set_marker:-}" != set ]]; then
-    printf '  %-20s (unset)\n' "$name"
+  eval "_set=\${${_name}+x}"
+  if [[ -z "${_set:-}" ]]; then
+    printf '  %-*s    (unset)\n' "$_width" "$_name"
     return 0
   fi
-  eval "val=\$${name}"
-  case "$exports" in
-    *" ${name}="*) note='   (exported)' ;;
+
+  jxl::_show_var_kind _kind "$_name"
+
+  _sigils=''
+  case "$_kind" in
+    array) _sigils='@' ;;
+    assoc) _sigils='%' ;;
   esac
-  printf '  %-20s = %s%s\n' "$name" "$val" "$note"
+  if [[ -n "$_exports" ]]; then
+    case "$_exports" in
+      *" ${_name}="*) _sigils="${_sigils}^" ;;
+    esac
+  fi
+
+  case "$_kind" in
+    array|assoc)
+      local _rendered
+      jxl::_show_var_render_array _rendered "$_name" "$_kind"
+      printf '  %-*s %-2s = %s\n' "$_width" "$_name" "$_sigils" "$_rendered"
+      ;;
+    *)
+      local _val _first=1 _l
+      eval "_val=\$${_name}"
+      # <<< always appends a trailing newline, so a plain one-line value still round-trips
+      # through this loop exactly once -- no separate single-line code path needed.
+      while IFS= read -r _l; do
+        if [[ $_first == 1 ]]; then
+          printf '  %-*s %-2s = %s\n' "$_width" "$_name" "$_sigils" "$_l"
+          _first=0
+        else
+          printf '      %s\n' "$_l"
+        fi
+      done <<< "$_val"
+      ;;
+  esac
+}
+
+function jxl::_show_var_kind() {
+  # jxl::_show_var_kind OUT_VAR NAME -- sets OUT_VAR to scalar, array, or assoc.
+  #
+  # `typeset -p NAME`'s first word plus flags differ completely by shell and by whether the
+  # name is exported: bash says "declare -a NAME=", "declare -ax NAME=", or "declare -x
+  # NAME="; zsh says the array forms with a leading "-g" (jx-lint-ok: bash4 -- prose, not
+  # code) or, for an exported *scalar* specifically, the bare form "export NAME=" with no
+  # "typeset" and no flags at all. Stripping the three known command words and checking
+  # what flag letters remain handles every combination uniformly; "declare"/"typeset" as
+  # literal words already contain an 'a', so the strip has to happen before the a/A check,
+  # not instead of it.
+  #
+  # The internal working variable is deliberately not named the same as any out-var callers
+  # pass in: an early version used "_kind" here too, and eval "$_out=$_k" silently wrote to
+  # THIS frame's own local instead of escaping to the caller whenever a caller's out-var
+  # happened to be called "_kind" -- everything downstream then misread as scalar.
+  local _out="$1" _name="$2" _line _prefix _flags _k
+
+  _line=$(typeset -p "$_name" 2>/dev/null | head -1)
+  _prefix="${_line%%"${_name}="*}"
+  _flags="${_prefix#declare }"
+  _flags="${_flags#typeset }"
+  _flags="${_flags#export }"
+  case "$_flags" in
+    *A*) _k=assoc ;;
+    *a*) _k=array ;;
+    *)   _k=scalar ;;
+  esac
+  eval "$_out=$_k"
+}
+
+function jxl::_show_var_render_array() {
+  # jxl::_show_var_render_array OUT_VAR NAME KIND -- render NAME's elements as
+  # "( e1 e2 ... )", quoting elements that need it (see jxl::_show_var_elem). KIND is
+  # "array" or "assoc"; assoc elements render as [key]=value and only ever occur under
+  # zsh -- bash 3.2 has no native associative arrays, so jxl::_show_var_kind can never
+  # produce "assoc" there, and this branch is simply never reached under bash.
+  local _out="$1" _name="$2" _kind="$3"
+  local _buf='' _elem _key
+
+  if [[ "$_kind" == assoc ]]; then
+    if [[ -n "${ZSH_VERSION:-}" ]]; then
+      # zsh-only key expansion, ${(k)...}. Wrapped in eval so it is a string to bash's
+      # parser rather than literal syntax -- unlike _JXL_LIB_PATH's ${(%):-%x} above, this
+      # needs no shellcheck disable, and bash -n never has to parse it at all.
+      local -a _keys
+      eval "_keys=(\"\${(k)${_name}[@]}\")"
+      for _key in "${_keys[@]}"; do
+        eval "_elem=\"\${${_name}[\$_key]}\""
+        _buf="${_buf:+${_buf} }[$(jxl::_show_var_elem "$_key")]=$(jxl::_show_var_elem "$_elem")"
+      done
+    fi
+  else
+    eval "set -- \${${_name}[@]+\"\${${_name}[@]}\"}"
+    for _elem in "$@"; do
+      _buf="${_buf:+${_buf} }$(jxl::_show_var_elem "$_elem")"
+    done
+  fi
+  eval "$_out=\"( \$_buf )\""
+}
+
+function jxl::_show_var_elem() {
+  # jxl::_show_var_elem VALUE -- print VALUE for array/assoc display, single-quoted if it
+  # is empty or contains whitespace or a quote. Not real shell-quoting, just enough that an
+  # element like "c d" cannot be mistaken for two elements; nothing re-parses this output.
+  local _val="$1"
+  case "$_val" in
+    '') printf "''" ;;
+    *[[:space:]\']*)
+      printf "'%s'" "${_val//\'/\'\\\'\'}"
+      ;;
+    *) printf '%s' "$_val" ;;
+  esac
 }
 
 function jxl::_show_options() {

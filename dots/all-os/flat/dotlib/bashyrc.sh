@@ -331,11 +331,12 @@ function jx-shell-info() {
   # library instead of every command function. Default isolation runs the impl in a
   # subshell, which is right here -- this command only reports, and never changes the
   # shell it is called from.
-  local do_long_path=0
+  local do_long_path=0 do_jxl=0
   local -a _JXL_COMMAND_INFO=(
     usage_headline 'Dump some info about this shell and its configuration'
-    synopsis_args  '[--long-path | -p]'
-    options        '    -p, --long-path   print the PATH one entry per line'
+    synopsis_args  '[--long-path | -p] [--jxl]'
+    options        '    -p, --long-path   print the PATH one entry per line
+        --jxl         also dump JXL'"'"'s own state (jxl::show_shell_info)'
   )
   jxl::run_command jx::shell_info "$@"
 }
@@ -348,6 +349,7 @@ function jx::shell_info_parse_cli() {
     arg="$1"; shift
     case "$arg" in
       --long-path | -p)   do_long_path=1 ;;
+      --jxl)              do_jxl=1 ;;
       *)                  leftover+=("$arg") ;;
     esac
   done
@@ -358,7 +360,7 @@ function jx::shell_info() {
   # TODO: Show which order Homebrew and MacPorts are loaded in, in a more
   # concise manner than the $PATH.
 
-  local shell_info java_ver java_ver_str ruby_info
+  local shell_info java_ver java_ver_str ruby_info exports
 
   # Detect this current shell
   # Hack: assume common shell variables have been neither clobbered nor exported
@@ -380,14 +382,19 @@ function jx::shell_info() {
     java_ver_str="($java_ver)"
   fi
 
+  # One fork for every jxl::show_var call below to share, rather than one each.
+  exports=$(export -p 2>/dev/null || true)
+
   cat <<EOS
 Shell state from jx dotfiles:
 
 Shell: ${shell_info} on $(uname -m)
 
-Vars:
-  EDITOR = ${EDITOR:-}  VISUAL = ${VISUAL:-}  GUIEDITOR = ${GUIEDITOR:-}
+EOS
+  jx::shell_info_std_vars "$exports"
+  jx::shell_info_custom_vars "$exports"
 
+  cat <<EOS
 Java:
   java = $(command -v java 2>/dev/null)  ${java_ver_str:-}
   JAVA_HOME = ${JAVA_HOME:-}
@@ -415,10 +422,11 @@ ${ruby_info:-}Commands:
   brew = $(command -v brew 2>/dev/null)
   port = $(command -v port 2>/dev/null)
 
-JX dotfiles variables:
-$(set | grep ^JX_ | sed -e 's/^/  /')
-
 EOS
+  jx::shell_info_jx_vars "$exports"
+  jx::shell_info_local_files
+  jx::shell_info_internal_state "$exports"
+
   if [[ $do_long_path = 1 ]]; then
     # shellcheck disable=SC2001
     cat <<EOS
@@ -432,6 +440,141 @@ PATH: ${PATH:-}
 
 EOS
   fi
+
+  if [[ $do_jxl == 1 ]]; then
+    printf '\n'
+    jxl::show_shell_info
+  fi
+}
+
+function jx::shell_info_std_vars() {
+  # Well-known variables that outside programs read, e.g. $EDITOR by a spawned editor.
+  local exports="$1" v width
+  local -a names=(EDITOR VISUAL GUIEDITOR PAGER LESS CLICOLOR LSCOLORS LS_COLORS)
+
+  width=$(jxl::max_strlen "${names[@]}")
+  printf 'Standard variables:\n'
+  for v in "${names[@]}"; do
+    jxl::show_var "$v" "$exports" "$width"
+  done
+  printf '\n'
+}
+
+function jx::shell_info_custom_vars() {
+  # My own variables that predate the JX_ prefix convention. Probably just DROPBOX
+  # forever, but written as a list so adding another is a one-line change. Omitted
+  # entirely when none of them are set, rather than printing an empty heading.
+  local exports="$1" v is_set width
+  local -a names=(DROPBOX)
+  local -a set_names=()
+
+  for v in "${names[@]}"; do
+    eval "is_set=\${${v}+x}"
+    if [[ -n "${is_set:-}" ]]; then
+      set_names+=("$v")
+    fi
+  done
+  if [[ ${#set_names[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  width=$(jxl::max_strlen "${set_names[@]}")
+  printf 'JX custom variables:\n'
+  for v in "${set_names[@]}"; do
+    jxl::show_var "$v" "$exports" "$width"
+  done
+  printf '\n'
+}
+
+function jx::shell_info_jx_vars() {
+  # Every currently-set JX_* variable, found by sweeping `set` for names only and then
+  # letting normal expansion (via jxl::show_var) produce the value -- unlike the old
+  # `set | grep ^JX_` one-liner, this renders identically in bash and zsh even for
+  # arrays and multi-line values, which `set`'s own syntax does not.
+  #
+  # Union'd with a hardcoded list of known JX_* names, so a knob that has never been set
+  # (JX_TRACE_SHELL_STARTUP, say) is still discoverable -- under --verbose, since showing
+  # every unset knob by default would bury the ones actually in use. An unrecognized
+  # JX_FOO still appears via discovery even if this list goes stale.
+  local exports="$1" jx_line v width
+  local -a set_names=()
+  local -a known_names=(
+    JX_CONDA_AUTOACTIVATE JX_CONDA_AUTOLOAD JX_ENV_LOADED JX_GRIN_EXCLUDES
+    JX_HOMEBREW_PREFIX JX_MACPORTS_PREFIX JX_NVM_AUTOLOAD JX_OMZ_DEBUG JX_OMZ_DEBUG_DIR
+    JX_OMZ_THEME JX_PREZTO_THEME JX_RUBY_AUTOLOAD_ENVMGR JX_TRACE_SHELL_STARTUP
+    JX_USE_HOMEBREW JX_USE_MACPORTS JX_ZSH_CONFIGURATOR
+  )
+
+  while IFS= read -r jx_line || [[ -n "$jx_line" ]]; do
+    set_names+=("$jx_line")
+  done < <(set | grep '^JX_[A-Za-z0-9_]*=' | sed -e 's/=.*//' | sort -u)
+
+  local -a report_names=( ${set_names[@]+"${set_names[@]}"} )
+  if jxl::is_verbose; then
+    local set_joined=" ${set_names[*]+"${set_names[*]}"} "
+    for v in "${known_names[@]}"; do
+      case "$set_joined" in
+        *" ${v} "*) ;;
+        *) report_names+=("$v") ;;
+      esac
+    done
+  fi
+
+  width=$(jxl::max_strlen ${report_names[@]+"${report_names[@]}"})
+  printf 'JX dotfiles variables:\n'
+  for v in ${report_names[@]+"${report_names[@]}"}; do
+    jxl::show_var "$v" "$exports" "$width"
+  done
+  printf '\n'
+}
+
+function jx::shell_info_local_files() {
+  # Presence of the optional per-machine/site files the rc files load if found -- see
+  # profile.sh, zshenv.zsh, and this file's own "Per-machine/site local definitions"
+  # below, plus zprofile.zsh and bashy-paths.sh's $HOME/bin-local. Present ones always
+  # show; absent ones only under --verbose, so a clean setup does not bury the report in
+  # files that were never expected to exist.
+  local f width n
+  local -a names=(
+    .profile-site .profile-user .profile-local
+    .zshenv-site .zshenv-user .zshenv-local
+    .bashyrc-site .bashyrc-user .bashyrc-local
+    .zprofile-local
+    bin-local
+  )
+
+  n=0
+  width=$(jxl::max_strlen "${names[@]}")
+  printf 'Local files:\n'
+  for f in "${names[@]}"; do
+    if [[ -e "$HOME/$f" ]]; then
+      n=$(( n + 1 ))
+      printf '  %-*s present\n' "$width" "$f"
+    elif jxl::is_verbose; then
+      printf '  %-*s absent\n' "$width" "$f"
+    fi
+  done
+  if [[ $n == 0 ]]; then
+    echo '  (none present)'
+  fi
+  printf '\n'
+}
+
+function jx::shell_info_internal_state() {
+  # JX's own _JX_* internal variables, --verbose only -- these are implementation
+  # details, not something to check on every run. Only _JX_DEBUG exists today.
+  if ! jxl::is_verbose; then
+    return 0
+  fi
+  local exports="$1" v width
+  local -a names=(_JX_DEBUG)
+
+  width=$(jxl::max_strlen "${names[@]}")
+  printf 'Internal state:\n'
+  for v in "${names[@]}"; do
+    jxl::show_var "$v" "$exports" "$width"
+  done
+  printf '\n'
 }
 
 # Dropbox
@@ -448,14 +591,14 @@ EOS
 
 if [[ $__uname = "Darwin" ]]; then
   if [[ -d $HOME/Library/CloudStorage/Dropbox ]]; then
-    DROPBOX="$HOME/Library/CloudStorage/Dropbox"
+    export DROPBOX="$HOME/Library/CloudStorage/Dropbox"
   else
-    DROPBOX=''
+    export DROPBOX=''
   fi
 else
   # I don't know where Dropbox lives on Linux, Windows, or WSL these days. Handle that later.
   # But keep the variables defined to avoid collapse.
-  DROPBOX='/I/dont/know/where/Dropbox/lives/on/this/platform'
+  export DROPBOX='/I/dont/know/where/Dropbox/lives/on/this/platform'
 fi
 alias dbox='cd "$DROPBOX"'
 

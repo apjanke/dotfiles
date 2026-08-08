@@ -1,0 +1,187 @@
+#!/bin/bash
+#
+# test-shell-info - exercise jx-shell-info, the shell diagnostic in dotlib/bashyrc.sh
+#
+# Usage: ./dots/tests/test-shell-info   (or via ./dots/tests/run-tests)
+#
+# Runs under every shell build select_test_shells finds. jx-shell-info's variable report
+# goes through jxl::show_var (see test-jxl for that function's own unit tests); this file
+# instead checks the JX-specific layer built on top of it -- name discovery unioned with
+# the known-names list, section placement, local-file detection, and the CLI options --
+# through jx-shell-info's actual output, the same way a real shell would produce it.
+#
+# .profile has to be sourced before bashyrc.sh in the fake $HOME: bashyrc.sh's own
+# per-machine local-loading loop calls _jx_source_maybe, which .profile defines (see the
+# doc/TODO.md entry added 2026-08-08). That is a real, already-known architectural
+# dependency, not something to route around here.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+cd "$(dirname "$0")/../.."
+REPO="$PWD"
+
+# shellcheck source=dots/tests/lib.sh
+source "$REPO/dots/tests/lib.sh"
+trap cleanup_fake_homes EXIT
+
+function run_shell_info() {
+  # Echoes the combined output of `jx-shell-info ARGS` under the given shell, with $HOME
+  # pointed at a throwaway dir carrying .profile and .dotlib.
+  #
+  # $home is substituted here, at outer-script string-construction time -- not left as
+  # literal $HOME for the inner shell to expand, since single quotes around it would
+  # suppress that expansion regardless of which shell reads them. HOME is still set on
+  # the inner shell's environment below, for jx-shell-info's own runtime use of $HOME.
+  local shell="$1" home="$2" args="${3:-}"
+  HOME="$home" "$shell" -c "
+    source '$home/.profile'
+    source '$home/.dotlib/bashyrc.sh'
+    jx-shell-info $args
+  " 2>&1 || true
+}
+
+function assert_all_shells_shell_info() {
+  # assert_all_shells_shell_info HOME ARGS NEEDLE DESC -- every shell's output must
+  # contain NEEDLE.
+  local home="$1" args="$2" needle="$3" desc="$4"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_shell_info "$sh" "$home" "$args")
+    if [[ "$got" != *"$needle"* ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): output did not contain: $needle"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+function shell_info_rc() {
+  # Runs `jx-shell-info ARGS` and echoes its exit status plus "alive" -- proves a bad
+  # option fails without also killing the shell it ran in, not just what its own rc was.
+  local shell="$1" home="$2" args="$3"
+  HOME="$home" "$shell" -c "
+    source '$home/.profile'
+    source '$home/.dotlib/bashyrc.sh'
+    jx-shell-info $args >/dev/null 2>&1
+    echo \"rc=\$?\"
+    echo alive
+  " 2>&1
+}
+
+function assert_all_shells_shell_info_not() {
+  # Same, but every shell's output must NOT contain NEEDLE.
+  local home="$1" args="$2" needle="$3" desc="$4"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_shell_info "$sh" "$home" "$args")
+    if [[ "$got" == *"$needle"* ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): output unexpectedly contained: $needle"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+function main() {
+  select_test_shells
+  print_test_env
+
+  # A fake home wired up exactly as install-dotfiles would, plus one local file
+  # (.bashyrc-user) carrying synthetic JX_* variables -- an array, a multi-line value, an
+  # exported scalar, and an undeclared name -- so the array/multi-line/export-marker and
+  # discover-beyond-the-known-list cases all run through the REAL discovery sweep in
+  # bashyrc.sh, not a hand-called jxl::show_var.
+  new_fake_home
+  local home="$FAKE_HOME"
+  ln -sfn "$REPO/dots/all-os/flat/dotlib" "$home/.dotlib"
+  ln -sfn "$REPO/dots/all-os/flat/profile.sh" "$home/.profile"
+  cat > "$home/.bashyrc-user" <<'EOF'
+JX_TEST_ARR=(one two "three four")
+JX_TEST_MULTI=$(printf 'line1\nline2')
+export JX_TEST_EXP=1
+EOF
+
+  echo "===== sections and standard variables ====="
+  assert_all_shells_shell_info "$home" '' 'Standard variables:' \
+      'the standard-variables section is present'
+  assert_all_shells_shell_info "$home" '' 'EDITOR' \
+      'EDITOR appears under standard variables'
+  assert_all_shells_shell_info "$home" '' 'JX dotfiles variables:' \
+      'the JX dotfiles variables section is present'
+
+  echo "===== JX custom variables ====="
+  assert_all_shells_shell_info "$home" '' 'JX custom variables:' \
+      'the JX-custom section is present when DROPBOX is set'
+  assert_all_shells_shell_info "$home" '' 'DROPBOX' \
+      'DROPBOX appears in the JX-custom section'
+  # DROPBOX is exported (fixed 2026-08-08); the JX-custom section is real-world proof an
+  # unexported var would show no ^, since every other custom-var candidate is hypothetical.
+  assert_all_shells_shell_info "$home" '' 'DROPBOX ^' \
+      'DROPBOX shows the ^ sigil, now that it is exported'
+  assert_all_shells_shell_info_not "$home" '' 'Vars:' \
+      'the old ad-hoc "Vars:" line is gone'
+
+  echo "===== array and multi-line values from real discovery ====="
+  assert_all_shells_shell_info "$home" '' "JX_TEST_ARR             @  = ( one two 'three four' )" \
+      'an array JX_* variable renders with @ and every element, spaces quoted'
+  assert_all_shells_shell_info "$home" '' 'JX_TEST_EXP             ^  = 1' \
+      'an exported scalar JX_* variable gets the ^ sigil'
+  assert_all_shells_shell_info "$home" '' \
+      "$(printf 'JX_TEST_MULTI              = line1\n      line2')" \
+      'a multi-line JX_* value has its continuation line indented'
+  assert_all_shells_shell_info "$home" '' 'JX_TEST_ARR' \
+      'an undeclared JX_* name still appears -- discovery is not limited to the known list'
+
+  echo "===== unset known names: hidden by default, shown under --verbose ====="
+  assert_all_shells_shell_info_not "$home" '' 'JX_TRACE_SHELL_STARTUP' \
+      'an unset known JX_* name is hidden by default'
+  assert_all_shells_shell_info "$home" '--verbose' 'JX_TRACE_SHELL_STARTUP' \
+      '--verbose shows an unset known JX_* name'
+  assert_all_shells_shell_info "$home" '--verbose' 'JX_TRACE_SHELL_STARTUP     (unset)' \
+      '--verbose marks it unset rather than inventing a value'
+
+  echo "===== local files ====="
+  assert_all_shells_shell_info "$home" '' '.bashyrc-user   present' \
+      'a present local file is listed by default'
+  assert_all_shells_shell_info_not "$home" '' '.bashyrc-local  absent' \
+      'an absent local file is hidden by default'
+  assert_all_shells_shell_info "$home" '--verbose' '.bashyrc-local  absent' \
+      '--verbose lists an absent local file too'
+
+  echo "===== internal state ====="
+  assert_all_shells_shell_info_not "$home" '' 'Internal state:' \
+      'the internal-state section is hidden by default'
+  assert_all_shells_shell_info "$home" '--verbose' 'Internal state:' \
+      '--verbose shows the internal-state section'
+  assert_all_shells_shell_info "$home" '--verbose' '_JX_DEBUG' \
+      '--verbose shows _JX_DEBUG'
+
+  echo "===== --jxl ====="
+  assert_all_shells_shell_info_not "$home" '' 'JXL 0.1.0' \
+      'the JXL section is absent without --jxl'
+  assert_all_shells_shell_info "$home" '--jxl' 'JXL 0.1.0' \
+      '--jxl appends jxl::show_shell_info'
+
+  echo "===== --help and a bad option ====="
+  assert_all_shells_shell_info "$home" '--help' 'Dump some info about this shell' \
+      '--help renders the headline'
+  assert_all_shells_shell_info "$home" '--help' '--jxl' \
+      '--help documents --jxl'
+
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(shell_info_rc "$sh" "$home" --nope)
+    if [[ "$got" != *'rc=1'* || "$got" != *alive* ]]; then
+      fail 'a bad option fails without killing the shell' \
+          "${sh##*/} $(shell_version "$sh"): got '$got'"
+      return
+    fi
+  done
+  ok 'a bad option fails without killing the shell'
+}
+
+main
+print_summary
+exit $(( FAILS > 0 ? 1 : 0 ))
