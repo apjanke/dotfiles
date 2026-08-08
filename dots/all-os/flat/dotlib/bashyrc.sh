@@ -331,11 +331,14 @@ function jx-shell-info() {
   # library instead of every command function. Default isolation runs the impl in a
   # subshell, which is right here -- this command only reports, and never changes the
   # shell it is called from.
-  local do_long_path=0 do_jxl=0
+  local path_mode=pretty path_width='' do_jxl=0
+  # shellcheck disable=SC2016  # $COLUMNS below is prose, not an expansion
   local -a _JXL_COMMAND_INFO=(
     usage_headline 'Dump some info about this shell and its configuration'
-    synopsis_args  '[--long-path | -p] [--jxl]'
-    options        '    -p, --long-path   print the PATH one entry per line
+    synopsis_args  '[--long-path | -p | --raw-path] [--width N] [--jxl]'
+    options        '    -p, --long-path   print PATH one entry per line
+        --raw-path    print PATH verbatim, one line, ":"-separated
+        --width N     wrap PATH to N columns instead of $COLUMNS
         --jxl         also dump JXL'"'"'s own state (jxl::show_shell_info)'
   )
   jxl::run_command jx::shell_info "$@"
@@ -348,7 +351,14 @@ function jx::shell_info_parse_cli() {
   while [[ $# -ge 1 ]]; do
     arg="$1"; shift
     case "$arg" in
-      --long-path | -p)   do_long_path=1 ;;
+      --long-path | -p)   path_mode=long ;;
+      --raw-path)         path_mode=raw ;;
+      --width)
+        path_width="$1"; shift
+        case "$path_width" in
+          ''|*[!0-9]*) jxl::die "--width wants a positive integer, got: ${path_width}" ;;
+        esac
+        ;;
       --jxl)              do_jxl=1 ;;
       *)                  leftover+=("$arg") ;;
     esac
@@ -427,19 +437,24 @@ EOS
   jx::shell_info_local_files
   jx::shell_info_internal_state "$exports"
 
-  if [[ $do_long_path = 1 ]]; then
-    # shellcheck disable=SC2001
-    cat <<EOS
-PATH:
-  $(echo "$PATH" | sed -e 's/:/\n  /g')
-
-EOS
+  local path_width_effective
+  if [[ -n "$path_width" ]]; then
+    path_width_effective="$path_width"
   else
-    cat <<EOS
-PATH: ${PATH:-}
-
-EOS
+    # $COLUMNS is not always merely unset -- a non-interactive/non-tty environment can
+    # export it as a literal "0" (observed in practice), which would otherwise sail
+    # through this fallback chain and silently produce degenerate one-entry-per-line
+    # output with no indication why. Non-numeric or non-positive counts as unusable, same
+    # as unset, for both $COLUMNS and the tput fallback.
+    path_width_effective="${COLUMNS:-}"
+    case "$path_width_effective" in ''|*[!0-9]*|0) path_width_effective='' ;; esac
+    if [[ -z "$path_width_effective" ]]; then
+      path_width_effective=$(tput cols 2>/dev/null) || true
+      case "$path_width_effective" in ''|*[!0-9]*|0) path_width_effective='' ;; esac
+    fi
+    : "${path_width_effective:=80}"
   fi
+  jx::shell_info_path "$path_mode" "$path_width_effective"
 
   if [[ $do_jxl == 1 ]]; then
     printf '\n'
@@ -573,6 +588,75 @@ function jx::shell_info_internal_state() {
   printf 'Internal state:\n'
   for v in "${names[@]}"; do
     jxl::show_var "$v" "$exports" "$width"
+  done
+  printf '\n'
+}
+
+function jx::shell_info_path() {
+  # jx::shell_info_path MODE [WIDTH] -- MODE is "pretty" (default, greedy-wrapped and
+  # quoted, WIDTH required), "long" (one entry per line, no quoting needed since there is
+  # no ambiguity to quote against), or "raw" (today's old default: one ":"-joined line).
+  #
+  # $PATH is walked with parameter-expansion string surgery, not `for x in $PATH` or an
+  # array -- zsh does not word-split unquoted expansions even with IFS=:, unlike bash. Same
+  # idiom bashy-paths.sh's jx_maybe_add_path already uses for the same reason.
+  local mode="$1" width="${2:-80}"
+  local rest item quoted line count=0
+  local -a lines=()
+
+  case "$mode" in
+    raw)
+      printf 'PATH: %s\n\n' "${PATH:-}"
+      return 0
+      ;;
+    long)
+      printf 'PATH:\n'
+      rest="${PATH:-}"
+      while [[ -n "$rest" ]]; do
+        case "$rest" in
+          *:*) item="${rest%%:*}"; rest="${rest#*:}" ;;
+          *)   item="$rest"; rest='' ;;
+        esac
+        printf '  %s\n' "$item"
+      done
+      printf '\n'
+      return 0
+      ;;
+  esac
+
+  # pretty (default): greedy word-wrap, one pass -- count entries and build wrapped lines
+  # together, so $PATH is walked once, not twice. An entry alone longer than $width still
+  # gets its own line rather than being truncated: the first token of a line is always
+  # accepted regardless of length, same as ordinary text-wrap conventions.
+  local avail=$(( width - 2 ))
+  rest="${PATH:-}"
+  while [[ -n "$rest" ]]; do
+    case "$rest" in
+      *:*) item="${rest%%:*}"; rest="${rest#*:}" ;;
+      *)   item="$rest"; rest='' ;;
+    esac
+    count=$(( count + 1 ))
+    quoted=$(jxl::quote_elem "$item")
+    if [[ -z "${line:-}" ]]; then
+      line="$quoted"
+    elif [[ $(( ${#line} + 1 + ${#quoted} )) -le $avail ]]; then
+      line="${line} ${quoted}"
+    else
+      lines+=("$line")
+      line="$quoted"
+    fi
+  done
+  if [[ -n "${line:-}" ]]; then
+    lines+=("$line")
+  fi
+
+  if [[ $count == 1 ]]; then
+    printf 'PATH (1 entry):\n'
+  else
+    printf 'PATH (%d entries):\n' "$count"
+  fi
+  for line in ${lines[@]+"${lines[@]}"}; do
+    printf '  %s\n' "$line"
   done
   printf '\n'
 }

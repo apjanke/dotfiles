@@ -640,6 +640,21 @@ function jxl::max_strlen() {
   echo "$width"
 }
 
+function jxl::quote_elem() {
+  # jxl::quote_elem VALUE -- print VALUE for a diagnostic listing (an array element, a
+  # $PATH entry), single-quoted if it is empty or contains whitespace or a quote.
+  # Not real shell-quoting, just enough that "c d" cannot be mistaken for two elements;
+  # nothing re-parses this output.
+  local _val="$1"
+  case "$_val" in
+    '') printf "''" ;;
+    *[[:space:]\']*)
+      printf "'%s'" "${_val//\'/\'\\\'\'}"
+      ;;
+    *) printf '%s' "$_val" ;;
+  esac
+}
+
 function jxl::thous() {
   # Format numbers with thousands separators.
   local py_script s
@@ -898,7 +913,7 @@ function jxl::_show_var_kind() {
 
 function jxl::_show_var_render_array() {
   # jxl::_show_var_render_array OUT_VAR NAME KIND -- render NAME's elements as
-  # "( e1 e2 ... )", quoting elements that need it (see jxl::_show_var_elem). KIND is
+  # "( e1 e2 ... )", quoting elements that need it (see jxl::quote_elem). KIND is
   # "array" or "assoc"; assoc elements render as [key]=value and only ever occur under
   # zsh -- bash 3.2 has no native associative arrays, so jxl::_show_var_kind can never
   # produce "assoc" there, and this branch is simply never reached under bash.
@@ -914,30 +929,16 @@ function jxl::_show_var_render_array() {
       eval "_keys=(\"\${(k)${_name}[@]}\")"
       for _key in "${_keys[@]}"; do
         eval "_elem=\"\${${_name}[\$_key]}\""
-        _buf="${_buf:+${_buf} }[$(jxl::_show_var_elem "$_key")]=$(jxl::_show_var_elem "$_elem")"
+        _buf="${_buf:+${_buf} }[$(jxl::quote_elem "$_key")]=$(jxl::quote_elem "$_elem")"
       done
     fi
   else
     eval "set -- \${${_name}[@]+\"\${${_name}[@]}\"}"
     for _elem in "$@"; do
-      _buf="${_buf:+${_buf} }$(jxl::_show_var_elem "$_elem")"
+      _buf="${_buf:+${_buf} }$(jxl::quote_elem "$_elem")"
     done
   fi
   eval "$_out=\"( \$_buf )\""
-}
-
-function jxl::_show_var_elem() {
-  # jxl::_show_var_elem VALUE -- print VALUE for array/assoc display, single-quoted if it
-  # is empty or contains whitespace or a quote. Not real shell-quoting, just enough that an
-  # element like "c d" cannot be mistaken for two elements; nothing re-parses this output.
-  local _val="$1"
-  case "$_val" in
-    '') printf "''" ;;
-    *[[:space:]\']*)
-      printf "'%s'" "${_val//\'/\'\\\'\'}"
-      ;;
-    *) printf '%s' "$_val" ;;
-  esac
 }
 
 function jxl::_show_options() {

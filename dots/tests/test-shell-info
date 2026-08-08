@@ -70,6 +70,84 @@ function shell_info_rc() {
   " 2>&1
 }
 
+function assert_all_shells_shell_info_bad_option() {
+  # assert_all_shells_shell_info_bad_option HOME ARGS DESC -- every shell must reject
+  # ARGS with rc=1 while leaving the shell itself alive.
+  #
+  # A plain `for` loop inlined into main() would `return` out of main() itself on
+  # failure, silently skipping every assertion written after it -- found by deliberately
+  # breaking this exact check and seeing a later, unrelated assertion vanish instead of
+  # failing. Wrapping it as its own function scopes `return` correctly, same as every
+  # other assert_* helper here.
+  local home="$1" args="$2" desc="$3"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(shell_info_rc "$sh" "$home" "$args")
+    if [[ "$got" != *'rc=1'* || "$got" != *alive* ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got'"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+function run_shell_info_path() {
+  # Like run_shell_info, but $PATH is overridden only for the jx-shell-info invocation
+  # itself, so PATH-wrapping assertions are deterministic regardless of the real
+  # machine's PATH. Includes /bin:/usr/bin so jx-shell-info's own internals (uname, sed,
+  # etc., run inside the isolated impl) keep working -- a PATH restricted to only the
+  # synthetic test entries breaks those and floods stderr with unrelated noise.
+  local shell="$1" home="$2" path="$3" args="${4:-}"
+  HOME="$home" "$shell" -c "
+    source '$home/.profile'
+    source '$home/.dotlib/bashyrc.sh'
+    PATH='/bin:/usr/bin:$path' jx-shell-info $args
+  " 2>&1 || true
+}
+
+function run_shell_info_path_columns() {
+  # Like run_shell_info_path, but also sets COLUMNS for the invocation -- a separate
+  # helper because only the COLUMNS-fallback case needs it, and threading a rarely-used
+  # parameter through every other call site would just add noise there.
+  local shell="$1" home="$2" path="$3" columns="$4"
+  HOME="$home" "$shell" -c "
+    source '$home/.profile'
+    source '$home/.dotlib/bashyrc.sh'
+    COLUMNS='$columns' PATH='/bin:/usr/bin:$path' jx-shell-info
+  " 2>&1 || true
+}
+
+function assert_all_shells_shell_info_columns() {
+  # assert_all_shells_shell_info_columns HOME PATH COLUMNS WANT DESC
+  local home="$1" path="$2" columns="$3" want="$4" desc="$5"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_shell_info_path_columns "$sh" "$home" "$path" "$columns" \
+        | sed -n '/^PATH/,/^$/p')
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+function assert_all_shells_shell_info_path() {
+  # assert_all_shells_shell_info_path HOME PATH ARGS WANT DESC -- compares just the PATH
+  # block (the "PATH..." line through the following blank line) against WANT exactly,
+  # since these cases are about the precise wrap point, not mere substring presence.
+  local home="$1" path="$2" args="$3" want="$4" desc="$5"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_shell_info_path "$sh" "$home" "$path" "$args" | sed -n '/^PATH/,/^$/p')
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
 function assert_all_shells_shell_info_not() {
   # Same, but every shell's output must NOT contain NEEDLE.
   local home="$1" args="$2" needle="$3" desc="$4"
@@ -158,6 +236,37 @@ EOF
   assert_all_shells_shell_info "$home" '--verbose' '_JX_DEBUG' \
       '--verbose shows _JX_DEBUG'
 
+  echo "===== \$PATH pretty-printing ====="
+  # /aa /bb /cc /d d, prefixed with /bin:/usr/bin so jx-shell-info's own internals keep
+  # working (see run_shell_info_path) -- six entries total, one containing a space.
+  local test_path='/aa:/bb:/cc:/d d'
+  local want_pretty want_long want_raw
+  want_pretty=$(printf "PATH (6 entries):\n  /bin /usr/bin\n  /aa /bb /cc\n  '/d d'\n")
+  want_long=$(printf 'PATH:\n  /bin\n  /usr/bin\n  /aa\n  /bb\n  /cc\n  /d d\n')
+  want_raw=$(printf 'PATH: /bin:/usr/bin:/aa:/bb:/cc:/d d\n')
+
+  assert_all_shells_shell_info_path "$home" "$test_path" '--width 15' "$want_pretty" \
+      'default pretty-wrap breaks at the given width and quotes the space-bearing entry'
+  assert_all_shells_shell_info_path "$home" "$test_path" '--long-path' "$want_long" \
+      '--long-path gives one raw, unquoted entry per line'
+  assert_all_shells_shell_info_path "$home" "$test_path" '--raw-path' "$want_raw" \
+      '--raw-path reproduces the old verbatim one-line form'
+  assert_all_shells_shell_info_columns "$home" "$test_path" 15 "$want_pretty" \
+      'COLUMNS drives the default wrap width when --width is not given'
+  # A non-interactive/non-tty environment can export COLUMNS as a literal "0" rather than
+  # leaving it unset (observed running this suite itself) -- found by the manual smoke
+  # test, not by a planned case. That has to fall through to the 80-column default like
+  # unset does, not sail through and silently degrade to one-entry-per-line.
+  assert_all_shells_shell_info_columns "$home" "$test_path" 0 \
+      "$(printf "PATH (6 entries):\n  /bin /usr/bin /aa /bb /cc '/d d'\n")" \
+      'COLUMNS=0 falls through to the 80-column default, not a degenerate width'
+
+  assert_all_shells_shell_info_bad_option "$home" '--width abc' \
+      'a non-numeric --width fails cleanly without killing the shell'
+  assert_all_shells_shell_info "$home" '--width abc' \
+      'ERROR: --width wants a positive integer' \
+      'the --width error names the bad value'
+
   echo "===== --jxl ====="
   assert_all_shells_shell_info_not "$home" '' 'JXL 0.1.0' \
       'the JXL section is absent without --jxl'
@@ -169,17 +278,13 @@ EOF
       '--help renders the headline'
   assert_all_shells_shell_info "$home" '--help' '--jxl' \
       '--help documents --jxl'
+  assert_all_shells_shell_info "$home" '--help' '--raw-path' \
+      '--help documents --raw-path'
+  assert_all_shells_shell_info "$home" '--help' '--width' \
+      '--help documents --width'
 
-  local sh got
-  for sh in "${TEST_SHELLS[@]}"; do
-    got=$(shell_info_rc "$sh" "$home" --nope)
-    if [[ "$got" != *'rc=1'* || "$got" != *alive* ]]; then
-      fail 'a bad option fails without killing the shell' \
-          "${sh##*/} $(shell_version "$sh"): got '$got'"
-      return
-    fi
-  done
-  ok 'a bad option fails without killing the shell'
+  assert_all_shells_shell_info_bad_option "$home" --nope \
+      'a bad option fails without killing the shell'
 }
 
 main

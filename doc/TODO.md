@@ -2,24 +2,13 @@
 
 ## General
 
-- `jx-shell-info` things
-  - Pretty-print `$PATH` by default: space-separated, elements containing spaces quoted,
-    wrapped to `${COLUMNS:-80}` (`COLUMNS` is unset non-interactively and `tput cols` needs
-    `$TERM`, so the fallback matters). Keep `-p`/`--long-path` for one-entry-per-line. Add
-    `--raw-path` for the current verbatim one-line form, and `--width N` to override the
-    wrap column.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
   - Consider `: ${MY_VAR:=default}` expansion form.
-- `install-dotfiles` doesn't clobber an existing regular (non-symlink) `~/.profile`, which is
-  intentional - the idea was to let a plain local file supersede the dotfiles-managed one,
-  per-file. But `.dotlib/bashyrc.sh`'s per-machine local-loading loop now hard-depends on the
-  `jx::*`/`_jx_source_maybe` functions defined in `.profile` (added 2026-08-08), so a
-  superseding non-JX-aware `.profile` silently breaks that loop. Revisit: maybe factor those
-  function definitions out of `.profile` into their own file, so `bashyrc.sh` doesn't depend
-  on `.profile` having actually run.
+- new `jx*` functions from `.profile` vs. local replacement files
+  - `install-dotfiles` doesn't clobber an existing regular (non-symlink) `~/.profile`, which is intentional - the idea was to let a plain local file supersede the dotfiles-managed one, per-file. But `.dotlib/bashyrc.sh`'s per-machine local-loading loop now hard-depends on the `jx::*`/`_jx_source_maybe` functions defined in `.profile` (added 2026-08-08), so a superseding non-JX-aware `.profile` silently breaks that loop. Revisit: maybe factor those function definitions out of `.profile` into their own file, so `bashyrc.sh` doesn't depend on `.profile` having actually run.
 - Top-down function order code layout.
 - Terminal colorization: basic support in JXL for colorization of output with basic ANSI terminal control escape codes, for use by command functions.
   - Should detect whether outputting to a TTY, and only colorize if it's a TTY. May need to get a bit fancy about this so command substitution can still produce terminal escape sequences for eventual interpolation in string output which will be going to a TTY. Maybe just a variable that indicates "my output is going to a TTY", that's set at command start time and read by the TTY colorization functions.
