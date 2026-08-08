@@ -5,15 +5,60 @@
 # See the HELP_SCREEN variable in the source code for details.
 
 
-# ========== Generic boilerplate and utilities ==========
-
 set -o errexit
 set -o nounset
 set -o pipefail
 if [[ "${TRACE:-0}" == "1" ]]; then set -o xtrace; fi
 
+FILES=()
+
+# Up here, not down in the boilerplate, because $HELP_SCREEN expands it when the heredoc
+# is read rather than when the help is printed. Once the boilerplate becomes a sourced
+# library, the source line takes this same spot.
 THIS_PROGRAM=$(basename "$0")
 readonly THIS_PROGRAM
+
+function parse_cmdline() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --verbose | -v)               VERBOSE=1 ;;
+      --dry-run)                    DRY_RUN=1 ;;
+      --debug)                      DEBUG=1 ;;
+      --help | -help | -h | '-?')   echo "$HELP_SCREEN"; exit 0 ;;
+      -*)
+        die "Unexpected option: ${arg}" ;;
+      *)
+        FILES+=("$arg")
+    esac
+  done
+
+  readonly DRY_RUN VERBOSE
+}
+
+# `readonly` goes after the read, not on the declaration: `read` can't write to a variable
+# that is already readonly, and the `|| true` would swallow the resulting error, leaving
+# the help screen silently empty.
+HELP_SCREEN=''
+IFS= read -r -d '' HELP_SCREEN <<EOHELP || true
+
+${THIS_PROGRAM} - do both 'du -sh' and file count, with compact output and timing
+
+${THIS_PROGRAM} <dir> [<dir> ...]
+    [--dry-run] [--verbose | -v] [--debug]
+
+EOHELP
+readonly HELP_SCREEN
+
+function main() {
+  parse_cmdline "$@"
+  du_sh_and_count_files "${FILES[@]}"
+}
+
+# ========== Generic boilerplate and utilities ==========
+
 DRY_RUN=0
 VERBOSE=0
 DEBUG=0
@@ -149,45 +194,8 @@ function thous() {
   done
 }
 
-# ========== Main script logic ==========
-
-FILES=()
-
-function parse_cmdline() {
-  local arg
-
-  while [[ $# -ge 1 ]]; do
-    arg="$1"; shift
-    case "$arg" in
-      --verbose | -v)               VERBOSE=1 ;;
-      --dry-run)                    DRY_RUN=1 ;;
-      --debug)                      DEBUG=1 ;;
-      --help | -help | -h | '-?')   echo "$HELP_SCREEN"; exit 0 ;;
-      -*)
-        die "Unexpected option: ${arg}" ;;
-      *)
-        FILES+=("$arg")
-    esac
-  done
-
-  readonly DRY_RUN VERBOSE
-}
-
-HELP_SCREEN=''
-IFS= read -r -d '' HELP_SCREEN <<EOHELP || true
-
-${THIS_PROGRAM} - do both 'du -sh' and file count, with compact output and timing
-
-${THIS_PROGRAM} <dir> [<dir> ...]
-    [--dry-run] [--verbose | -v] [--debug]
-
-EOHELP
-
-function main() {
-  parse_cmdline "$@"
-  du_sh_and_count_files "${FILES[@]}"
-}
 
 # ========== Main script ==========
 
 main "$@"
+exit $?

@@ -104,8 +104,11 @@ function run_tests() {
   new_fake_home
   install_into_fake_home > /dev/null
   out2=$(install_into_fake_home -v)
-  assert_contains "$out2" "Symlink '.bashrc' is already set up" 'second run reports flat-tree file unchanged'
-  assert_contains "$out2" "Symlink '.config/btop/btop.conf' is already set up" 'second run reports nested-tree file unchanged'
+  # The target is printf-padded to 18 columns, so keep a trailing space in the needle: it
+  # anchors the end of the name and stops '.bashrc' from matching a longer '.bashrcfoo'.
+  assert_contains "$out2" 'Already set up: .bashrc ' 'second run reports flat-tree file unchanged'
+  assert_contains "$out2" 'Already set up: .config/btop/btop.conf ' \
+      'second run reports nested-tree file unchanged'
   if [[ "$(readlink "$FAKE_HOME/.bashrc")" == "$REPO/dots/all-os/flat/bashrc.sh" ]]; then
     ok 'second run left the link pointing where it was'
   else
@@ -116,7 +119,7 @@ function run_tests() {
   new_fake_home
   echo 'hand-written, do not touch' > "$FAKE_HOME/.bashrc"
   out=$(install_into_fake_home)
-  assert_contains "$out" "SKIPPED: File '.bashrc' is a regular file" 'regular file is reported as skipped'
+  assert_contains "$out" 'SKIPPED: .bashrc is a regular file' 'regular file is reported as skipped'
   if [[ "$(cat "$FAKE_HOME/.bashrc")" == 'hand-written, do not touch' ]]; then
     ok 'regular file kept its contents'
   else

@@ -7,12 +7,19 @@
 #
 #   extract-audio-from-mp4 <file> [...]
 
-set -e
+set -o errexit
+set -o nounset
+set -o pipefail
+if [[ "${TRACE:-0}" == "1" ]]; then set -o xtrace; fi
 
-for mp4file in "$@"; do
-  filebase="${mp4file%.*}"
-  m4afile="$filebase.m4a"
+function main() {
+  for mp4file in "$@"; do
+    filebase="${mp4file%.*}"
+    m4afile="$filebase.m4a"
 
-  ffmpeg -i "$mp4file" -vn -acodec copy "$m4afile"
-  echo "Wrote: $m4afile"
-done
+    ffmpeg -i "$mp4file" -vn -acodec copy "$m4afile"
+    echo "Wrote: $m4afile"
+  done
+}
+
+main "$@"

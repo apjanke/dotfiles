@@ -60,26 +60,6 @@ EOF
 FILE_ARGS=()
 OPT_LIST=0
 
-function parse_cli() {
-  local arg
-
-  while [[ $# -ge 1 ]]; do
-    arg="$1"; shift
-    case "$arg" in
-      --list | -l)                  OPT_LIST=1 ;;
-      --help | -help | -h | '-?')   usage; exit 0 ;;
-      --)                           break ;;
-      -*)
-        die "Unexpected option: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
-      *)                            FILE_ARGS+=("$arg") ;;
-    esac
-  done
-  # Whatever followed a `--` is a file name, however option-like it looks.
-  FILE_ARGS+=("$@")
-
-  readonly OPT_LIST FILE_ARGS
-}
-
 function main() {
   local -a sh_targets=() zsh_targets=()
   local file rc=0
@@ -119,6 +99,26 @@ function main() {
     run_zsh_syntax_check "${zsh_targets[@]}" || rc=1
   fi
   return $rc
+}
+
+function parse_cli() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --list | -l)                  OPT_LIST=1 ;;
+      --help | -help | -h | '-?')   usage; exit 0 ;;
+      --)                           break ;;
+      -*)
+        die "Unexpected option: ${arg}. See '$PROGRAM_NAME --help' for usage" ;;
+      *)                            FILE_ARGS+=("$arg") ;;
+    esac
+  done
+  # Whatever followed a `--` is a file name, however option-like it looks.
+  FILE_ARGS+=("$@")
+
+  readonly OPT_LIST FILE_ARGS
 }
 
 function run_shellcheck() {
