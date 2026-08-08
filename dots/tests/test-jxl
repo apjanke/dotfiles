@@ -326,6 +326,41 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     if jxl::_is_function tic; then echo claimed; else echo left-alone; fi' 'left-alone' \
       'tic is left alone, since /usr/bin/tic is a real command'
 
+  echo "===== show_shell_info ====="
+  assert_all_shells 'jxl::show_shell_info | head -1' "JXL $(cat <<<'0.1.0')" \
+      'show_shell_info leads with the version'
+  assert_all_shells 'jxl::show_shell_info | grep -c "loaded from: .*jxl-lib.sh"' '1' \
+      'show_shell_info names the file that was sourced'
+  # Compare depths rather than asserting an absolute one: any way of capturing the output
+  # is itself a subshell, so the reported number includes the harness's own pipeline. The
+  # difference is what carries the meaning.
+  assert_all_shells "$DEMO"'
+    function depth_now() {
+      jxl::show_shell_info | grep "subshell depth:" | sed -e "s/.*depth: //"
+    }
+    top=$(depth_now)
+    function jx::demo() { depth_now; }
+    inner=$(jx-demo)
+    echo $(( inner - top ))' '1' \
+      'show_shell_info sees one more subshell level inside an isolated impl'
+  assert_all_shells "$DEMO"'
+    function jx::demo() { jxl::show_shell_info | grep -c "Call stack:.*jx-demo"; }
+    jx-demo' '1' 'show_shell_info shows the command function on the call stack'
+  assert_all_shells "$DEMO"'
+    function jx::demo() { jxl::show_shell_info | grep -c "PROGRAM_NAME *= jx-demo"; }
+    jx-demo' '1' 'show_shell_info reports the invocation state'
+  assert_all_shells 'jxl::show_shell_info | grep -c "PROGRAM_NAME *(unset)"' '1' \
+      'invocation state reads as unset outside a command'
+  assert_all_shells 'jxl::use_short_names >/dev/null 2>&1
+    jxl::show_shell_info | grep -c "JXL wrappers: info"' '1' \
+      'show_shell_info reports which short names are JXL wrappers'
+  assert_all_shells 'function info() { :; }
+    jxl::show_shell_info | grep -c "defined but NOT JXL: info"' '1' \
+      'show_shell_info distinguishes a foreign definition from a JXL wrapper'
+  assert_all_shells 'export VERBOSE=1
+    jxl::show_shell_info | grep -c "VERBOSE *= 1   (exported)"' \
+      '1' 'show_shell_info marks exported interface variables'
+
   echo "===== version and load notice ====="
   assert_all_shells 'echo "$_JXL_VERSION"' '0.1.0' 'sourcing sets the version'
   assert_all_shells 'echo "${_JXL_VERSION_ARR[*]}"' '0 1 0' \

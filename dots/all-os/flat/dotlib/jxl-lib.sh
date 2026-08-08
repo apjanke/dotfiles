@@ -74,6 +74,7 @@
 #   _JXL_VERSION              Version string, e.g. "0.1.0".
 #   _JXL_VERSION_ARR          The same, pre-split: (0 1 0). Compare components from this
 #                             rather than parsing the string.
+#   _JXL_LIB_PATH             Path of the jxl-lib.sh that actually got sourced.
 
 # shellcheck shell=bash
 
@@ -102,9 +103,23 @@ for _jxl_v in "${_JXL_VERSION_ARR[@]}"; do
   _JXL_VERSION="${_JXL_VERSION:+${_JXL_VERSION}.}${_jxl_v}"
 done
 unset _jxl_v
+
+# Which copy of this file got loaded. With a repo copy, an installed copy, and an
+# idempotence guard all in play, that is a real question -- jxl::show_shell_info reports
+# it, and the debug load notice at the bottom prints it.
+if [[ -n "${BASH_VERSION:-}" ]]; then
+  _JXL_LIB_PATH="${BASH_SOURCE[0]}"
+else
+  # zsh's equivalent of $BASH_SOURCE for the file being sourced. bash parses this fine
+  # (verified with bash -n) and never reaches it; shellcheck reads it as bash and does not
+  # know the (%) flag form.
+  # shellcheck disable=SC2296
+  _JXL_LIB_PATH="${(%):-%x}"
+fi
+
 # Set JXL_NO_READONLY=1 to skip this, for the rare in-shell reload while hacking on JXL.
 if [[ "${JXL_NO_READONLY:-0}" == 0 ]]; then
-  readonly _JXL_VERSION _JXL_VERSION_ARR
+  readonly _JXL_VERSION _JXL_VERSION_ARR _JXL_LIB_PATH
 fi
 
 
@@ -641,6 +656,20 @@ function jxl::thous() {
   done
 }
 
+function jxl::_short_names() {
+  # Populates the caller's $_jxl_names array. One source of truth, since both
+  # jxl::use_short_names and jxl::show_shell_info need the list.
+  #
+  # thous is deliberately absent -- a name worth leaving free, since it often gets defined
+  # by hand for interactive use. Call jxl::thous when a script needs it.
+  _jxl_names=(
+    info warning error die emit log_vrb log_dbg
+    is_verbose is_debug is_dry_run
+    dry dry_vrb wet wet_vrb forbid_dry_run
+    tick tock s2mmss say_tock timeit max_strlen
+  )
+}
+
 function jxl::_is_function() {
   # Portable "is this name a function?" -- `typeset -f` works in both shells.
   typeset -f "$1" >/dev/null 2>&1
@@ -677,17 +706,11 @@ function jxl::use_short_names() {
     esac
   done
 
-  # thous is deliberately absent -- it is a name worth leaving free, since it often gets
-  # defined by hand for interactive use. Call jxl::thous when a script needs it.
-  local -a names=(
-    info warning error die emit log_vrb log_dbg
-    is_verbose is_debug is_dry_run
-    dry dry_vrb wet wet_vrb forbid_dry_run
-    tick tock s2mmss say_tock timeit max_strlen
-  )
+  local -a _jxl_names
+  jxl::_short_names
 
   local name kind defined='' redefined='' shadowed_alias='' shadowed_cmd='' skipped=''
-  for name in "${names[@]}"; do
+  for name in "${_jxl_names[@]}"; do
     # Quoted, or `kind=command` reads as an assignment from a command's output (SC2209).
     kind='none'
     if jxl::_is_function "$name";            then kind='function'
@@ -729,26 +752,154 @@ function jxl::use_short_names() {
 }
 
 
+
+# ========== Diagnostics ==========
+
+function jxl::show_shell_info() {
+  # Dump JXL's state and the shell it is running in, for debugging JXL or a command built
+  # on it.
+  #
+  # Writes to stdout: for a diagnostic, the report IS the work product.
+  #
+  # Most of the invocation state only exists while a script or command function is
+  # running, so calling this from a bare prompt correctly shows those as unset. Calling it
+  # from inside an impl is where it earns its keep.
+  local exports shell_name='?' shell_ver='?' depth='?'
+
+  # One fork, then membership tests against the result. bash prints `declare -x FOO=...`
+  # and zsh prints `export FOO=...`, but both contain " FOO=", which is all we check.
+  exports=$(export -p 2>/dev/null || true)
+
+  if [[ -n "${BASH_VERSION:-}" ]]; then
+    shell_name=bash; shell_ver="$BASH_VERSION"; depth="${BASH_SUBSHELL:-?}"
+  elif [[ -n "${ZSH_VERSION:-}" ]]; then
+    # shellcheck disable=SC2154  # ZSH_SUBSHELL is zsh's; guarded by the version test
+    shell_name=zsh;  shell_ver="$ZSH_VERSION";  depth="${ZSH_SUBSHELL:-?}"
+  fi
+
+  printf 'JXL %s\n' "${_JXL_VERSION:-<not loaded>}"
+  printf '  loaded from: %s\n' "${_JXL_LIB_PATH:-<unknown>}"
+  printf '\n'
+  printf 'Shell: %s %s   subshell depth: %s\n' "$shell_name" "$shell_ver" "$depth"
+  printf 'Call stack: %s\n' "$(jxl::_call_stack)"
+  printf '\n'
+
+  printf 'Caller-set interface:\n'
+  local v
+  for v in VERBOSE DEBUG JXL_VERBOSE JXL_DEBUG TRACE JXL_NO_READONLY; do
+    jxl::_show_var "$v" "$exports"
+  done
+  printf '\n'
+
+  printf 'Invocation state:\n'
+  for v in PROGRAM_NAME _JXL_VERBOSE _JXL_DEBUG _JXL_DRY_RUN _JXL_WANT_HELP \
+           _JXL_EMIT_PROGNAME _JXL_EMIT_TIMESTAMP; do
+    jxl::_show_var "$v" "$exports"
+  done
+  printf '\n'
+
+  printf 'Shell options:\n'
+  jxl::_show_options
+  printf '\n'
+
+  printf 'Short-name functions:\n'
+  jxl::_show_short_names
+}
+
+function jxl::_show_var() {
+  # jxl::_show_var NAME EXPORT_LIST -- one line of "name = value", or "(unset)".
+  local name="$1" exports="$2" set_marker val note=''
+
+  eval "set_marker=\${${name}+set}"
+  if [[ "${set_marker:-}" != set ]]; then
+    printf '  %-20s (unset)\n' "$name"
+    return 0
+  fi
+  eval "val=\$${name}"
+  case "$exports" in
+    *" ${name}="*) note='   (exported)' ;;
+  esac
+  printf '  %-20s = %s%s\n' "$name" "$val" "$note"
+}
+
+function jxl::_show_options() {
+  # The options JXL cares about, in two groups: the `set -o` ones both shells share, then
+  # bash's shopt-only ones. Anything absent in this shell is skipped rather than reported
+  # as off, so bash 3.2 does not claim to have globstar.
+  local opt line=''
+  for opt in errexit nounset pipefail noclobber noglob allexport xtrace verbose; do
+    if [[ -o "$opt" ]]; then
+      line="${line:+${line}  }${opt}=on"
+    else
+      line="${line:+${line}  }${opt}=off"
+    fi
+  done
+  printf '  %s\n' "$line"
+
+  if [[ -z "${BASH_VERSION:-}" ]]; then
+    return 0
+  fi
+  line=''
+  for opt in nocasematch nullglob failglob dotglob nocaseglob extglob xpg_echo \
+             expand_aliases globstar lastpipe; do
+    if shopt -q "$opt" 2>/dev/null; then
+      line="${line:+${line}  }${opt}=on"
+    elif shopt -u "$opt" 2>/dev/null; then
+      # Naming it succeeded, so it exists here and is off. (shopt -u on an already-unset
+      # option is a no-op, so this costs nothing.)
+      line="${line:+${line}  }${opt}=off"
+    fi
+  done
+  printf '  %s\n' "$line"
+}
+
+function jxl::_show_short_names() {
+  # Which of the unprefixed wrappers exist, and whether they are actually JXL's.
+  local -a _jxl_names
+  jxl::_short_names
+
+  local name defined='' foreign='' missing=''
+  for name in "${_jxl_names[@]}"; do
+    if ! jxl::_is_function "$name"; then
+      missing="${missing:+${missing}, }${name}"
+    elif typeset -f "$name" 2>/dev/null | grep -q "jxl::${name}"; then
+      defined="${defined:+${defined}, }${name}"
+    else
+      foreign="${foreign:+${foreign}, }${name}"
+    fi
+  done
+
+  if [[ -n "$defined" ]]; then printf '  JXL wrappers: %s\n' "$defined"; fi
+  if [[ -n "$foreign" ]]; then printf '  defined but NOT JXL: %s\n' "$foreign"; fi
+  if [[ -n "$missing" ]]; then printf '  not defined: %s\n' "$missing"; fi
+}
+
+function jxl::_call_stack() {
+  # Innermost first. The first frames are always this diagnostic's own plumbing.
+  #
+  # Per-frame subshell attribution is not available in either shell -- there is no record
+  # of which frame forked -- so the depth is reported once, above, rather than per frame.
+  local -a frames=()
+  local f out=''
+
+  if [[ -n "${BASH_VERSION:-}" ]]; then
+    frames=( ${FUNCNAME[@]+"${FUNCNAME[@]}"} )
+  else
+    # shellcheck disable=SC2154  # funcstack is zsh's; guarded by the bash test
+    frames=( ${funcstack[@]+"${funcstack[@]}"} )
+  fi
+  for f in ${frames[@]+"${frames[@]}"}; do
+    out="${out:+${out} < }${f}"
+  done
+  printf '%s\n' "${out:-<top level>}"
+}
+
+
 # ========== Load notice ==========
 
-# Announce the load when debugging, naming the file that was actually sourced -- with a
-# repo copy, an installed copy, and an idempotence guard in play, "which one did I
-# get?" is a real question.
-#
-# Reads the interface variables directly rather than $_JXL_DEBUG, which by design does not
-# exist until a script or command function seeds it.
+# Announce the load when debugging. Reads the interface variables directly rather than
+# $_JXL_DEBUG, which by design does not exist until a script or command function seeds it,
+# and jxl::emit rather than jxl::log_dbg, which gates on that same variable.
 if [[ "${JXL_DEBUG:-${DEBUG:-0}}" != 0 ]]; then
-  if [[ -n "${BASH_VERSION:-}" ]]; then
-    _jxl_self="${BASH_SOURCE[0]}"
-  else
-    # zsh's equivalent of $BASH_SOURCE for the file currently being sourced. bash parses
-    # this fine (verified with bash -n) and never reaches it; shellcheck reads it as bash
-    # and does not know the (%) flag form.
-    # shellcheck disable=SC2296
-    _jxl_self="${(%):-%x}"
-  fi
-  # jxl::emit, not jxl::log_dbg: log_dbg gates on $_JXL_DEBUG, which by design does not
-  # exist yet at source time, so it would swallow this every time.
-  jxl::emit "debug: JXL ${_JXL_VERSION} loaded from ${_jxl_self}"
-  unset _jxl_self
+  jxl::emit "debug: JXL ${_JXL_VERSION} loaded from ${_JXL_LIB_PATH}"
 fi
