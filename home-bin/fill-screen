@@ -10,3 +10,4 @@ done
 for (( i=0; i < nlines; i++ )); do
   echo $line;
 done
+exit 0

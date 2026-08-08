@@ -69,3 +69,4 @@ if [[ $? != 0 ]]; then
 fi
 
 echo "Desktop configured to sync with Dropbox at $DROPBOX_DESKTOP"
+exit 0

@@ -13,3 +13,4 @@ for flacfile in "$@"; do
   ffmpeg -v 0 -i "$flacfile" -acodec alac -vcodec copy "$m4afile"
   echo "Wrote: $m4afile"
 done
+exit 0

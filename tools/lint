@@ -314,3 +314,4 @@ function shebang_interp() {
 
 parse_cli "$@"
 main
+exit $?

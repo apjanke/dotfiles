@@ -113,3 +113,4 @@ function heading() {
 # ========== Main script ==========
 
 main "$@"
+exit $?
