@@ -90,7 +90,7 @@ if [[ $__uname = "Darwin" ]]; then
   # Make $JAVA_HOME defined by default, based on what's installed in the Mac
   # system Frameworks area
   if [[ -z $JAVA_HOME ]]; then
-    __my_java_home=$(/usr/libexec/java_home 2>/dev/null)
+    __my_java_home=$(/usr/libexec/java_home 2> /dev/null)
     if [[ $? = 0 ]]; then
       export JAVA_HOME="$__my_java_home"
     fi

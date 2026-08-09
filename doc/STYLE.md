@@ -19,6 +19,12 @@ first line of the statement.
 Doesn't apply where the lines are aligning with *each other* rather than continuing a
 statement – multi-item lists and pipeline stages keep their own alignment.
 
+### Redirection spacing
+
+A space between `>` (or `<`) and a destination that names a *file*: `> /dev/null`, not
+`>/dev/null`. No space when redirecting one stream to another by file descriptor: `2>&1`,
+not `2> &1`.
+
 ## Static checking
 
 `tools/lint` from the repo root; exits non-zero on findings.
