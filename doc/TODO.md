@@ -2,16 +2,26 @@
 
 ## General
 
+- Rename `~/bin` to `~/bin-jx`, leaving `/bin` available as a standard-ish dir that other programs use and write to.
+- `findd` - like `grin` but for `find`, that respects the same dir and pattern exclusions from `$JX_GRIN_EXCLUDES`
+  - Prob need to change the format of `$JX_GRIN_EXCLUDES`, bc it's currently `grep` option format, and `find` uses a different format. Maybe: Split in to two `$JX_GRIN_EXCLUDE_{DIRS,PATS}` vars that just have dir names and name patterns, ahd have `grin` and `findd` construct the appropriate command args from those.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
   - Consider `: ${MY_VAR:=default}` expansion form.
+- Check in VS Code suggested-packages list: Bash IDE, Rewrap, maybe markdownlint
+- `-site`/`-user`/`-local` - is having all three excessive? File stat & IO can be slow if `/home` is on a slow network share.
+- `jxl-lib.sh` loading version check
+  - `jxl-lib.sh` load-once guard (`if [[ -n "${_JXL_VERSION:-}" ]]`) should check whether a *different* version of JXL is already loaded in this shell, and emit a warning (maybe only when `$_JXL_DEBUG` is on) about the version difference, to catch the case when inconsistent source code is being used.
+- Add `jxl::debug()` like `info()`, that emits only when `$JXL_DEBUG` is on? Replaces inline `if [[ ... ]]` tests.
+- `jxl::show_shell_info()`
+  - Reverse the call stack display order, so it goes top -> bottom.
+  - Sort or otherwise order the variables displayed in "Caller-set interface" and "Invocation state"
+- Remove unneeded double-quotes on variables inside `[[ ... ]]` tests.
 - new `jx*` functions from `.profile` vs. local replacement files
   - `install-dotfiles` doesn't clobber an existing regular (non-symlink) `~/.profile`, which is intentional - the idea was to let a plain local file supersede the dotfiles-managed one, per-file. But `.dotlib/bashyrc.sh`'s per-machine local-loading loop now hard-depends on the `jx::*`/`_jx_source_maybe` functions defined in `.profile` (added 2026-08-08), so a superseding non-JX-aware `.profile` silently breaks that loop. Revisit: maybe factor those function definitions out of `.profile` into their own file, so `bashyrc.sh` doesn't depend on `.profile` having actually run.
 - Make `--dry-run` opt-in per command in JXL. A script or command function should be able to declare (through `$_JXL_COMMAND_INFO`, or an equivalent for shebang scripts) that it has no dry-run mode, after which `jxl::std_opt` rejects `--dry-run` as an unrecognized option and `jxl::std_options_help` stops advertising it. Today every JXL command advertises a `--dry-run` it may not actually implement, and `jxl::forbid_dry_run` only catches that after the user has already typed it.
-- Terminal colorization: basic support in JXL for colorization of output with basic ANSI terminal control escape codes, for use by command functions.
-  - Should detect whether outputting to a TTY, and only colorize if it's a TTY. May need to get a bit fancy about this so command substitution can still produce terminal escape sequences for eventual interpolation in string output which will be going to a TTY. Maybe just a variable that indicates "my output is going to a TTY", that's set at command start time and read by the TTY colorization functions.
 - Revisit: the environment can reach into non-interactive shells and change how scripts behave. Two vectors, verified 2026-08-06:
   - `BASH_ENV` - non-interactive bash sources whatever it points at, before running the script. Confirmed it can flip shell options: setting `nullglob` that way changed how an unmatched glob expanded inside a `#!/bin/bash` script. Not currently exposed (nothing here sets `BASH_ENV`, and it's unset in my env), but any script's behavior could be altered from outside if that changed. `BASHOPTS` was also tested and did *not* propagate, despite the bash manual implying it would.
   - zsh's equivalent is already active by design: zsh reads `.zshenv` for **all** invocations, including non-interactive `zsh -c`, and `setopt` there does apply to scripts. Ours then sources `.profile` → `dotlib/bashy-paths.sh`, so every `zsh -c` pays full `$PATH` setup and inherits whatever options `.zshenv` set. Worth asking whether `.zshenv` should be more minimal, and whether scripts should set the options they depend on rather than assuming defaults.
@@ -20,15 +30,8 @@
 - `zshrc-ohmyzsh.zsh`
   - Pull default values for ZSH_THEME up into .zshenv or .profile?
 - `.profile-early` hook - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough, before any conditional stuff in `.profile` or `.{bash,bashy,zsh}rc`, to work
-- `install-dotfiles`
-  - Make it safer.
-    - Still open: an *intermediate* parent directory in the nested tree that's itself a real file or a foreign symlink-to-a-directory isn't handled by `--clobber` at all -- `install_nested_tree`'s `mkdir -p` either fails outright or silently follows the symlink and writes leaf links inside someone else's directory, before `dotinstall::symlink` (and so `--clobber`) ever sees it.
-  - Safely handle case-insensitive filesystems and link target files that differ only in case. Maybe include option to normalize them to the current case of the files in the repo, or even do that by default.
-- Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
-  - When adding the first `nested/_ssh/` or `nested/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_nested`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
 - Namespace-prefix more internal variables, and add more `unset`/`unfunction` cleanup.
 - Fix everything to work with `sudo bash`.
-- Add more documentation. A Design doc.
 - Tool in zsh to quick switch to a simpler no-emoji theme suitable for copy-paste, in current session.
 - A `_jx_do` function to echo a command and then run it.
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
@@ -38,6 +41,33 @@
      - That prob means switching to a single variable to control package managers, with values `homebrew`, `macports`, `auto`, `both`, and `none`. And the default should prob be `auto`. Along with another variable that sets the preferred one for `auto` for the case that both exist.
 - Not sure I like the name `wet_vrb`. Maybe pick a better name? Or switch names `wet` and `wet_vrb`, interpreting `wet_vrb` to mean "`wet`, always with verbose-style output (regardless of whether `--verbose` enabled more)? And maybe it should also echo the command when `--debug` but not `--verbose` was given too?
 - Make sure the `wet` output call is safe against `-` characters; maybe need to switch to printf?
+- Documentation
+  - Add more documentation. A Design doc.
+  - Document the "matrix" of portability/coverage in README. (Axes: bash/zsh, login/non, interactive/non, Bash 3.x/4.x+.)
+- Terminal colorization: basic support in JXL for colorization of output with basic ANSI terminal control escape codes, for use by command functions.
+  - Should detect whether outputting to a TTY, and only colorize if it's a TTY. May need to get a bit fancy about this so command substitution can still produce terminal escape sequences for eventual interpolation in string output which will be going to a TTY. Maybe just a variable that indicates "my output is going to a TTY", that's set at command start time and read by the TTY colorization functions.
+
+### `jx-shell-info` things
+
+- "^" sigil for *non*-exported variables.
+  - Most variables displayed by `jx-shell-info` will be exported (env vars), and that's the normal case for them. They're currently marked by "^" to indicate the export. So should probably use "^" to instead mark non-exported shell-only variables, since that's the exceptional case.
+- Add a "?" sigil to mark missing files/dirs or non-resolving commands, for vars like `$GEM_HOME` and `$DROPBOX` which point at paths, and vars like `$VISUAL` that contain command names or paths.
+- Break "Standard variables" section back out in to editors / pagers / lscolors.
+- Maybe make the language toolchain displays (Java, Ruby, Python) optional, so the main display fits on one screen.
+- Move `conda` and `mamba` into the Python section. Maybe put `brew` and `port` in a "Package managers" section instead of generic "Commands".
+- Align/justify the "=" signs inside the language sections (Java, Ruby, Python) and Commands. And maybe across sections?
+
+### `install-dotfiles` things
+
+- Make it safer.
+  - Still open: an *intermediate* parent directory in the nested tree that's itself a real file or a foreign symlink-to-a-directory isn't handled by `--clobber` at all -- `install_nested_tree`'s `mkdir -p` either fails outright or silently follows the symlink and writes leaf links inside someone else's directory, before `dotinstall::symlink` (and so `--clobber`) ever sees it.
+  - Safely handle case-insensitive filesystems and link-target files that differ only in case on those. Maybe include option to normalize them to the current case of the files in the repo, or even do that by default.
+- Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
+  - When adding the first `nested/_ssh/` or `nested/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_nested`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
+
+## Architecture
+
+Rethink the JXL design. This is basically a library that is now being used by both my dotfiles (for in-shell command function definitions and some of its startup logic), and also by commands/programs like `install-dotfiles` that just happen to be implemented in shell. That `jxl-lib.sh` file lives in `dotlib/` under my dot files, and is sourced by `install-dotfiles` and things outside `dots/`. Feels weird. But maybe that's okay: I *don't* want to split this up in to multiple repos/projects and/or have my shell rc files take a dependency on a library that needs to be installed.
 
 ### Big "framework + config" repo split?
 
