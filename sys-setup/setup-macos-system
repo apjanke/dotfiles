@@ -32,9 +32,6 @@ EOF
 
 function main() {
 
-# Prompt for administrator password up front
-sudo -v
-
 ################################################
 # Tools and editors
 ################################################

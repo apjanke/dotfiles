@@ -4,10 +4,6 @@
 
 (Also includes stuff I just don't know how to do from the command line.)
 
-##  Core Bugs  ##
-
-- Don't `sudo -v`; let it authenticate lazily, since this script can't run unattended anyway. Or maybe have user sudo it explicitly.
-
 ##  System Setup Bugs  ##
 
 - Install Dropbox
