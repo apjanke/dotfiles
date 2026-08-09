@@ -1,0 +1,332 @@
+#!/bin/bash
+#
+# whatsmyip - report this machine's IP address, by one of several methods
+#
+# Consolidates the old myip()/lip()/whatismyip() interactive functions from bashyrc.sh
+# (see doc/TODO.md) -- they'd outgrown being shell functions.
+#
+#   whatsmyip [--mode opendns|ifconfigme|local] [-4|-6] [--no-copy]
+
+# Load JXL. See "Loading JXL" in dots/README.md.
+source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
+    || { echo >&2 "ERROR: failed to load jxl-lib.sh"; exit 1; }
+
+jxl::init_script
+jxl::use_short_names
+_JXL_EMIT_PROGNAME=1
+
+UNAME=$(uname)
+readonly UNAME
+
+MODE=opendns
+IP_FAMILY=4
+DO_COPY=1
+_MODE_SET=0
+
+function parse_cli() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --mode)
+        if [[ $# -lt 1 ]]; then
+          die "--mode requires a value: opendns, ifconfigme, or local"
+        fi
+        select_mode "$1" "--mode $1"
+        shift
+        ;;
+      --opendns)      select_mode opendns "--opendns" ;;
+      --ifconfigme)   select_mode ifconfigme "--ifconfigme" ;;
+      --local | -l)   select_mode local "--local" ;;
+      -4 | --ipv4)    IP_FAMILY=4 ;;
+      -6 | --ipv6)    IP_FAMILY=6 ;;
+      --copy)         DO_COPY=1 ;;
+      --no-copy)      DO_COPY=0 ;;
+      -*)
+        jxl::std_opt "$arg" || die "Unexpected option: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then echo "$HELP_SCREEN"; exit 0; fi
+        ;;
+      *)
+        die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        ;;
+    esac
+  done
+
+  readonly MODE IP_FAMILY DO_COPY
+}
+
+function select_mode() {
+  # select_mode <mode> <flag-as-typed> -- records the chosen mode, or dies if a different
+  # one was already chosen. Every mode-selecting option (--mode itself and its three
+  # bare-flag synonyms) routes through here, so there's one place that knows what
+  # "conflicting" means.
+  local new_mode="$1" flag="$2"
+
+  case "$new_mode" in
+    opendns | ifconfigme | local) ;;
+    *) die "Unrecognized mode: '${new_mode}'. Valid modes: opendns, ifconfigme, local" ;;
+  esac
+  if [[ $_MODE_SET == 1 && "$MODE" != "$new_mode" ]]; then
+    die "Conflicting mode options: already selected '${MODE}', then got '${flag}'"
+  fi
+  MODE="$new_mode"
+  _MODE_SET=1
+}
+
+# `readonly` goes after the read, not on the declaration: `read` can't write to a variable
+# that is already readonly, and the `|| true` would swallow the resulting error, leaving
+# the help screen silently empty.
+HELP_SCREEN=''
+IFS= read -r -d '' HELP_SCREEN <<EOHELP || true
+
+${PROGRAM_NAME} - report this machine's IP address, by one of several methods
+
+Usage:
+  ${PROGRAM_NAME} [--mode opendns|ifconfigme|local] [-4|-6] [--no-copy]
+
+Modes (default: opendns; two different ones together is an error):
+        --mode M      select a mode explicitly: opendns, ifconfigme, or local
+        --opendns     = --mode opendns: public IP via OpenDNS's resolver trick
+        --ifconfigme  = --mode ifconfigme: public IP via https://ifconfig.me
+    -l, --local       = --mode local: this machine's own address on its network
+
+Options:
+    -4, --ipv4        report an IPv4 address (default)
+    -6, --ipv6        report an IPv6 address
+        --copy        copy the result to the clipboard (default)
+        --no-copy     don't copy the result to the clipboard
+$(jxl::std_options_help)
+EOHELP
+readonly HELP_SCREEN
+
+function main() {
+  local ip
+
+  parse_cli "$@"
+
+  case "$MODE" in
+    opendns)    ip=$(get_ip_opendns)    || true ;;
+    ifconfigme) ip=$(get_ip_ifconfigme) || true ;;
+    local)      ip=$(get_ip_local)      || true ;;
+  esac
+
+  # opendns/ifconfigme route their lookup through `wet`, which -- under --dry-run --
+  # skips the network call and reports what it would have run, leaving $ip empty here.
+  # `local` never touches the network (just this machine's own routing table and
+  # interfaces), so it always runs for real; see get_ip_local.
+  if is_dry_run && [[ "$MODE" != local ]]; then
+    info "dry-run: no lookup performed; no address to report"
+    exit 0
+  fi
+
+  if [[ -z "$ip" ]]; then
+    die "Failed to determine an IP address (mode: ${MODE}, family: IPv${IP_FAMILY})"
+  fi
+
+  echo "$ip"
+  if [[ $DO_COPY == 1 ]]; then
+    copy_to_clipboard "$ip"
+  fi
+}
+
+function get_ip_opendns() {
+  # Public IP via OpenDNS's "what's my IP" resolver trick.
+  command -v dig >/dev/null 2>&1 \
+      || die "opendns mode needs 'dig', which is not on \$PATH"
+
+  local -a cmd
+  case "$IP_FAMILY" in
+    4)
+      # -4 forces the query itself over IPv4 transport. Without it, dig resolves
+      # resolver1.opendns.com to its AAAA record and queries over IPv6, and OpenDNS
+      # answers that with an empty answer section instead of the expected A record --
+      # confirmed on this machine, and the reason myip() silently printed a blank line.
+      cmd=(dig -4 +short +time=5 +tries=1 A myip.opendns.com @resolver1.opendns.com)
+      ;;
+    6)
+      cmd=(dig -6 +short +time=5 +tries=1 AAAA myip.opendns.com
+          @resolver1.ipv6-sandbox.opendns.com)
+      ;;
+  esac
+  wet "${cmd[@]}" || true
+}
+
+function get_ip_ifconfigme() {
+  # Public IP via the ifconfig.me HTTP echo service.
+  command -v curl >/dev/null 2>&1 \
+      || die "ifconfigme mode needs 'curl', which is not on \$PATH"
+
+  local -a cmd
+  case "$IP_FAMILY" in
+    4) cmd=(curl -fsS -4 --max-time 10 https://ifconfig.me) ;;
+    6) cmd=(curl -fsS -6 --max-time 10 https://ifconfig.me) ;;
+  esac
+  wet "${cmd[@]}" || true
+}
+
+function get_ip_local() {
+  # Local-only: no public network contact, just this machine's own routing table and
+  # interface list. Unlike the other two modes, this runs even under --dry-run -- see the
+  # comment in main().
+  case "$UNAME" in
+    Darwin | FreeBSD) get_ip_local_bsd ;;
+    *)                get_ip_local_linux ;;
+  esac
+}
+
+function get_ip_local_bsd() {
+  local iface ip cand
+
+  iface=$(bsd_default_route_iface)
+  if [[ -n "$iface" ]]; then
+    ip=$(bsd_iface_addr "$iface")
+    if [[ -n "$ip" ]]; then
+      echo "$ip"
+      return 0
+    fi
+  fi
+
+  # Fallback: the interfaces the old lip() function guessed at, in the same order. Not
+  # academic on this machine -- en0 is empty and en1 is the live interface, and the old
+  # code found it only by luck of trying en0 first and falling through.
+  for cand in en0 en1 bridge0; do
+    ip=$(bsd_iface_addr "$cand")
+    if [[ -n "$ip" ]]; then
+      echo "$ip"
+      return 0
+    fi
+  done
+}
+
+function bsd_default_route_iface() {
+  # Echoes the interface carrying the default route for $IP_FAMILY, or nothing. Always
+  # returns 0 -- "not found" is a legitimate outcome here, signaled by empty output, not a
+  # script-ending error.
+  local -a cmd=(route -n get)
+  [[ "$IP_FAMILY" == 6 ]] && cmd+=(-inet6)
+  cmd+=(default)
+
+  if command -v route >/dev/null 2>&1; then
+    "${cmd[@]}" 2>/dev/null | sed -n 's/^ *interface: *//p' | head -1
+  fi
+  return 0
+}
+
+function bsd_iface_addr() {
+  # bsd_iface_addr <iface> -- echoes its address for $IP_FAMILY, or nothing. Always
+  # returns 0, same reasoning as bsd_default_route_iface.
+  local iface="$1"
+
+  if [[ "$IP_FAMILY" == 4 ]]; then
+    if command -v ipconfig >/dev/null 2>&1; then
+      ipconfig getifaddr "$iface" 2>/dev/null
+    fi
+  else
+    # No 'ipconfig getv6ifaddr' subcommand exists (checked on this machine) -- parse
+    # 'ifconfig' instead. Skip link-local (fe80::) and deprecated temporary addresses to
+    # land on the stable global one -- not necessarily the same address macOS actually
+    # uses for outbound connections, which may be a rotating temporary privacy address.
+    if command -v ifconfig >/dev/null 2>&1; then
+      ifconfig "$iface" 2>/dev/null \
+          | awk '/inet6/ && $2 !~ /^fe80/ && !/deprecated/ { print $2; exit }'
+    fi
+  fi
+  return 0
+}
+
+function get_ip_local_linux() {
+  local ip cand
+
+  ip=$(linux_default_route_addr)
+  if [[ -n "$ip" ]]; then
+    echo "$ip"
+    return 0
+  fi
+
+  # Fallback: same candidate interfaces as the BSD path, read via 'ip addr' instead of
+  # ipconfig/ifconfig.
+  for cand in en0 en1 bridge0 eth0 wlan0; do
+    ip=$(linux_iface_addr "$cand")
+    if [[ -n "$ip" ]]; then
+      echo "$ip"
+      return 0
+    fi
+  done
+}
+
+function linux_default_route_addr() {
+  # Echoes the source address the kernel would use for $IP_FAMILY's default route, or
+  # nothing. `ip route get` already does the kernel's own source-address selection, so
+  # there's no separate interface step like the BSD path needs. Always returns 0.
+  local probe
+
+  if ! command -v ip >/dev/null 2>&1; then
+    return 0
+  fi
+  case "$IP_FAMILY" in
+    4) probe=1.1.1.1 ;;
+    6) probe=2606:4700:4700::1111 ;;
+  esac
+  ip "-${IP_FAMILY}" route get "$probe" 2>/dev/null \
+      | sed -n 's/.* src \([^ ]*\).*/\1/p' | head -1
+  return 0
+}
+
+function linux_iface_addr() {
+  # linux_iface_addr <iface> -- echoes its global-scope address for $IP_FAMILY, or
+  # nothing. Always returns 0.
+  local iface="$1"
+
+  if ! command -v ip >/dev/null 2>&1; then
+    return 0
+  fi
+  ip "-${IP_FAMILY}" -o addr show dev "$iface" scope global 2>/dev/null \
+      | sed -n 's#.* inet6\{0,1\} \([^/]*\)/.*#\1#p' | head -1
+  return 0
+}
+
+function copy_to_clipboard() {
+  # Copying is a secondary side effect, not the command's work product (stdout is), so a
+  # failure here is a warning, never a reason for whatsmyip itself to exit non-zero.
+  local ip="$1"
+  # Ordered candidates: name, then its fixed args as one string (word-split deliberately
+  # below; none of these need further quoting). First one found on $PATH wins.
+  local -a candidates=(
+    pbcopy    ''
+    wl-copy   ''
+    xclip     '-selection clipboard'
+    xsel      '--clipboard --input'
+    clip.exe  ''
+  )
+  local i name args rc
+
+  for (( i = 0; i < ${#candidates[@]}; i += 2 )); do
+    name="${candidates[i]}"
+    args="${candidates[i+1]}"
+    if command -v "$name" >/dev/null 2>&1; then
+      if is_dry_run; then
+        dry "copy to clipboard via ${name}"
+        return 0
+      fi
+      rc=0
+      # shellcheck disable=SC2086  # $args is a small fixed flag string, not user input
+      printf '%s' "$ip" | "$name" $args || rc=$?
+      if [[ $rc == 0 ]]; then
+        log_vrb "Copied to clipboard via ${name}"
+      else
+        warning "Failed to copy to clipboard via '${name}' (exit ${rc})"
+      fi
+      return 0
+    fi
+  done
+
+  log_vrb "No clipboard tool found on \$PATH" \
+      "(looked for pbcopy, wl-copy, xclip, xsel, clip.exe); skipping copy"
+}
+
+
+# ========== Main script ==========
+
+main "$@"
+exit $?

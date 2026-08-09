@@ -295,36 +295,7 @@ function wwhich() {
 # Fancycat
 alias c="pygmentize -O style=solarized -f console256 -g"
 
-# IP address discovery
-function myip() {
-  local ip
-  # This opendns thing might just be broken now
-  ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
-  echo "${ip}"
-  command -v pbcopy >/dev/null && echo "${ip}" | pbcopy
-}
-function lip() {
-  local ip rc iface
-  rc=1
-  # Check multiple ifaces, bc I'm often using en1 or bridge0 now
-  for iface in en0 en1 bridge0; do
-    ip=$(ipconfig getifaddr $iface)
-    if [[ -n $ip ]]; then
-      rc=0; break
-    fi
-  done
-  if [[ $rc == 0 ]]; then
-    echo "${ip}"
-    command -v pbcopy >/dev/null && echo "${ip}" | pbcopy
-  fi
-  return $rc
-}
-function whatismyip() {
-  local ip
-  ip=$(curl ifconfig.me)
-  echo "${ip}"
-  command -v pbcopy >/dev/null && echo "${ip}" | pbcopy
-}
+# IP address discovery moved to home-bin/whatsmyip -- these were too big for functions.
 
 # Fun stuff
 alias dadjoke="curl https://icanhazdadjoke.com --silent; echo"

@@ -1,0 +1,319 @@
+#!/bin/bash
+#
+# test-whatsmyip - exercise home-bin/whatsmyip
+#
+# Usage: ./dots/tests/test-whatsmyip   (or via ./dots/tests/run-tests)
+#
+# whatsmyip shells out to dig, curl, route, ipconfig, ifconfig, ip, uname, and a clipboard
+# tool, none of which this suite may actually invoke -- no network access, and no touching
+# the real clipboard. Every one of those names gets a stub script on a scratch $PATH, so
+# each code path is exercised deterministically. `uname` is stubbed too, which is what lets
+# the Linux branch of --local run and get checked from this (real) macOS test box.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+cd "$(dirname "$0")/../.."
+REPO="$PWD"
+
+# shellcheck source=dots/tests/lib.sh
+source "$REPO/dots/tests/lib.sh"
+trap cleanup_fake_homes EXIT
+
+WHATSMYIP="$REPO/home-bin/whatsmyip"
+
+function write_stub() {
+  # write_stub <dir> <name> <<'EOF' ... EOF -- writes and chmods a stub executable.
+  local dir="$1" name="$2"
+  cat > "$dir/$name"
+  chmod +x "$dir/$name"
+}
+
+function build_full_stub_bin() {
+  # The normal fixture: stub the tools whatsmyip shells out to, and record each call for
+  # assertions. $STUB_LOG must already be set. Left on the real $PATH by run_whatsmyip
+  # (prepended), so basename/dirname/sed/awk/head -- which whatsmyip and JXL also need,
+  # but which are not under test -- still resolve normally.
+  mkdir -p "$STUB_LOG"
+
+  write_stub "$STUB_BIN" uname <<'EOF'
+#!/bin/bash
+echo "${STUB_UNAME:-Darwin}"
+EOF
+
+  write_stub "$STUB_BIN" dig <<'EOF'
+#!/bin/bash
+echo "$@" >> "$STUB_LOG/dig.calls"
+if [[ "${STUB_DIG_FAIL:-0}" == 1 ]]; then
+  exit 1
+fi
+if [[ "${STUB_DIG_EMPTY:-0}" == 1 ]]; then
+  # The real bug this guards against: OpenDNS answering with an empty answer section
+  # (rc=0, no output) when dig queries over the wrong transport family.
+  exit 0
+fi
+case " $* " in
+  *' -6 '*) echo '2001:db8::dead:beef' ;;
+  *)        echo '203.0.113.7' ;;
+esac
+EOF
+
+  write_stub "$STUB_BIN" curl <<'EOF'
+#!/bin/bash
+echo "$@" >> "$STUB_LOG/curl.calls"
+if [[ "${STUB_CURL_FAIL:-0}" == 1 ]]; then
+  exit 1
+fi
+case " $* " in
+  *' -6 '*) echo '2001:db8::cafe:1' ;;
+  *)        echo '198.51.100.23' ;;
+esac
+EOF
+
+  # BSD/macOS --local path: route -> interface name, then ipconfig/ifconfig -> address.
+  # "en9"/"en9v6" stand in for the real en0/en1/bridge0 candidates -- only reachable via
+  # the default-route step here, never via the hardcoded fallback list, so a test relying
+  # on one of these names is exercising route detection, not the fallback.
+  write_stub "$STUB_BIN" route <<'EOF'
+#!/bin/bash
+echo "$@" >> "$STUB_LOG/route.calls"
+case " $* " in
+  *' -inet6 '*) echo '   interface: en9v6' ;;
+  *)            echo '   interface: en9' ;;
+esac
+EOF
+
+  write_stub "$STUB_BIN" ipconfig <<'EOF'
+#!/bin/bash
+echo "$@" >> "$STUB_LOG/ipconfig.calls"
+if [[ "$1" == getifaddr && "$2" == en9 ]]; then
+  echo '203.0.113.9'
+  exit 0
+fi
+exit 1
+EOF
+
+  write_stub "$STUB_BIN" ifconfig <<'EOF'
+#!/bin/bash
+echo "$@" >> "$STUB_LOG/ifconfig.calls"
+if [[ "$1" == en9v6 ]]; then
+  # A link-local line first, then a deprecated temporary one, then the stable global
+  # address -- get_ip_local_bsd must skip the first two and land on the third, same as it
+  # would against real `ifconfig` output.
+  printf '\tinet6 fe80::dead:beef%%en9v6 prefixlen 64 secured scopeid 0xb \n'
+  printf '\tinet6 2001:db8::bad:temp prefixlen 64 deprecated autoconf temporary \n'
+  printf '\tinet6 2001:db8::9999 prefixlen 64 autoconf secured \n'
+  exit 0
+fi
+echo "ifconfig: interface $1 does not exist" >&2
+exit 1
+EOF
+
+  # Linux --local path: `ip route get` alone yields the address via its "src" field, no
+  # separate interface step. "eth9"/10.0.0.x and 2001:db8::10 stand in for real addresses.
+  write_stub "$STUB_BIN" ip <<'EOF'
+#!/bin/bash
+echo "$@" >> "$STUB_LOG/ip.calls"
+case "$*" in
+  *'route get'*)
+    case "$*" in
+      *2606:4700:4700::1111*)
+        echo '2606:4700:4700::1111 via fe80::1 dev eth9 src 2001:db8::10 metric 1024'
+        ;;
+      *)
+        echo '1.1.1.1 via 192.168.1.1 dev eth9 src 10.0.0.10 uid 1000'
+        ;;
+    esac
+    ;;
+esac
+EOF
+
+  write_stub "$STUB_BIN" pbcopy <<'EOF'
+#!/bin/bash
+if [[ "${STUB_PBCOPY_FAIL:-0}" == 1 ]]; then
+  cat > /dev/null
+  exit 1
+fi
+cat > "$STUB_LOG/clipboard"
+EOF
+}
+
+function build_minimal_stub_bin() {
+  # A hermetic fixture with nothing on $PATH but what whatsmyip's opendns path and JXL's
+  # own boot sequence need -- no real /usr/bin, so no real pbcopy either. This is the only
+  # way to genuinely test "no clipboard tool found": on macOS, prepending stubs to the real
+  # $PATH still leaves the real /usr/bin/pbcopy reachable.
+  write_stub "$MINIMAL_STUB_BIN" basename <<'EOF'
+#!/bin/bash
+echo "${1##*/}"
+EOF
+
+  write_stub "$MINIMAL_STUB_BIN" dirname <<'EOF'
+#!/bin/bash
+d="${1%/*}"
+if [[ "$d" == "$1" ]]; then d='.'; fi
+echo "$d"
+EOF
+
+  write_stub "$MINIMAL_STUB_BIN" uname <<'EOF'
+#!/bin/bash
+echo 'Darwin'
+EOF
+
+  write_stub "$MINIMAL_STUB_BIN" dig <<'EOF'
+#!/bin/bash
+echo '203.0.113.7'
+EOF
+}
+
+function run_whatsmyip() {
+  # run_whatsmyip full|minimal ARGS... -- echoes combined stdout+stderr, then "rc=N".
+  local path_mode="$1"; shift
+  local out rc=0
+  case "$path_mode" in
+    full)    out=$(PATH="$STUB_BIN:$PATH" "$WHATSMYIP" "$@" 2>&1) || rc=$? ;;
+    minimal) out=$(PATH="$MINIMAL_STUB_BIN" "$WHATSMYIP" "$@" 2>&1) || rc=$? ;;
+    *)       fail "run_whatsmyip" "unknown path_mode: ${path_mode}"; return ;;
+  esac
+  printf '%s\nrc=%s\n' "$out" "$rc"
+}
+
+function assert_file_exists() {
+  local path="$1" desc="$2"
+  if [[ -e "$path" ]]; then ok "$desc"; else fail "$desc" "missing: $path"; fi
+}
+
+function assert_file_absent() {
+  local path="$1" desc="$2"
+  if [[ ! -e "$path" ]]; then ok "$desc"; else fail "$desc" "unexpectedly exists: $path"; fi
+}
+
+function main() {
+  new_fake_home; STUB_BIN="$FAKE_HOME/bin"; mkdir -p "$STUB_BIN"
+  new_fake_home; MINIMAL_STUB_BIN="$FAKE_HOME/bin"; mkdir -p "$MINIMAL_STUB_BIN"
+  new_fake_home; STUB_LOG="$FAKE_HOME"
+  export STUB_LOG
+  build_full_stub_bin
+  build_minimal_stub_bin
+
+  local got
+
+  echo "===== mode selection ====="
+  got=$(run_whatsmyip full --no-copy)
+  assert_contains "$got" '203.0.113.7' 'default mode is opendns'
+  assert_contains "$got" 'rc=0' 'opendns exits 0'
+
+  got=$(run_whatsmyip full --opendns --no-copy)
+  assert_contains "$got" '203.0.113.7' '--opendns matches the default'
+
+  got=$(run_whatsmyip full --mode opendns --no-copy)
+  assert_contains "$got" '203.0.113.7' '--mode opendns matches the default'
+
+  got=$(run_whatsmyip full --ifconfigme --no-copy)
+  assert_contains "$got" '198.51.100.23' '--ifconfigme selects the ifconfig.me path'
+
+  got=$(run_whatsmyip full --mode ifconfigme --no-copy)
+  assert_contains "$got" '198.51.100.23' '--mode ifconfigme is a synonym for --ifconfigme'
+
+  got=$(run_whatsmyip full -6 --no-copy)
+  assert_contains "$got" '2001:db8::dead:beef' '-6 asks opendns for an IPv6 address'
+  assert_contains "$(cat "$STUB_LOG/dig.calls")" '-6' \
+      '-6 is actually passed through to dig'
+
+  echo "===== --local (BSD/macOS path -- the default stub uname) ====="
+  got=$(run_whatsmyip full --local --no-copy)
+  assert_contains "$got" '203.0.113.9' \
+      '--local finds the default-route interface and its v4 address'
+
+  got=$(run_whatsmyip full --local -6 --no-copy)
+  assert_contains "$got" '2001:db8::9999' \
+      '--local -6 skips link-local and deprecated addresses to find the stable one'
+
+  echo "===== --local (Linux path, via stubbed uname) ====="
+  got=$(STUB_UNAME=Linux run_whatsmyip full --local --no-copy)
+  assert_contains "$got" '10.0.0.10' \
+      'Linux --local reads the src address straight from "ip route get"'
+
+  got=$(STUB_UNAME=Linux run_whatsmyip full --local -6 --no-copy)
+  assert_contains "$got" '2001:db8::10' 'Linux --local -6 does the same for IPv6'
+
+  echo "===== conflicting and invalid options ====="
+  got=$(run_whatsmyip full --local --mode opendns --no-copy)
+  assert_contains "$got" 'Conflicting mode options' \
+      'two different mode selections is an error'
+  assert_contains "$got" 'rc=1' 'a conflicting mode selection exits non-zero'
+
+  got=$(run_whatsmyip full --opendns --opendns --no-copy)
+  assert_contains "$got" 'rc=0' 'repeating the same mode twice is not a conflict'
+
+  got=$(run_whatsmyip full --mode bogus --no-copy)
+  assert_contains "$got" "Unrecognized mode: 'bogus'" 'an unrecognized --mode value errors'
+  assert_contains "$got" 'rc=1' 'an unrecognized --mode value exits non-zero'
+
+  got=$(run_whatsmyip full --nope --no-copy)
+  assert_contains "$got" 'Unexpected option: --nope' 'an unknown option errors'
+  assert_contains "$got" 'rc=1' 'an unknown option exits non-zero'
+
+  echo "===== help ====="
+  got=$(run_whatsmyip full --help)
+  assert_contains "$got" 'rc=0' '--help exits 0'
+  assert_contains "$got" '--opendns' 'help names opendns'
+  assert_contains "$got" '--ifconfigme' 'help names ifconfigme'
+  assert_contains "$got" '--local' 'help names local'
+  assert_contains "$got" '--mode M' 'help documents --mode'
+
+  echo "===== an empty lookup result is an error, not a silent blank line ====="
+  # This is the bug that motivated the rewrite: the old myip() got an empty answer from
+  # dig (rc=0) and happily echoed a blank line and "succeeded".
+  got=$(STUB_DIG_EMPTY=1 run_whatsmyip full --no-copy)
+  assert_contains "$got" 'Failed to determine an IP address' \
+      'an empty (but rc=0) lookup result is reported as a failure'
+  assert_contains "$got" 'rc=1' 'an empty lookup result exits non-zero'
+
+  echo "===== clipboard ====="
+  rm -f "$STUB_LOG/clipboard"
+  run_whatsmyip full --no-copy > /dev/null
+  assert_file_absent "$STUB_LOG/clipboard" '--no-copy leaves the clipboard untouched'
+
+  rm -f "$STUB_LOG/clipboard"
+  run_whatsmyip full > /dev/null
+  assert_file_exists "$STUB_LOG/clipboard" 'copy is on by default'
+  assert_eq "$(cat "$STUB_LOG/clipboard")" '203.0.113.7' \
+      'the copied value is the address that was printed'
+
+  got=$(STUB_PBCOPY_FAIL=1 run_whatsmyip full --verbose)
+  assert_contains "$got" 'rc=0' \
+      'a failed clipboard copy does not fail the overall command'
+  assert_contains "$got" "Failed to copy to clipboard via 'pbcopy'" \
+      'a failed clipboard copy is reported as a warning'
+
+  got=$(run_whatsmyip minimal --verbose)
+  assert_contains "$got" 'rc=0' 'no clipboard tool found still exits 0'
+  assert_contains "$got" 'No clipboard tool found' \
+      'no clipboard tool found is reported, verbosely, as informational'
+
+  echo "===== --dry-run ====="
+  rm -f "$STUB_LOG/dig.calls"
+  got=$(run_whatsmyip full --dry-run --verbose)
+  assert_contains "$got" 'rc=0' 'dry-run exits 0'
+  assert_contains "$got" 'dry-run: would:' 'dry-run reports the query it would have made'
+  assert_contains "$got" 'no lookup performed' \
+      'dry-run says plainly that no address was determined'
+  assert_not_contains "$got" '203.0.113.7' 'dry-run does not print an address'
+  assert_file_absent "$STUB_LOG/dig.calls" 'dry-run never actually calls dig'
+
+  got=$(run_whatsmyip full --dry-run --local --no-copy)
+  assert_contains "$got" '203.0.113.9' \
+      '--local runs for real even under --dry-run, since it never touches the network'
+
+  rm -f "$STUB_LOG/clipboard"
+  got=$(run_whatsmyip full --dry-run --local --verbose)
+  assert_contains "$got" 'dry-run: would: copy to clipboard via pbcopy' \
+      'dry-run reports the clipboard copy it would have made'
+  assert_file_absent "$STUB_LOG/clipboard" 'dry-run does not actually copy to the clipboard'
+}
+
+main
+print_summary
+exit $(( FAILS > 0 ? 1 : 0 ))

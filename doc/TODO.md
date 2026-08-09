@@ -2,7 +2,6 @@
 
 ## General
 
-- Pull myip()/lip()/whatismyip out from bashyrc to an external command/program in `home-bin`. These are prob too big for functions now.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
