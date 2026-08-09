@@ -63,7 +63,7 @@ The `setup-macos-system` and `setup-macos-user` scripts can only have soft depen
 
 ## AI use disclosure
 
-Some of the code in this repo was produced with the assistance of generative AI. Specifically, Claude Code. This AI use started on 8/6/2026 with commit "deep selective linking". The code in the git history prior to that is AI-clean.
+Some of the code in this repo was produced with the assistance of generative AI. Specifically, Claude Code. This AI use started on 8/6/2026 with commit cc15c1b ("deep selective linking"). The code in the git history prior to that is AI-clean.
 
 ## License
 
