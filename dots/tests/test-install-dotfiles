@@ -194,6 +194,219 @@ function run_tests() {
         "was $before, now $(readlink "$FAKE_HOME/.bashrc")"
   fi
 
+  echo "===== .linkdir: a marked directory links whole ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  echo 'content' > "$FAKE_DOTS/all-os/nested/_foo/leaf.txt"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS")
+  assert_symlink_to '.foo' "$FAKE_DOTS/all-os/nested/_foo" \
+      '.linkdir makes the directory itself one symlink'
+  # Not assert_absent on '.foo/leaf.txt' or '.foo/.linkdir': .foo is a symlink to the
+  # source dir, so its contents are reachable through it regardless. What matters -- that
+  # leaf.txt is not ALSO linked individually, i.e. .foo is a symlink rather than a real
+  # directory containing its own leaf symlinks -- is exactly what assert_symlink_to above
+  # already proves.
+  assert_absent '.linkdir' '.linkdir marker files are never linked into ~'
+  assert_not_contains "$out" '.linkdir ' \
+      '.linkdir is never itself treated as something to link'
+
+  echo "===== .linkdirs: each child directory links whole ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_skills/one" "$FAKE_DOTS/all-os/nested/_skills/two"
+  touch "$FAKE_DOTS/all-os/nested/_skills/.linkdirs"
+  echo 'one' > "$FAKE_DOTS/all-os/nested/_skills/one/SKILL.md"
+  echo 'two' > "$FAKE_DOTS/all-os/nested/_skills/two/SKILL.md"
+  echo 'sibling file' > "$FAKE_DOTS/all-os/nested/_skills/README.md"
+  install_into_fake_home --dots-dir "$FAKE_DOTS" > /dev/null
+  assert_symlink_to '.skills/one' "$FAKE_DOTS/all-os/nested/_skills/one" \
+      'each child directory of a .linkdirs dir links whole'
+  assert_symlink_to '.skills/two' "$FAKE_DOTS/all-os/nested/_skills/two" \
+      'including a second child directory'
+  assert_real_dir '.skills' 'the .linkdirs-marked directory itself stays real'
+  assert_symlink_to '.skills/README.md' "$FAKE_DOTS/all-os/nested/_skills/README.md" \
+      'a non-directory sibling of the marked children still links as a leaf file'
+  assert_absent '.linkdirs' '.linkdirs marker files are never linked into ~'
+
+  echo "===== .linkdirs: a child also marked .linkdir is linked once, not twice ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_skills/one"
+  touch "$FAKE_DOTS/all-os/nested/_skills/.linkdirs"
+  touch "$FAKE_DOTS/all-os/nested/_skills/one/.linkdir"
+  echo 'one' > "$FAKE_DOTS/all-os/nested/_skills/one/SKILL.md"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS")
+  assert_symlink_to '.skills/one' "$FAKE_DOTS/all-os/nested/_skills/one" \
+      'a child covered by both markers still links whole'
+  assert_eq "$(printf '%s\n' "$out" | grep -c 'Linked: \.skills/one ')" 1 \
+      'and is linked exactly once, not once per marker'
+
+  echo "===== .linkdir at a tree root is a hard error ====="
+  new_fake_home
+  new_fake_dots
+  touch "$FAKE_DOTS/all-os/nested/.linkdir"
+  rc=0
+  install_into_fake_home --dots-dir "$FAKE_DOTS" > /dev/null 2>&1 || rc=$?
+  assert_eq "$rc" 1 '.linkdir at a nested tree root exits non-zero'
+  leftovers=$(find "$FAKE_HOME" -mindepth 1 2>/dev/null || true)
+  assert_eq "$leftovers" '' '.linkdir at a nested tree root writes nothing to ~'
+
+  echo "===== a leaf file target nested under a whole-linked directory is an error ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  mkdir -p "$FAKE_DOTS/macos/nested/_foo"
+  echo 'stray leaf' > "$FAKE_DOTS/macos/nested/_foo/leaf.txt"
+  rc=0
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS") || rc=$?
+  assert_eq "$rc" 1 'a file target under a dir target exits non-zero'
+  assert_contains "$out" 'nested under' 'the error names the containment'
+  leftovers=$(find "$FAKE_HOME" -mindepth 1 2>/dev/null || true)
+  assert_eq "$leftovers" '' 'nothing was written to ~'
+  # The bug this specifically guards against: validating per-tier on source paths (instead
+  # of in target space) would miss this case, and the leaf file's `ln` would then resolve
+  # THROUGH the newly created .foo symlink and write into the source tree itself.
+  assert_eq "$(find "$FAKE_DOTS" -type f | sort)" \
+      "$(printf '%s\n%s' \
+          "$FAKE_DOTS/all-os/nested/_foo/.linkdir" \
+          "$FAKE_DOTS/macos/nested/_foo/leaf.txt" | sort)" \
+      'the source tree itself was not modified'
+
+  echo "===== a directory target nested under another directory target is an error ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo/bar"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  touch "$FAKE_DOTS/all-os/nested/_foo/bar/.linkdir"
+  rc=0
+  install_into_fake_home --dots-dir "$FAKE_DOTS" > /dev/null 2>&1 || rc=$?
+  assert_eq "$rc" 1 'a dir target nested under another dir target exits non-zero'
+
+  echo "===== the same target as a directory in one tier and a file in another is an error ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  mkdir -p "$FAKE_DOTS/macos/nested"
+  echo 'a file where a dir is expected' > "$FAKE_DOTS/macos/nested/_foo"
+  rc=0
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS") || rc=$?
+  assert_eq "$rc" 1 'dir-vs-file kind mismatch across tiers exits non-zero'
+  assert_contains "$out" 'whole-linked directory' 'the error names the conflict'
+
+  echo "===== \$OSNAME's .linkdir shadows all-os's .linkdir on the same target ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  mkdir -p "$FAKE_DOTS/macos/nested/_foo"
+  touch "$FAKE_DOTS/macos/nested/_foo/.linkdir"
+  install_into_fake_home --dots-dir "$FAKE_DOTS" > /dev/null
+  assert_symlink_to '.foo' "$FAKE_DOTS/macos/nested/_foo" \
+      "\$OSNAME .linkdir overrides all-os .linkdir on a matching target"
+
+  echo "===== dry run previews a whole-directory link and writes nothing ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS" --dry-run) || true
+  assert_contains "$out" 'Linked: .foo' \
+      'dry run previews the whole-directory link like any other'
+  leftovers=$(find "$FAKE_HOME" -mindepth 1 2>/dev/null || true)
+  assert_eq "$leftovers" '' 'dry run creates nothing, including no mkdir-ed parents'
+
+  echo "===== idempotence for a whole-directory link ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  install_into_fake_home --dots-dir "$FAKE_DOTS" > /dev/null
+  out2=$(install_into_fake_home --dots-dir "$FAKE_DOTS" -v)
+  assert_contains "$out2" 'Already set up: .foo ' \
+      'second run reports the whole-directory link unchanged'
+
+  echo "===== a real directory at a .linkdir target is skipped, not clobbered ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  mkdir -p "$FAKE_HOME/.foo"
+  echo 'hand-made, do not touch' > "$FAKE_HOME/.foo/mine.txt"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS")
+  assert_contains "$out" 'SKIPPED: .foo is a non-symlink directory' \
+      'a real directory at a .linkdir target is reported as skipped'
+  assert_real_dir '.foo' 'and is left as a real directory, not replaced'
+  if [[ -f "$FAKE_HOME/.foo/mine.txt" ]]; then
+    ok 'its contents survived'
+  else
+    fail 'its contents survived'
+  fi
+
+  echo "===== a leaf-file symlink pointing elsewhere is skipped by default, not silently left ====="
+  # Regression test: dotinstall::symlink used to fall through its -L branch with no else
+  # when the existing symlink pointed somewhere else -- not relinked, not counted, not
+  # reported. A real migration (an install-dotfiles-private tree moving from files/ to
+  # dots/) hit this: every entry silently did nothing, and the summary claimed everything
+  # was already up to date while every link still pointed at the old location.
+  #
+  # The stale target has to be a real file -- assert_symlink_to also checks the symlink
+  # isn't dangling, and a fictional path would always be.
+  local stale_file="$REPO/dots/all-os/flat/profile.sh"
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home)
+  assert_contains "$out" "SKIPPED: .bashrc is a symlink to '$stale_file'" \
+      'a symlink pointing elsewhere is reported as skipped, naming its current target'
+  assert_symlink_to '.bashrc' "$stale_file" \
+      'and is left untouched, not silently ignored nor relinked'
+
+  echo "===== --relink forces it to update instead ====="
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink -v)
+  assert_contains "$out" 'Relinked: .bashrc' '--relink reports the relink'
+  assert_contains "$out" "(was -> $stale_file)" 'and names what it was pointing at before'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
+      'and it now points at the correct target'
+
+  echo "===== --relink --dry-run previews without writing ====="
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink --dry-run) || true
+  assert_contains "$out" 'Relinked: .bashrc' 'dry run previews the relink'
+  assert_symlink_to '.bashrc' "$stale_file" 'dry run leaves the stale link exactly as it was'
+
+  echo "===== a second --relink run against an already-correct link is a no-op ====="
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  install_into_fake_home --relink > /dev/null
+  out2=$(install_into_fake_home --relink -v)
+  assert_contains "$out2" 'Already set up: .bashrc ' \
+      'a link already pointing correctly is reported unchanged, not relinked again'
+  assert_not_contains "$out2" 'Relinked:' 'and no Relinked line appears'
+
+  echo "===== a .linkdir whole-directory symlink pointing elsewhere behaves the same way ====="
+  # The exact real-world shape of the bug above: a Claude Code skill directory symlink left
+  # pointing at the pre-migration location.
+  local stale_dir="$REPO/dots/all-os/flat/dotlib"
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  ln -s "$stale_dir" "$FAKE_HOME/.foo"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS")
+  assert_contains "$out" "SKIPPED: .foo is a symlink to '$stale_dir'" \
+      'by default, a stale whole-directory link is reported as skipped'
+  assert_symlink_to '.foo' "$stale_dir" 'and left untouched'
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS" --relink)
+  assert_contains "$out" 'Relinked: .foo' 'with --relink, it is updated'
+  assert_symlink_to '.foo' "$FAKE_DOTS/all-os/nested/_foo" \
+      'and now points at the correct whole-linked directory'
+
   echo "===== the real \$HOME was never touched ====="
   # Compare against a snapshot taken before any test ran, rather than against the current
   # repo layout. Comparing to the layout conflates two things, and trips on a rearranged

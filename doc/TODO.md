@@ -24,7 +24,9 @@
   - Add support for relative symlinks, like `.hgignore_global -> .gitignore_global`?
 - `install-dotfiles`
   - Make it safer.
-    - Don't replace existing non-symlink files, unless `--clobber --yes-really` is given. Make backups of clobbered files. Only update existing symlinks iff they already point somewhere under this repo (which indicates they are dotfiles-managed); do not update symlinks pointing elsewhere.
+    - Don't replace existing non-symlink files, unless `--clobber --yes-really` is given. Make backups of clobbered files.
+    - Done: a symlink pointing somewhere other than the computed source is no longer silently left alone — it's reported `SKIPPED` (naming its current target), and a new `--relink` flag force-updates it. Found via a real migration (`install-dotfiles-private`'s `files/` → `dots/` move): every `~/.claude/*` entry hit the old silent no-op, and `--dry-run` claimed everything was already up to date while every link still pointed at the stale location.
+    - Still open: `--relink` is a blunt, explicit opt-in, not the smarter behavior originally imagined here — auto-updating only a symlink that already points somewhere recognizable as *this* repo (or a variant of it), and leaving anything else alone even under `--relink`. That distinction still doesn't exist.
   - Safely handle case-insensitive filesystems and link target files that differ only in case. Maybe include option to normalize them to the current case of the files in the repo, or even do that by default.
 - Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
   - When adding the first `nested/_ssh/` or `nested/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_nested`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
@@ -46,7 +48,7 @@
 ### Big "framework + config" repo split?
 
 - The `dots/` project subdir mixes two things: the sync/install framework and shell-rcfile structure (bash+zsh, multiple configurators) vs. my personal dotfile contents/preferences. Consider splitting the framework part out as its own project/repo, maybe named "dotframe" or "dotframe-jx". Not started.
-- Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Not started.
+- Split this repo into a public `dotfiles` (framework + non-sensitive config) and a private `dotfiles-private` repo for anything sensitive (starting with `~/.claude/CLAUDE.md`), with `install-dotfiles` layering the private repo's files in. Started: the linking engine now lives in `lib/dotinstall-lib.sh`, shared with `dotfiles-private`'s own `install-dotfiles-private`; `.linkdir`/`.linkdirs` markers support whole-directory links at an arbitrary nesting depth, which `~/.claude/skills/<skill>/` needs.
 - Factor out user-specific customizations (like the list of "default" user names) to separate files, to make this easier to reuse across users.
 - Load Ruby stuff from alternate locations and different platforms.
 
