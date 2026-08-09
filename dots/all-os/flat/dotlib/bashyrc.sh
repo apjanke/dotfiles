@@ -301,7 +301,7 @@ function myip() {
   # This opendns thing might just be broken now
   ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
   echo "${ip}"
-  command -v >/dev/null && echo "${ip}" | pbcopy
+  command -v pbcopy >/dev/null && echo "${ip}" | pbcopy
 }
 function lip() {
   local ip rc iface
@@ -310,17 +310,21 @@ function lip() {
   for iface in en0 en1 bridge0; do
     ip=$(ipconfig getifaddr $iface)
     if [[ -n $ip ]]; then
-      rc=0
-      break
+      rc=0; break
     fi
   done
   if [[ $rc == 0 ]]; then
     echo "${ip}"
-    command -v >/dev/null && echo "${ip}" | pbcopy
+    command -v pbcopy >/dev/null && echo "${ip}" | pbcopy
   fi
   return $rc
 }
-alias whatismyip='curl ifconfig.me; echo'
+function whatismyip() {
+  local ip
+  ip=$(curl ifconfig.me)
+  echo "${ip}"
+  command -v pbcopy >/dev/null && echo "${ip}" | pbcopy
+}
 
 # Fun stuff
 alias dadjoke="curl https://icanhazdadjoke.com --silent; echo"
