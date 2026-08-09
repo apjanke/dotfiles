@@ -185,3 +185,13 @@ function new_fake_home() {
   FAKE_HOME=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
   FAKE_HOMES+=("$FAKE_HOME")
 }
+
+function new_fake_dots() {
+  # A synthetic dots/ tree for tests that build their own fixtures rather than touching
+  # the tracked one. Sets $FAKE_DOTS; pass it to install-dotfiles as --dots-dir. Reuses the
+  # dotfiles-test.* cleanup in cleanup_fake_homes -- that match is on the temp-dir naming
+  # template, not on what the dir is used for.
+  FAKE_DOTS=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
+  FAKE_HOMES+=("$FAKE_DOTS")
+  mkdir -p "$FAKE_DOTS/all-os/flat" "$FAKE_DOTS/all-os/nested"
+}

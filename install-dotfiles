@@ -42,12 +42,14 @@ Usage:
   $PROGRAM_NAME --help
 
 Options:
-    -x, --trace     trace program execution
+    -x, --trace         trace program execution
+        --dots-dir DIR  install from DIR instead of the repo's own dots/ (for tests)
 $(jxl::std_options_help)
 EOF
 }
 
 OPT_TRACE=0
+OPT_DOTS_DIR=''
 
 ANY_CHANGED=0 ALREADY=0 SKIPPED=0 FAILED=0
 
@@ -60,7 +62,7 @@ function main() {
   # ~ points at itself.
   sourcedir=$(cd "$(dirname "$0")" && pwd)
   dotfiles_repo_dir="$sourcedir"
-  dotdir="$sourcedir/dots"
+  dotdir="${OPT_DOTS_DIR:-$sourcedir/dots}"
   todir=$HOME
 
   detect_os_type
@@ -112,6 +114,7 @@ function parse_cli() {
     arg="$1"; shift
     case "$arg" in
       --trace | -x)   OPT_TRACE=1 ;;
+      --dots-dir)     OPT_DOTS_DIR="$1"; shift ;;
       *)
         jxl::std_opt "$arg" \
             || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
@@ -120,7 +123,7 @@ function parse_cli() {
     esac
   done
 
-  readonly OPT_TRACE
+  readonly OPT_TRACE OPT_DOTS_DIR
 }
 
 # ========== Script-specific code ==========
