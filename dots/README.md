@@ -205,9 +205,9 @@ On failure the rc file **complains and carries on** rather than returning. Sever
 source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" || exit 1
 ```
 
-Always the repo copy, never `~/.dotlib`, so a script can never be paired with a mismatched library version. The repo is always reachable: these scripts live in it, and `~/bin` is a symlink into it, so if the script ran at all the checkout is present.
+Always the repo copy, never `~/.dotlib`, so a script can never be paired with a mismatched library version. The repo is always reachable: these scripts live in it, and `~/bin-jx` is a symlink into it, so if the script ran at all the checkout is present.
 
-`pwd -P` because `~/bin` is that symlink – the path up to the repo root has to be relative to the physical directory, not the logical one. The relative prefix varies with how deep the script sits, so this line is not identical everywhere. `$0` rather than `${BASH_SOURCE[0]}` because these are only ever run, never sourced.
+`pwd -P` because `~/bin-jx` is that symlink – the path up to the repo root has to be relative to the physical directory, not the logical one. The relative prefix varies with how deep the script sits, so this line is not identical everywhere. `$0` rather than `${BASH_SOURCE[0]}` because these are only ever run, never sourced.
 
 `|| exit 1` so a broken checkout fails on one clear line instead of cascading into `jxl::init_script: command not found` and everything after it. `errexit` cannot cover this, since turning it on is `jxl::init_script`'s job and that has not run yet.
 
@@ -217,7 +217,7 @@ Symlinking is split across two sibling trees under each OS root, per the "Organi
 
 The linking engine itself (both trees, both scripts below) is in `lib/dotinstall-lib.sh` at the repo root, shared with other repos' own installers.
 
-The same `bin` directory will be linked on all platforms, so it needs to have portability support inside it, instead of defining alternate platform-specific `bin` dirs. This is by design, since it will mostly contain script files.
+The same `bin-jx` directory will be linked on all platforms, so it needs to have portability support inside it, instead of defining alternate platform-specific `bin-jx` dirs. This is by design, since it will mostly contain script files.
 
 I mostly test this on macOS and a bit on Linux, but it "should" work on other OSes that support Bash and Zsh.
 

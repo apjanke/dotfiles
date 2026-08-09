@@ -61,4 +61,4 @@ Keep them short. Assume a reader proficient in bash and zsh and already familiar
 
 Partly aspirational; existing code hasn't fully migrated.
 
-This does not apply to `sys-setup/`, `home-bin/`, or `tools/`, which hold standalone shebang scripts where nothing persists past execution. Those use plain names, with a bare leading underscore for small internal helpers (`_do`, `_read_lines`) alongside unprefixed `main` and `usage`.
+This does not apply to `sys-setup/`, `home-bin-jx/`, or `tools/`, which hold standalone shebang scripts where nothing persists past execution. Those use plain names, with a bare leading underscore for small internal helpers (`_do`, `_read_lines`) alongside unprefixed `main` and `usage`.

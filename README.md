@@ -15,7 +15,7 @@ If you want to use this repo, make a copy, read and understand it, and load it i
 There are a few different parts to this repo.
 
 - [*dots*](dots/README.md) – Unix-style configuration files for dropping in to your home directory.
-- *home-bin* – Portable-ish little Unix scripts and programs I want on all my computers. Linked in as `~/bin`.
+- *home-bin-jx* – Portable-ish little Unix scripts and programs I want on all my computers. Linked in as `~/bin-jx`.
 - [*sys-setup*](sys-setup/README.md) – System and user configuration scripts that install things and adjust system settings.
 - *settings* – Settings data files.
   - *manual* – Exported and imported settings files from various programs, managed manually.

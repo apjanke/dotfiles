@@ -141,8 +141,9 @@ PATH="/usr/local/bin:$PATH"
 # Custom local dirs defined by this dotfiles framework or just my habits
 
 jx_maybe_add_path --prepend "$HOME/bin"
+jx_maybe_add_path --prepend "$HOME/bin-jx"
 if [[ $__jx_uname = "Darwin" ]]; then
-  jx_maybe_add_path --prepend "$HOME/bin/macos"
+  jx_maybe_add_path --prepend "$HOME/bin-jx/macos"
 fi
 # Sheesh. I haven't been able to settle on a conventional local bin location, have I?
 jx_maybe_add_path --prepend "$HOME/bin-local"

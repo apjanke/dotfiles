@@ -2,7 +2,6 @@
 
 ## General
 
-- Rename `~/bin` to `~/bin-jx`, leaving `/bin` available as a standard-ish dir that other programs use and write to.
 - `findd` - like `grin` but for `find`, that respects the same dir and pattern exclusions from `$JX_GRIN_EXCLUDES`
   - Prob need to change the format of `$JX_GRIN_EXCLUDES`, bc it's currently `grep` option format, and `find` uses a different format. Maybe: Split in to two `$JX_GRIN_EXCLUDE_{DIRS,PATS}` vars that just have dir names and name patterns, ahd have `grin` and `findd` construct the appropriate command args from those.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.

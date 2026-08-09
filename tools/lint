@@ -10,8 +10,9 @@
 # Exits non-zero if either checker reports anything, so it is usable from CI.
 #
 # Scripts are found by extension (.sh/.bash/.ksh/.zsh) or, for extensionless files, by
-# reading the shebang -- the repo has a dozen-plus extensionless bash scripts in home-bin/,
-# sys-setup/, and the root, and one Perl one, so "has a shebang" is not a sufficient test.
+# reading the shebang -- the repo has a dozen-plus extensionless bash scripts in
+# home-bin-jx/, sys-setup/, and the root, and one Perl one, so "has a shebang" is not a
+# sufficient test.
 #
 # Two checkers, because shellcheck has no zsh dialect: it parses zsh as bash and reports
 # artifacts of that rather than real problems (an anonymous `() { ... }` function trips

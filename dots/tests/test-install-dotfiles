@@ -50,20 +50,55 @@ function run_tests() {
   assert_absent '.nested' 'the nested/ tree is not itself linked into ~'
   assert_absent '.flat'   'the flat/ tree is not itself linked into ~'
 
-  assert_symlink_to 'bin' "$REPO/home-bin" 'the ~/bin dir links to the repo home-bin/'
+  assert_symlink_to 'bin-jx' "$REPO/home-bin-jx" 'the ~/bin-jx dir links to the repo home-bin-jx/'
 
   echo "===== the invocation path doesn't leak into the links ====="
   # install_into_fake_home calls the installer by absolute path, so nothing above here
   # exercises a relative invocation -- which is how the README says to run it, and which
-  # used to write a self-referential "./bin" into ~/bin.
+  # used to write a self-referential "./bin-jx" into ~/bin-jx.
   new_fake_home
   ( cd "$REPO" && HOME="$FAKE_HOME" ./install-dotfiles ) > /dev/null 2>&1
-  assert_symlink_to 'bin' "$REPO/home-bin" 'run as ./install-dotfiles, ~/bin is still absolute'
+  assert_symlink_to 'bin-jx' "$REPO/home-bin-jx" \
+      'run as ./install-dotfiles, ~/bin-jx is still absolute'
   new_fake_home
   ( cd "$REPO/dots" && HOME="$FAKE_HOME" ../install-dotfiles ) > /dev/null 2>&1
-  assert_symlink_to 'bin' "$REPO/home-bin" 'run from a subdir as ../install-dotfiles, likewise'
+  assert_symlink_to 'bin-jx' "$REPO/home-bin-jx" \
+      'run from a subdir as ../install-dotfiles, likewise'
   assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
       'relative invocation gets the flat tree right too'
+
+  echo "===== a leftover ~/bin from the old install target ====="
+  # ~/bin used to be this repo's install target (renamed to ~/bin-jx). An old link left
+  # over from that is never touched, but the installer should say something about it. The
+  # repo's own home-bin/ no longer exists under that name (it's home-bin-jx/ now), so this
+  # link is realistically dangling -- same as it would be on a real machine after a git
+  # pull -- which is fine, since "repo-managed" is a string-prefix check, not a resolve.
+  new_fake_home
+  ln -s "$REPO/home-bin" "$FAKE_HOME/bin"
+  out=$(install_into_fake_home)
+  # shellcheck disable=SC2088  # "~/bin" here is message text, not a path to expand
+  assert_contains "$out" '~/bin is a leftover symlink' \
+      'a stale ~/bin pointing at the old repo target is called out'
+  assert_eq "$(readlink "$FAKE_HOME/bin")" "$REPO/home-bin" \
+      'the stale ~/bin link itself is left completely alone'
+  assert_symlink_to 'bin-jx' "$REPO/home-bin-jx" \
+      'bin-jx is still linked normally alongside the leftover ~/bin'
+
+  echo "===== ~/bin dirs this repo never touched are not called out ====="
+  new_fake_home
+  mkdir -p "$FAKE_HOME/otherpkg/bin"
+  ln -s "$FAKE_HOME/otherpkg/bin" "$FAKE_HOME/bin"
+  out=$(install_into_fake_home)
+  # shellcheck disable=SC2088  # "~/bin" here is message text, not a path to expand
+  assert_not_contains "$out" '~/bin is a leftover symlink' \
+      'a ~/bin symlink to somewhere outside this repo is not flagged'
+
+  new_fake_home
+  mkdir -p "$FAKE_HOME/bin"
+  out=$(install_into_fake_home)
+  # shellcheck disable=SC2088  # "~/bin" here is message text, not a path to expand
+  assert_not_contains "$out" '~/bin is a leftover symlink' \
+      'a real (non-symlink) ~/bin directory is not flagged'
 
   echo "===== a repo path with a dot component still installs the nested tree ====="
   # Regression test: the nested-tree find used to filter on find's ABSOLUTE path, so

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# test-whatsmyip - exercise home-bin/whatsmyip
+# test-whatsmyip - exercise home-bin-jx/whatsmyip
 #
 # Usage: ./dots/tests/test-whatsmyip   (or via ./dots/tests/run-tests)
 #
@@ -21,7 +21,7 @@ REPO="$PWD"
 source "$REPO/dots/tests/lib.sh"
 trap cleanup_fake_homes EXIT
 
-WHATSMYIP="$REPO/home-bin/whatsmyip"
+WHATSMYIP="$REPO/home-bin-jx/whatsmyip"
 
 function main() {
   new_fake_home; STUB_BIN="$FAKE_HOME/bin"; mkdir -p "$STUB_BIN"

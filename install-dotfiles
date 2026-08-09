@@ -93,8 +93,8 @@ function main() {
     set -o xtrace
   fi
   # Absolute, so the links we write don't depend on the cwd we were invoked from. Run as
-  # `./install-dotfiles`, a relative $sourcedir put a literal "./bin" in ~/bin, which from
-  # ~ points at itself.
+  # `./install-dotfiles`, a relative $sourcedir put a literal "./bin-jx" in ~/bin-jx, which
+  # from ~ points at itself.
   sourcedir=$(cd "$(dirname "$0")" && pwd)
   dotfiles_repo_dir="$sourcedir"
   dotdir="${OPT_DOTS_DIR:-$sourcedir/dots}"
@@ -109,6 +109,7 @@ function main() {
   dotinstall::install_flat_tree "$dotdir"
   dotinstall::install_nested_tree "$dotdir"
   install_bin
+  warn_stale_bin_link
 
   local rc=0
   dotinstall::summary || rc=1
@@ -158,11 +159,26 @@ function parse_cli() {
 # ========== Script-specific code ==========
 
 function install_bin() {
-  # repo home-bin/ -> ~/bin. Pre: cwd is $HOME. Reads $dotfiles_repo_dir.
+  # repo home-bin-jx/ -> ~/bin-jx. Pre: cwd is $HOME. Reads $dotfiles_repo_dir.
   local _DOTINSTALL_THIS_CHANGED
-  dotinstall::symlink "${dotfiles_repo_dir}/home-bin" "bin"
+  dotinstall::symlink "${dotfiles_repo_dir}/home-bin-jx" "bin-jx"
   if [[ $_DOTINSTALL_THIS_CHANGED == 1 ]]; then
-    echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
+    echo "Linked the ~/bin-jx directory. Don't forget to add it to your \$PATH."
+  fi
+}
+
+function warn_stale_bin_link() {
+  # ~/bin used to be this repo's install target (see doc/TODO.md history); now it's left
+  # for other tools (e.g. cabal) to manage. Read-only - never removes anything, even
+  # under --clobber. Pre: cwd is $HOME. Reads $_DOTINSTALL_REPO_ROOTS.
+  [[ -L bin ]] || return 0
+  local current_source
+  current_source=$(readlink bin)
+  if dotinstall::is_repo_managed "$current_source"; then
+    # shellcheck disable=SC2088  # "~/bin" here is message text, not a path to expand
+    jxl::warning "~/bin is a leftover symlink to '$current_source'. This repo now" \
+        "installs to ~/bin-jx instead. Remove the old link with 'rm ~/bin' once" \
+        "nothing else still expects it there."
   fi
 }
 
@@ -170,4 +186,4 @@ function install_bin() {
 # ========== Main script ==========
 
 parse_cli "$@"
-main   # exits with its own status; nothing here is reachable
+main

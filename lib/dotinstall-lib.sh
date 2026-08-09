@@ -60,8 +60,8 @@ function dotinstall::detect_os_type() {
   esac
 }
 
-function dotinstall::_is_repo_managed() {
-  # dotinstall::_is_repo_managed PATH -- true iff PATH lies under one of
+function dotinstall::is_repo_managed() {
+  # dotinstall::is_repo_managed PATH -- true iff PATH lies under one of
   # $_DOTINSTALL_REPO_ROOTS. An empty/unset roots array correctly means "nothing is
   # repo-managed" (dotinstall::_path_under would otherwise treat an empty root as "/" and
   # match every absolute path).
@@ -147,7 +147,7 @@ function dotinstall::symlink() {
     if [[ "$current_source" == "$source" ]]; then
       jxl::log_vrb "Already set up: $(printf '%-18s -> %s' "$target" "$source")"
       _DOTINSTALL_ALREADY=$((_DOTINSTALL_ALREADY + 1))
-    elif dotinstall::_is_repo_managed "$current_source"; then
+    elif dotinstall::is_repo_managed "$current_source"; then
       if [[ "$_DOTINSTALL_OPT_RELINK" == 1 || "$_DOTINSTALL_OPT_CLOBBER" == 1 ]]; then
         dotinstall::_do_link "$source" "$target" Relinked " (was -> $current_source)"
       else

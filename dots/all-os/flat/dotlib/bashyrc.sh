@@ -296,7 +296,7 @@ function wwhich() {
 # Fancycat
 alias c="pygmentize -O style=solarized -f console256 -g"
 
-# IP address discovery moved to home-bin/whatsmyip -- these were too big for functions.
+# IP address discovery moved to home-bin-jx/whatsmyip -- these were too big for functions.
 
 # Fun stuff
 alias dadjoke="curl https://icanhazdadjoke.com --silent; echo"
