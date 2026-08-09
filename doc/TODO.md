@@ -36,9 +36,6 @@
 - A `_jx_do` function to echo a command and then run it.
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.
 - Move `$PATH` setup up in to env/login stage, not rc/interactive stage?
-- `.*env` files to go with `.*rc` files, or a common `.dotlib/bashyenv.sh`?
-  - Now, as of 2026-08, `.profile` serves this purpose: it's sourced by both bash & zsh, for both login and interactive sessions. But since `.profile` is a standard bash rc file name, maybe I should pull out the common env-stage stuff to a separate file, to make it more obvious what I'm doing here.
-- More use of anonymous functions for variable hygiene?
 - Homebrew/MacPorts loading
   - "auto" option for loading only one or the other of Homebrew or MacPorts if they both exist. Right now, set `$JX_USE_{HOMEBREW,MACPORTS}` both to true, and you get both loaded if they both exist.
      - That prob means switching to a single variable to control package managers, with values `homebrew`, `macports`, `auto`, `both`, and `none`. And the default should prob be `auto`. Along with another variable that sets the preferred one for `auto` for the case that both exist.
