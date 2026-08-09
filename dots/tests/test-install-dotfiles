@@ -407,6 +407,189 @@ function run_tests() {
   assert_symlink_to '.foo' "$FAKE_DOTS/all-os/nested/_foo" \
       'and now points at the correct whole-linked directory'
 
+  echo "===== --relink does not touch a symlink pointing outside any recognized repo ====="
+  new_fake_home
+  local foreign_file="$FAKE_HOME/.elsewhere"
+  echo 'not ours' > "$foreign_file"
+  ln -s "$foreign_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink)
+  assert_contains "$out" "SKIPPED: .bashrc is a symlink to '$foreign_file'" \
+      'a symlink to somewhere outside any recognized repo is reported as skipped'
+  assert_contains "$out" 'not managed by a' 'the message explains why, and names --clobber'
+  assert_symlink_to '.bashrc' "$foreign_file" '--relink alone does not touch it'
+  if find "$FAKE_HOME" -name '*.bak*' 2>/dev/null | grep -q .; then
+    fail 'no .bak file is ever created without --clobber'
+  else
+    ok 'no .bak file is ever created without --clobber'
+  fi
+
+  echo "===== --clobber replaces a symlink pointing outside any recognized repo ====="
+  new_fake_home
+  local foreign_file2="$FAKE_HOME/.elsewhere2"
+  echo 'not ours either' > "$foreign_file2"
+  ln -s "$foreign_file2" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --clobber --yes-really -v)
+  # Relative, not absolute: dotinstall::symlink is called with a target relative to cwd
+  # (main() cds to $HOME before linking anything), and _backup operates on that same path.
+  assert_contains "$out" 'Backed up: .bashrc -> .bashrc.bak' \
+      'the foreign symlink itself is backed up'
+  assert_contains "$out" 'Clobbered: .bashrc' 'and reported as clobbered'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
+      'and it now points at the correct target'
+  assert_symlink_to '.bashrc.bak' "$foreign_file2" \
+      'the backup is the original symlink itself, unchanged'
+
+  echo "===== a relative symlink target is always treated as foreign, never resolved ====="
+  new_fake_home
+  ln -s '../nonexistent-relative-target' "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink)
+  assert_contains "$out" 'not managed by a' \
+      'a relative symlink target is never recognized as repo-managed'
+
+  echo "===== a dangling symlink whose target STRING is under the repo is still relink-eligible ====="
+  new_fake_home
+  local dangling_repo_target="$REPO/dots/all-os/flat/this-file-does-not-exist.sh"
+  ln -s "$dangling_repo_target" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink)
+  assert_contains "$out" 'Relinked: .bashrc' \
+      'recognized as repo-managed by the target string, not by the target existing'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
+      'and it now points at the correct, real target'
+
+  echo "===== a dangling foreign symlink is clobberable ====="
+  new_fake_home
+  ln -s '/nonexistent/foreign/path' "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink)
+  assert_contains "$out" 'not managed by a' \
+      'a dangling foreign symlink is still just skipped without --clobber'
+  out=$(install_into_fake_home --clobber --yes-really)
+  assert_contains "$out" 'Clobbered: .bashrc' 'and is clobbered with --clobber --yes-really'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" 'ending up at the correct target'
+  assert_eq "$(readlink "$FAKE_HOME/.bashrc.bak")" '/nonexistent/foreign/path' \
+      'the backup preserves the original (dangling) target string'
+
+  echo "===== --clobber without --yes-really refuses to run at all ====="
+  new_fake_home
+  echo 'hand-written' > "$FAKE_HOME/.bashrc"
+  rc=0
+  out=$(install_into_fake_home --clobber) || rc=$?
+  assert_eq "$rc" 1 '--clobber alone exits non-zero'
+  assert_contains "$out" '--yes-really' 'the error names --yes-really'
+  if [[ "$(cat "$FAKE_HOME/.bashrc")" == 'hand-written' ]]; then
+    ok 'and the file was never touched'
+  else
+    fail 'and the file was never touched'
+  fi
+  if find "$FAKE_HOME" -name '*.bak*' 2>/dev/null | grep -q .; then
+    fail 'no .bak file was created'
+  else
+    ok 'no .bak file was created'
+  fi
+
+  echo "===== --clobber combined with --help just prints help, in either order ====="
+  new_fake_home
+  rc=0
+  out=$(install_into_fake_home --clobber --help) || rc=$?
+  assert_eq "$rc" 0 '--clobber --help exits zero'
+  assert_contains "$out" 'Usage:' 'and prints usage'
+  rc=0
+  out=$(install_into_fake_home --help --clobber) || rc=$?
+  assert_eq "$rc" 0 '--help --clobber exits zero too'
+  assert_contains "$out" 'Usage:' 'and also prints usage'
+
+  echo "===== --clobber backs up a regular file before replacing it ====="
+  new_fake_home
+  echo 'hand-written, do not touch' > "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --clobber --yes-really)
+  assert_contains "$out" 'Clobbered: .bashrc' 'the file is reported as clobbered'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
+      'and now points at the correct target'
+  if [[ "$(cat "$FAKE_HOME/.bashrc.bak")" == 'hand-written, do not touch' ]]; then
+    ok 'the original content is preserved in .bashrc.bak'
+  else
+    fail 'the original content is preserved in .bashrc.bak'
+  fi
+
+  echo "===== a second clobber of the same target uses a dated backup name instead ====="
+  new_fake_home
+  echo 'first version' > "$FAKE_HOME/.bashrc"
+  install_into_fake_home --clobber --yes-really > /dev/null
+  rm -f "$FAKE_HOME/.bashrc"
+  echo 'second version' > "$FAKE_HOME/.bashrc"
+  install_into_fake_home --clobber --yes-really > /dev/null
+  if [[ "$(cat "$FAKE_HOME/.bashrc.bak" 2>/dev/null)" == 'first version' ]]; then
+    ok 'the first backup is untouched'
+  else
+    fail 'the first backup is untouched' "got: $(cat "$FAKE_HOME/.bashrc.bak" 2>/dev/null)"
+  fi
+  local dated_backup
+  dated_backup=$(find "$FAKE_HOME" -maxdepth 1 -name '.bashrc.bak-*' | head -n 1)
+  if [[ -n "$dated_backup" && "$(cat "$dated_backup" 2>/dev/null)" == 'second version' ]]; then
+    ok 'the second backup lands in a dated .bak-<datetime>.bak file instead'
+  else
+    fail 'the second backup lands in a dated .bak-<datetime>.bak file instead' \
+        "found: $dated_backup"
+  fi
+
+  echo "===== --clobber backs up a real directory before replacing it with a whole-dir link ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  mkdir -p "$FAKE_HOME/.foo"
+  echo 'hand-made, do not touch' > "$FAKE_HOME/.foo/mine.txt"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS" --clobber --yes-really)
+  assert_contains "$out" 'Clobbered: .foo' 'the directory is reported as clobbered'
+  assert_symlink_to '.foo' "$FAKE_DOTS/all-os/nested/_foo" \
+      'and now points at the correct whole-linked directory'
+  if [[ "$(cat "$FAKE_HOME/.foo.bak/mine.txt")" == 'hand-made, do not touch' ]]; then
+    ok 'the original directory and its contents survive at .foo.bak'
+  else
+    fail 'the original directory and its contents survive at .foo.bak'
+  fi
+
+  echo "===== a foreign whole-directory symlink is backed up as a symlink, not copied ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  local foreign_dir="$FAKE_HOME/.elsewhere-dir"
+  mkdir -p "$foreign_dir"
+  echo 'not ours' > "$foreign_dir/other.txt"
+  ln -s "$foreign_dir" "$FAKE_HOME/.foo"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS" --clobber --yes-really)
+  assert_contains "$out" 'Clobbered: .foo' 'reported as clobbered'
+  assert_symlink_to '.foo' "$FAKE_DOTS/all-os/nested/_foo" \
+      'and now points at the correct whole-linked directory'
+  assert_symlink_to '.foo.bak' "$foreign_dir" \
+      'the backup is the symlink itself, not a copy of the foreign directory'
+  if [[ "$(cat "$foreign_dir/other.txt")" == 'not ours' ]]; then
+    ok "the foreign directory's own contents are untouched"
+  else
+    fail "the foreign directory's own contents are untouched"
+  fi
+
+  echo "===== --clobber --dry-run previews without writing anything ====="
+  new_fake_home
+  echo 'hand-written' > "$FAKE_HOME/.bashrc"
+  local before_listing after_listing
+  before_listing=$(find "$FAKE_HOME" -mindepth 1 | sort)
+  out=$(install_into_fake_home --clobber --yes-really --dry-run) || true
+  assert_contains "$out" 'Backed up:' 'dry run previews the backup'
+  assert_contains "$out" 'Clobbered: .bashrc' 'and the clobber'
+  after_listing=$(find "$FAKE_HOME" -mindepth 1 | sort)
+  assert_eq "$after_listing" "$before_listing" \
+      'dry run leaves the target home completely unchanged'
+
+  echo "===== --clobber alone (no explicit --relink) still fixes a repo-managed stale link ====="
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --clobber --yes-really)
+  assert_contains "$out" 'Relinked: .bashrc' \
+      '--clobber implies fixing a symlink already recognized as repo-managed'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
+      'and it now points at the correct target'
+
   echo "===== the real \$HOME was never touched ====="
   # Compare against a snapshot taken before any test ran, rather than against the current
   # repo layout. Comparing to the layout conflates two things, and trips on a rearranged

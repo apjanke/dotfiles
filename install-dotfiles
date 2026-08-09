@@ -4,13 +4,19 @@
 #
 # Installs symlinks to dotfiles in this repo into current user's $HOME dir.
 #
-# Never clobbers a non-symlink file or directory -- reports it as skipped. An existing
-# symlink already pointing at the right place is left alone. An existing symlink pointing
-# somewhere ELSE is also left alone by default, reported as skipped (naming its current
-# target), unless --relink is given, in which case it's unconditionally repointed. There's
-# no check on whether that current target looks like it belongs to this dotfiles repo or a
-# variant of it -- --relink is a blunt, explicit tool for a deliberate migration, not an
-# auto-detecting one.
+# Never clobbers anything by default -- an existing regular file, real directory, or
+# symlink pointing anywhere unexpected is left alone and reported as skipped. An existing
+# symlink already pointing at the right place is left alone too, silently.
+#
+# --relink force-updates a symlink that's recognizable as repo-managed (its current
+# target is somewhere under this repo) but currently points at the wrong place within it
+# -- e.g. after a file moves. A symlink pointing somewhere NOT recognizable as this repo
+# is untouched by --relink; it needs --clobber instead.
+#
+# --clobber replaces that: any pre-existing local content this run would otherwise skip,
+# repo-managed or not. Requires --yes-really alongside it, or it refuses to run at all.
+# The original is always renamed to a `.bak` file first, never deleted outright.
+# --clobber implies --relink's effect too.
 #
 # Two source trees, siblings under each `dots/<osname>/` root. ("all-os" applies to
 # all OSes; per-OS entries take precedence over it in both trees.)
@@ -57,8 +63,15 @@ Usage:
 Options:
     -x, --trace         trace program execution
         --dots-dir DIR  install from DIR instead of the repo's own dots/ (for tests)
-        --relink        force-relink an existing symlink pointing somewhere else, instead
-                         of leaving it alone and reporting it as skipped
+        --relink        force-relink a symlink recognized as repo-managed but pointing
+                         somewhere else, instead of leaving it alone and reporting it as
+                         skipped
+        --clobber       replace existing local content this run would otherwise skip
+                         (repo-managed or not) -- backed up to a .bak file first, never
+                         just deleted. Implies --relink. Requires --yes-really.
+        --yes-really    confirms a dangerous operation (currently: --clobber) is really
+                         wanted; doesn't change what it does, only whether it's allowed
+                         to run at all
 $(jxl::std_options_help)
 EOF
 }
@@ -66,6 +79,8 @@ EOF
 OPT_TRACE=0
 OPT_DOTS_DIR=''
 OPT_RELINK=0
+OPT_CLOBBER=0
+OPT_YES_REALLY=0
 
 function main() {
   if [[ $OPT_TRACE = 1 ]]; then
@@ -82,6 +97,8 @@ function main() {
   dotinstall::detect_os_type
   cd "$todir"
   _DOTINSTALL_OPT_RELINK="$OPT_RELINK"
+  _DOTINSTALL_OPT_CLOBBER="$OPT_CLOBBER"
+  _DOTINSTALL_REPO_ROOTS=("$sourcedir")
 
   dotinstall::install_flat_tree "$dotdir"
   dotinstall::install_nested_tree "$dotdir"
@@ -108,6 +125,8 @@ function parse_cli() {
       --trace | -x)   OPT_TRACE=1 ;;
       --dots-dir)     OPT_DOTS_DIR="$1"; shift ;;
       --relink)       OPT_RELINK=1 ;;
+      --clobber)      OPT_CLOBBER=1 ;;
+      --yes-really)   OPT_YES_REALLY=1 ;;
       *)
         jxl::std_opt "$arg" \
             || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
@@ -116,7 +135,11 @@ function parse_cli() {
     esac
   done
 
-  readonly OPT_TRACE OPT_DOTS_DIR OPT_RELINK
+  if [[ $OPT_CLOBBER == 1 && $OPT_YES_REALLY != 1 ]]; then
+    die "You must also specify --yes-really when using --clobber."
+  fi
+
+  readonly OPT_TRACE OPT_DOTS_DIR OPT_RELINK OPT_CLOBBER OPT_YES_REALLY
 }
 
 # ========== Script-specific code ==========

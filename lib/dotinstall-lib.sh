@@ -14,13 +14,19 @@
 # the full semantics; install-dotfiles's own header has the short version.
 #
 # A caller must call dotinstall::detect_os_type before either install_*_tree function --
-# both read $OSNAME. A caller MAY set $_DOTINSTALL_OPT_RELINK=1 first, to force-relink any
-# existing symlink pointing somewhere other than the computed source (see
-# dotinstall::symlink) -- default is to leave it alone and report it as skipped.
+# both read $OSNAME. A caller MUST set $_DOTINSTALL_REPO_ROOTS (an array of one or more
+# repo root paths -- e.g. install-dotfiles-private includes both its own repo and the
+# public dotfiles repo it depends on) before either function too: it's what
+# dotinstall::symlink uses to tell a stale-but-ours symlink from a foreign one. A caller
+# MAY also set $_DOTINSTALL_OPT_RELINK=1 and/or $_DOTINSTALL_OPT_CLOBBER=1 -- see
+# dotinstall::symlink for what each does. Defaults are the safe, do-nothing settings.
 
 # Bump this if a caller-visible function's name, argument order, or behavior changes, so a
-# caller that checks it can fail loudly instead of half-working.
-_DOTINSTALL_LIB_API=1
+# caller that checks it can fail loudly instead of half-working. Bumped to 2 when
+# $_DOTINSTALL_REPO_ROOTS and $_DOTINSTALL_OPT_CLOBBER were added: an un-updated caller
+# that doesn't set $_DOTINSTALL_REPO_ROOTS must not silently fall back to the old blunt
+# "relink anything" behavior.
+_DOTINSTALL_LIB_API=2
 
 # Load JXL relative to this file, not the caller -- a caller in another repo shouldn't have
 # to know this repo's internal layout.
@@ -30,8 +36,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/../dots/all-os/flat/dot
 _DOTINSTALL_ANY_CHANGED=0
 _DOTINSTALL_ALREADY=0
 _DOTINSTALL_SKIPPED=0
+_DOTINSTALL_CLOBBERED=0
 _DOTINSTALL_FAILED=0
 _DOTINSTALL_OPT_RELINK=0
+_DOTINSTALL_OPT_CLOBBER=0
+_DOTINSTALL_REPO_ROOTS=()
 
 function dotinstall::detect_os_type() {
   # Post: $OSNAME is set, or the script has exited with an error status
@@ -51,59 +60,131 @@ function dotinstall::detect_os_type() {
   esac
 }
 
+function dotinstall::_is_repo_managed() {
+  # dotinstall::_is_repo_managed PATH -- true iff PATH lies under one of
+  # $_DOTINSTALL_REPO_ROOTS. An empty/unset roots array correctly means "nothing is
+  # repo-managed" (dotinstall::_path_under would otherwise treat an empty root as "/" and
+  # match every absolute path).
+  local path="$1" root
+  for root in ${_DOTINSTALL_REPO_ROOTS[@]+"${_DOTINSTALL_REPO_ROOTS[@]}"}; do
+    [[ -n "$root" ]] || continue
+    dotinstall::_path_under "$path" "$root" && return 0
+  done
+  return 1
+}
+
+function dotinstall::_do_link() {
+  # dotinstall::_do_link SOURCE TARGET VERB [SUFFIX]
+  # out: $_DOTINSTALL_ANY_CHANGED, $_DOTINSTALL_THIS_CHANGED, $_DOTINSTALL_FAILED
+  local source="$1" target="$2" verb="$3" suffix="${4:-}" descr
+  descr=$(printf '%-18s -> %s\n' "$target" "$source")
+  # wet_vrb, not wet: on a dry run the raw `ln` line is verbose-only detail, while the
+  # verb line below is the preview worth seeing. Running the normal logging path is half
+  # the value of a dry run -- it exercises those branches too.
+  if jxl::wet_vrb ln -sfn "$source" "$target"; then
+    _DOTINSTALL_ANY_CHANGED=1; _DOTINSTALL_THIS_CHANGED=1
+    jxl::info "$verb: $descr$suffix"
+  else
+    _DOTINSTALL_FAILED=$((_DOTINSTALL_FAILED + 1))
+    jxl::error "Failed: $descr"
+  fi
+}
+
+function dotinstall::_backup() {
+  # dotinstall::_backup PATH -- moves PATH to PATH.bak, or PATH.bak-<datetime>.bak if that
+  # already exists, or PATH.bak-<datetime>-<pid>.bak if even that's taken (two clobbers of
+  # the same target within one second, e.g. from a test loop -- $$ is a cheap
+  # always-different-per-process tiebreaker). Returns 1 (reports Failed, touches nothing)
+  # if no slot is free or the move itself fails -- the caller MUST NOT link on a nonzero
+  # return, since ln -sfn's -f would then delete PATH outright.
+  # out: $_DOTINSTALL_FAILED
+  local path="$1"
+  local backup="$path.bak"
+  if [[ -e "$backup" || -L "$backup" ]]; then
+    backup="$path.bak-$(date +%Y%m%d-%H%M%S).bak"
+    if [[ -e "$backup" || -L "$backup" ]]; then
+      backup="$path.bak-$(date +%Y%m%d-%H%M%S)-$$.bak"
+    fi
+  fi
+  if [[ -e "$backup" || -L "$backup" ]]; then
+    jxl::error "Failed: no free backup slot for '$path'"
+    _DOTINSTALL_FAILED=$((_DOTINSTALL_FAILED + 1))
+    return 1
+  fi
+  if jxl::wet_vrb mv "$path" "$backup"; then
+    jxl::info "Backed up: $path -> $backup"
+  else
+    jxl::error "Failed: could not back up '$path'"
+    _DOTINSTALL_FAILED=$((_DOTINSTALL_FAILED + 1))
+    return 1
+  fi
+}
+
 function dotinstall::symlink() {
   # out: $_DOTINSTALL_ANY_CHANGED, $_DOTINSTALL_THIS_CHANGED, $_DOTINSTALL_ALREADY,
-  #      $_DOTINSTALL_SKIPPED, $_DOTINSTALL_FAILED
-  # in: $_DOTINSTALL_OPT_RELINK
+  #      $_DOTINSTALL_SKIPPED, $_DOTINSTALL_CLOBBERED, $_DOTINSTALL_FAILED
+  # in: $_DOTINSTALL_OPT_RELINK, $_DOTINSTALL_OPT_CLOBBER, $_DOTINSTALL_REPO_ROOTS
   #
-  # An existing symlink pointing somewhere OTHER than $source is reported as skipped (its
-  # current target named in the message) and left alone, UNLESS $_DOTINSTALL_OPT_RELINK is
-  # set, in which case it's relinked. Not auto-detecting whether the current target looks
-  # dotfiles-managed before relinking -- that's a coarser, explicit opt-in, not the smarter
-  # check doc/TODO.md still wants.
+  # An existing symlink pointing somewhere OTHER than $source is handled two different
+  # ways, depending on whether its CURRENT target is recognizable as repo-managed (under
+  # one of $_DOTINSTALL_REPO_ROOTS):
+  #   - repo-managed but stale (e.g. a file that moved within the repo): relinked if
+  #     $_DOTINSTALL_OPT_RELINK OR $_DOTINSTALL_OPT_CLOBBER is set (clobber implies
+  #     relink -- consenting to the more dangerous operation implies consenting to the
+  #     strictly less risky one), else reported SKIPPED.
+  #   - not repo-managed ("foreign"): the same bucket as a pre-existing regular
+  #     file/directory below -- backed up and replaced under $_DOTINSTALL_OPT_CLOBBER,
+  #     else reported SKIPPED.
+  # The current target is compared as the literal string readlink returns, never
+  # resolved -- a relative target therefore never matches a repo root and is always
+  # foreign. That's deliberate: resolving would also resolve symlinks in the recorded
+  # root, which the "invoked through a symlink" test relies on NOT happening.
   local source="$1" target="$2"
   _DOTINSTALL_THIS_CHANGED=0
-  local current_source='' descr
-  descr=$(printf '%-18s -> %s\n' "$target" "$source")
+  local current_source=''
   if [[ -L "$target" ]]; then
     current_source=$(readlink "$target")
     if [[ "$current_source" == "$source" ]]; then
-      jxl::log_vrb "Already set up: $descr"
+      jxl::log_vrb "Already set up: $(printf '%-18s -> %s' "$target" "$source")"
       _DOTINSTALL_ALREADY=$((_DOTINSTALL_ALREADY + 1))
-    elif [[ "$_DOTINSTALL_OPT_RELINK" == 1 ]]; then
-      if jxl::wet_vrb ln -sfn "$source" "$target"; then
-        _DOTINSTALL_ANY_CHANGED=1; _DOTINSTALL_THIS_CHANGED=1
-        jxl::info "Relinked: $descr (was -> $current_source)"
+    elif dotinstall::_is_repo_managed "$current_source"; then
+      if [[ "$_DOTINSTALL_OPT_RELINK" == 1 || "$_DOTINSTALL_OPT_CLOBBER" == 1 ]]; then
+        dotinstall::_do_link "$source" "$target" Relinked " (was -> $current_source)"
       else
-        _DOTINSTALL_FAILED=$((_DOTINSTALL_FAILED + 1))
-        jxl::error "Failed: $descr"
+        jxl::info "SKIPPED: $target is a symlink to '$current_source' (not '$source');" \
+            "pass --relink to update it"
+        _DOTINSTALL_SKIPPED=$((_DOTINSTALL_SKIPPED + 1))
+      fi
+    elif [[ "$_DOTINSTALL_OPT_CLOBBER" == 1 ]]; then
+      if dotinstall::_backup "$target"; then
+        _DOTINSTALL_CLOBBERED=$((_DOTINSTALL_CLOBBERED + 1))
+        dotinstall::_do_link "$source" "$target" Clobbered
       fi
     else
-      jxl::info "SKIPPED: $target is a symlink to '$current_source' (not '$source')"
+      jxl::info "SKIPPED: $target is a symlink to '$current_source', not managed by a" \
+          "recognized dotfiles repo; pass --clobber --yes-really to replace it"
       _DOTINSTALL_SKIPPED=$((_DOTINSTALL_SKIPPED + 1))
     fi
   elif [[ -e "$target" && ! -L "$target" ]]; then
-    local file_type
-    if [[ -f "$target" ]]; then
-      file_type='regular file'
-    elif [[ -d "$target" ]]; then
-      file_type='non-symlink directory'
+    if [[ "$_DOTINSTALL_OPT_CLOBBER" == 1 ]]; then
+      if dotinstall::_backup "$target"; then
+        _DOTINSTALL_CLOBBERED=$((_DOTINSTALL_CLOBBERED + 1))
+        dotinstall::_do_link "$source" "$target" Clobbered
+      fi
     else
-      file_type='file of some sort (neither regular file nor symlink)'
+      local file_type
+      if [[ -f "$target" ]]; then
+        file_type='regular file'
+      elif [[ -d "$target" ]]; then
+        file_type='non-symlink directory'
+      else
+        file_type='file of some sort (neither regular file nor symlink)'
+      fi
+      jxl::info "SKIPPED: $target is a $file_type"
+      _DOTINSTALL_SKIPPED=$((_DOTINSTALL_SKIPPED + 1))
     fi
-    jxl::info "SKIPPED: $target is a $file_type"
-    _DOTINSTALL_SKIPPED=$((_DOTINSTALL_SKIPPED + 1))
   else
-    # wet_vrb, not wet: on a dry run the raw `ln` line is verbose-only detail, while the
-    # "Linked:" message below is the preview worth seeing. Running the normal logging path
-    # is half the value of a dry run -- it exercises those branches too.
-    if jxl::wet_vrb ln -sfn "$source" "$target"; then
-      _DOTINSTALL_ANY_CHANGED=1; _DOTINSTALL_THIS_CHANGED=1
-      jxl::info "Linked: $descr"
-    else
-      _DOTINSTALL_FAILED=$((_DOTINSTALL_FAILED + 1))
-      jxl::error "Failed: $descr"
-    fi
+    dotinstall::_do_link "$source" "$target" Linked
   fi
 }
 
@@ -337,6 +418,9 @@ function dotinstall::summary() {
   fi
   if [[ $_DOTINSTALL_SKIPPED != 0 ]]; then
     msg=$(dotinstall::_append_msg "$msg" "Skipped $_DOTINSTALL_SKIPPED files.")
+  fi
+  if [[ $_DOTINSTALL_CLOBBERED != 0 ]]; then
+    msg=$(dotinstall::_append_msg "$msg" "Replaced $_DOTINSTALL_CLOBBERED files (backed up).")
   fi
   if [[ $_DOTINSTALL_FAILED != 0 ]]; then
     jxl::info "FAILED linking $_DOTINSTALL_FAILED files."
