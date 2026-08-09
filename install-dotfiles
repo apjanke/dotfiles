@@ -240,6 +240,12 @@ function install_dotfiles_nested() {
     [[ -d "$srcdir" ]] || continue
     while IFS= read -r -d '' file; do
       relpath="${file#"$srcdir"/}"
+      # Filter on the relpath, not find's absolute path: '*/.* ' would otherwise also match
+      # a dot component in an ancestor directory (e.g. a repo checked out under
+      # ~/.dotfiles), and silently skip every nested file.
+      case "/$relpath" in
+        */.*) continue ;;  # skip repo-control dotfiles like .gitkeep
+      esac
       tofile=$(munge_nested_path "$relpath")
       found=-1
       for i in "${!targets[@]}"; do
@@ -251,7 +257,7 @@ function install_dotfiles_nested() {
         targets+=("$tofile")
         sources+=("$file")
       fi
-    done < <(find "$srcdir" -type f ! -path '*/.*' -print0 | sort -z)  # skip repo-control dotfiles
+    done < <(find "$srcdir" -type f -print0 | sort -z)
   done
 
   for i in "${!targets[@]}"; do

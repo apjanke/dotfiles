@@ -77,6 +77,25 @@ function run_tests() {
   assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
       'relative invocation gets the flat tree right too'
 
+  echo "===== a repo path with a dot component still installs the nested tree ====="
+  # Regression test: the nested-tree find used to filter on find's ABSOLUTE path, so
+  # '*/.* ' also matched a dot component in an ancestor dir (e.g. ~/.dotfiles) and
+  # silently skipped every nested file, while the flat tree (which uses ls) kept working.
+  new_fake_home
+  local dotpath
+  dotpath=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.XXXXXX")
+  dotpath=$(cd "$dotpath" && pwd)  # collapse a double slash from a trailing-slash $TMPDIR,
+                                    # same normalization install-dotfiles applies to itself
+  ln -s "$REPO" "$dotpath/.repo-link"
+  HOME="$FAKE_HOME" "$dotpath/.repo-link/install-dotfiles" > /dev/null 2>&1
+  # The recorded link target is the invocation path (through .repo-link), not $REPO -- the
+  # installer never resolves symlinks in its own location, same as the existing
+  # relative-invocation tests above expect an absolute (not resolved) source.
+  assert_symlink_to '.config/btop/btop.conf' \
+      "$dotpath/.repo-link/dots/all-os/nested/_config/btop/btop.conf" \
+      'nested tree installs even when invoked through a path with a dot component'
+  rm -rf "$dotpath"
+
   echo "===== underscore-to-dot munging ====="
   mkdir -p "$REPO/dots/all-os/nested/_munge-test/completions"
   echo 'test content' > "$REPO/dots/all-os/nested/_munge-test/_leaf"
