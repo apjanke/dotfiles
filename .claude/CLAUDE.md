@@ -59,6 +59,6 @@ Keep them short. Assume a reader proficient in bash and zsh and already familiar
 - `jx-` – interactive functions: the big, unusual-use, or very dotfiles-specific ones.
 - unprefixed – commonly-used interactive functions that read like ordinary commands.
 
-Partly aspirational; existing code hasn't fully migrated (see the `APJ_` → `JX_` and `__uname` → `__jx_uname` items in `doc/TODO.md`).
+Partly aspirational; existing code hasn't fully migrated.
 
 This does not apply to `sys-setup/`, `home-bin/`, or `tools/`, which hold standalone shebang scripts where nothing persists past execution. Those use plain names, with a bare leading underscore for small internal helpers (`_do`, `_read_lines`) alongside unprefixed `main` and `usage`.

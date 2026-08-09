@@ -101,7 +101,7 @@ function run_case() {
   local shell="$1" base_path="$2" snippet="$3"
   "$shell" -c "
     source '$PATHS_FILE' >/dev/null 2>&1
-    __uname=\$(uname)
+    __jx_uname=\$(uname)
     PATH='$base_path'
     $snippet
     printf '%s' \"\$PATH\"

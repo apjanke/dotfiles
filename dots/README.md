@@ -162,7 +162,7 @@ These dotfiles also set up the following semistandard env vars. You should not m
 
 - `$JX_HOMEBREW_PREFIX` – Where Homebrew is, if it is loaded in this session.
 - `$JX_MACPORTS_PREFIX` – Where MacPorts is, if it is loaded in this session.
-- `$__uname` – internal stash of `uname` output for performance.
+- `$__jx_uname` – internal stash of `uname` output for performance.
 
 ### Shell functions supplied
 

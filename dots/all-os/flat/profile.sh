@@ -11,8 +11,8 @@ if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
 fi
 
 # Call uname once and stash results for performance
-if [[ -z $__uname ]]; then
-  __uname=$(uname)
+if [[ -z $__jx_uname ]]; then
+  __jx_uname=$(uname)
 fi
 
 
@@ -46,7 +46,7 @@ export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-0}"
 
 # MacOS specifics
 
-if [[ $__uname = "Darwin" ]]; then
+if [[ $__jx_uname = "Darwin" ]]; then
 
   # Default $TMPPREFIX may be insecure? So clobber it.
   # TODO: Find a citation for that and whether it's still relevant

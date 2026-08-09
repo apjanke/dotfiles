@@ -13,8 +13,8 @@ if ! source "$HOME/.dotlib/jxl-lib.sh"; then
 fi
 
 # Call uname once and stash results for performance
-if [[ -z $__uname ]]; then
-  __uname=$(uname)
+if [[ -z $__jx_uname ]]; then
+  __jx_uname=$(uname)
 fi
 
 
@@ -55,7 +55,7 @@ function jx-rainbow-me() {
 if ls --version 2> /dev/null | grep GNU &> /dev/null; then
   # ls is GNU ls: color on by default
   alias ls="ls --color --quoting-style=literal"
-elif [[ $__uname = "Darwin" ]] || [[ $__uname = "FreeBSD" ]]; then
+elif [[ $__jx_uname = "Darwin" ]] || [[ $__jx_uname = "FreeBSD" ]]; then
   # On BSD, prefer GNU ls for nicer colors
   # (Unsure if I really want to do this, bc of gls' uneven column widths)
   # As of 2023-12, I disabled this for now.
@@ -82,7 +82,7 @@ fi
 
 # MacOS specifics
 
-if [[ $__uname = "Darwin" ]]; then
+if [[ $__jx_uname = "Darwin" ]]; then
 
   # TODO: Conditionalize all Homebrew stuff on Homebrew being installed, and add
   # MacPorts equivalents.
@@ -650,7 +650,7 @@ function jx::shell_info_path() {
 # but as of 2026-03 I'm going to try to do without, bc I think the symlink may be messing other
 # things up, and bc I want to figure out how this is "supposed to" be used.
 
-if [[ $__uname = "Darwin" ]]; then
+if [[ $__jx_uname = "Darwin" ]]; then
   if [[ -d $HOME/Library/CloudStorage/Dropbox ]]; then
     export DROPBOX="$HOME/Library/CloudStorage/Dropbox"
   else
@@ -676,4 +676,4 @@ unset __where
 
 # Cleanup
 
-unset __uname
+unset __jx_uname

@@ -26,7 +26,7 @@
   - Safely handle case-insensitive filesystems and link target files that differ only in case. Maybe include option to normalize them to the current case of the files in the repo, or even do that by default.
 - Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
   - When adding the first `nested/_ssh/` or `nested/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_nested`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
-- Namespace-prefix more internal variables, like `__jx_uname` instead of `__uname`, and add more `unset`/`unfunction` cleanup.
+- Namespace-prefix more internal variables, and add more `unset`/`unfunction` cleanup.
 - Fix everything to work with `sudo bash`.
 - Add more documentation. A Design doc.
 - Tool in zsh to quick switch to a simpler no-emoji theme suitable for copy-paste, in current session.

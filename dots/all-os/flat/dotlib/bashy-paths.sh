@@ -10,8 +10,8 @@
 # shellcheck shell=bash
 
 # Call uname once and stash results for performance
-if [[ -z $__uname ]]; then
-  __uname=$(uname)
+if [[ -z $__jx_uname ]]; then
+  __jx_uname=$(uname)
 fi
 
 
@@ -54,7 +54,7 @@ function jx_maybe_add_path() {
     yes|no) ;;
     auto)
       # Match the OS's default filesystem behavior.
-      case "$__uname" in
+      case "$__jx_uname" in
         Darwin|CYGWIN*|MINGW*|MSYS*) casing=no ;;
         *)                           casing=yes ;;
       esac
@@ -141,7 +141,7 @@ PATH="/usr/local/bin:$PATH"
 # Custom local dirs defined by this dotfiles framework or just my habits
 
 jx_maybe_add_path --prepend "$HOME/bin"
-if [[ $__uname = "Darwin" ]]; then
+if [[ $__jx_uname = "Darwin" ]]; then
   jx_maybe_add_path --prepend "$HOME/bin/macos"
 fi
 # Sheesh. I haven't been able to settle on a conventional local bin location, have I?

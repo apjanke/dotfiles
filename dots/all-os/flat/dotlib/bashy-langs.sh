@@ -7,8 +7,8 @@
 # shellcheck disable=SC1091
 
 # Call uname once and stash results for performance
-if [[ -z $__uname ]]; then
-  __uname=$(uname)
+if [[ -z $__jx_uname ]]; then
+  __jx_uname=$(uname)
 fi
 
 
@@ -205,7 +205,7 @@ fi
 
 # MacOS specifics
 
-if [[ $__uname = "Darwin" ]]; then
+if [[ $__jx_uname = "Darwin" ]]; then
 
   # Matlab
 
