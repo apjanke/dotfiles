@@ -18,8 +18,8 @@ There are a few different parts to this repo.
 - *home-bin* – Portable-ish little Unix scripts and programs I want on all my computers. Linked in as `~/bin`.
 - [*sys-setup*](sys-setup/README.md) – System and user configuration scripts that install things and adjust system settings.
 - *settings* – Settings data files.
-  * *manual* – Exported and imported settings files from various programs, managed manually.
-  * [*iTerm2*](iTerm2/README.md) – Shared data directory for iTerm2's "load settings from folder" preference sync thing.
+  - *manual* – Exported and imported settings files from various programs, managed manually.
+  - [*iTerm2*](iTerm2/README.md) – Shared data directory for iTerm2's "load settings from folder" preference sync thing.
 - *tools* – Scripts for maintaining this repo itself, as opposed to configuring a machine. Currently just `lint`.
 
 ## Overall Installation / Usage
