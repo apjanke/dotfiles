@@ -19,20 +19,6 @@ REPO="$PWD"
 source "$REPO/dots/tests/lib.sh"
 trap cleanup_fake_homes EXIT
 
-function install_into_fake_home() {
-  # errexit off: failures are the caller's to interpret, not ours to abort on.
-  local rc=0
-  set +o errexit
-  HOME="$FAKE_HOME" "$REPO/install-dotfiles" "$@" 2>&1
-  rc=$?
-  set -o errexit
-  return $rc
-}
-
-function real_bashrc_link() {
-  readlink "$HOME/.bashrc" 2>/dev/null || echo '(not a symlink)'
-}
-
 # ============ Tests ============
 
 function run_tests() {
@@ -619,6 +605,20 @@ function run_tests() {
     fail "the real ~/.bashrc is exactly as the tests found it" \
         "was $REAL_BASHRC_BEFORE, now $(real_bashrc_link)"
   fi
+}
+
+function install_into_fake_home() {
+  # errexit off: failures are the caller's to interpret, not ours to abort on.
+  local rc=0
+  set +o errexit
+  HOME="$FAKE_HOME" "$REPO/install-dotfiles" "$@" 2>&1
+  rc=$?
+  set -o errexit
+  return $rc
+}
+
+function real_bashrc_link() {
+  readlink "$HOME/.bashrc" 2>/dev/null || echo '(not a symlink)'
 }
 
 function print_summary() {
