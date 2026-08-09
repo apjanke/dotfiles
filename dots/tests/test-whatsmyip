@@ -200,60 +200,64 @@ function main() {
   local got
 
   echo "===== mode selection ====="
-  got=$(run_whatsmyip full --no-copy)
+  got=$(run_whatsmyip full)
   assert_contains "$got" '203.0.113.7' 'default mode is opendns'
   assert_contains "$got" 'rc=0' 'opendns exits 0'
 
-  got=$(run_whatsmyip full --opendns --no-copy)
+  got=$(run_whatsmyip full --opendns)
   assert_contains "$got" '203.0.113.7' '--opendns matches the default'
 
-  got=$(run_whatsmyip full --mode opendns --no-copy)
+  got=$(run_whatsmyip full --mode opendns)
   assert_contains "$got" '203.0.113.7' '--mode opendns matches the default'
 
-  got=$(run_whatsmyip full --ifconfigme --no-copy)
+  got=$(run_whatsmyip full --ifconfigme)
   assert_contains "$got" '198.51.100.23' '--ifconfigme selects the ifconfig.me path'
 
-  got=$(run_whatsmyip full --mode ifconfigme --no-copy)
+  got=$(run_whatsmyip full --mode ifconfigme)
   assert_contains "$got" '198.51.100.23' '--mode ifconfigme is a synonym for --ifconfigme'
 
-  got=$(run_whatsmyip full -6 --no-copy)
+  got=$(run_whatsmyip full -6)
   assert_contains "$got" '2001:db8::dead:beef' '-6 asks opendns for an IPv6 address'
   assert_contains "$(cat "$STUB_LOG/dig.calls")" '-6' \
       '-6 is actually passed through to dig'
 
   echo "===== --local (BSD/macOS path -- the default stub uname) ====="
-  got=$(run_whatsmyip full --local --no-copy)
+  got=$(run_whatsmyip full --local)
   assert_contains "$got" '203.0.113.9' \
       '--local finds the default-route interface and its v4 address'
 
-  got=$(run_whatsmyip full --local -6 --no-copy)
+  got=$(run_whatsmyip full --local -6)
   assert_contains "$got" '2001:db8::9999' \
       '--local -6 skips link-local and deprecated addresses to find the stable one'
 
   echo "===== --local (Linux path, via stubbed uname) ====="
-  got=$(STUB_UNAME=Linux run_whatsmyip full --local --no-copy)
+  got=$(STUB_UNAME=Linux run_whatsmyip full --local)
   assert_contains "$got" '10.0.0.10' \
       'Linux --local reads the src address straight from "ip route get"'
 
-  got=$(STUB_UNAME=Linux run_whatsmyip full --local -6 --no-copy)
+  got=$(STUB_UNAME=Linux run_whatsmyip full --local -6)
   assert_contains "$got" '2001:db8::10' 'Linux --local -6 does the same for IPv6'
 
   echo "===== conflicting and invalid options ====="
-  got=$(run_whatsmyip full --local --mode opendns --no-copy)
+  got=$(run_whatsmyip full --local --mode opendns)
   assert_contains "$got" 'Conflicting mode options' \
       'two different mode selections is an error'
   assert_contains "$got" 'rc=1' 'a conflicting mode selection exits non-zero'
 
-  got=$(run_whatsmyip full --opendns --opendns --no-copy)
+  got=$(run_whatsmyip full --opendns --opendns)
   assert_contains "$got" 'rc=0' 'repeating the same mode twice is not a conflict'
 
-  got=$(run_whatsmyip full --mode bogus --no-copy)
+  got=$(run_whatsmyip full --mode bogus)
   assert_contains "$got" "Unrecognized mode: 'bogus'" 'an unrecognized --mode value errors'
   assert_contains "$got" 'rc=1' 'an unrecognized --mode value exits non-zero'
 
-  got=$(run_whatsmyip full --nope --no-copy)
+  got=$(run_whatsmyip full --nope)
   assert_contains "$got" 'Unexpected option: --nope' 'an unknown option errors'
   assert_contains "$got" 'rc=1' 'an unknown option exits non-zero'
+
+  got=$(run_whatsmyip full --no-copy)
+  assert_contains "$got" 'Unexpected option: --no-copy' \
+      '--no-copy no longer exists -- not copying is the default now'
 
   echo "===== help ====="
   got=$(run_whatsmyip full --help)
@@ -266,29 +270,37 @@ function main() {
   echo "===== an empty lookup result is an error, not a silent blank line ====="
   # This is the bug that motivated the rewrite: the old myip() got an empty answer from
   # dig (rc=0) and happily echoed a blank line and "succeeded".
-  got=$(STUB_DIG_EMPTY=1 run_whatsmyip full --no-copy)
+  got=$(STUB_DIG_EMPTY=1 run_whatsmyip full)
   assert_contains "$got" 'Failed to determine an IP address' \
       'an empty (but rc=0) lookup result is reported as a failure'
   assert_contains "$got" 'rc=1' 'an empty lookup result exits non-zero'
 
   echo "===== clipboard ====="
   rm -f "$STUB_LOG/clipboard"
-  run_whatsmyip full --no-copy > /dev/null
-  assert_file_absent "$STUB_LOG/clipboard" '--no-copy leaves the clipboard untouched'
+  run_whatsmyip full > /dev/null
+  assert_file_absent "$STUB_LOG/clipboard" 'not copying is the default'
 
   rm -f "$STUB_LOG/clipboard"
-  run_whatsmyip full > /dev/null
-  assert_file_exists "$STUB_LOG/clipboard" 'copy is on by default'
+  run_whatsmyip full -c > /dev/null
+  assert_file_exists "$STUB_LOG/clipboard" '-c copies to the clipboard'
   assert_eq "$(cat "$STUB_LOG/clipboard")" '203.0.113.7' \
       'the copied value is the address that was printed'
 
-  got=$(STUB_PBCOPY_FAIL=1 run_whatsmyip full --verbose)
+  rm -f "$STUB_LOG/clipboard"
+  run_whatsmyip full --copy > /dev/null
+  assert_file_exists "$STUB_LOG/clipboard" '--copy is the long form of -c'
+
+  got=$(run_whatsmyip full --no-copy)
+  assert_contains "$got" 'rc=1' \
+      '--no-copy is gone -- passing it is just an unknown option now'
+
+  got=$(STUB_PBCOPY_FAIL=1 run_whatsmyip full -c --verbose)
   assert_contains "$got" 'rc=0' \
       'a failed clipboard copy does not fail the overall command'
   assert_contains "$got" "Failed to copy to clipboard via 'pbcopy'" \
       'a failed clipboard copy is reported as a warning'
 
-  got=$(run_whatsmyip minimal --verbose)
+  got=$(run_whatsmyip minimal -c --verbose)
   assert_contains "$got" 'rc=0' 'no clipboard tool found still exits 0'
   assert_contains "$got" 'No clipboard tool found' \
       'no clipboard tool found is reported, verbosely, as informational'
@@ -303,12 +315,12 @@ function main() {
   assert_not_contains "$got" '203.0.113.7' 'dry-run does not print an address'
   assert_file_absent "$STUB_LOG/dig.calls" 'dry-run never actually calls dig'
 
-  got=$(run_whatsmyip full --dry-run --local --no-copy)
+  got=$(run_whatsmyip full --dry-run --local)
   assert_contains "$got" '203.0.113.9' \
       '--local runs for real even under --dry-run, since it never touches the network'
 
   rm -f "$STUB_LOG/clipboard"
-  got=$(run_whatsmyip full --dry-run --local --verbose)
+  got=$(run_whatsmyip full --dry-run --local -c --verbose)
   assert_contains "$got" 'dry-run: would: copy to clipboard via pbcopy' \
       'dry-run reports the clipboard copy it would have made'
   assert_file_absent "$STUB_LOG/clipboard" 'dry-run does not actually copy to the clipboard'

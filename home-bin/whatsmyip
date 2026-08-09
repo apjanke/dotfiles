@@ -5,7 +5,7 @@
 # Consolidates the old myip()/lip()/whatismyip() interactive functions from bashyrc.sh
 # (see doc/TODO.md) -- they'd outgrown being shell functions.
 #
-#   whatsmyip [--mode opendns|ifconfigme|local] [-4|-6] [--no-copy]
+#   whatsmyip [--mode opendns|ifconfigme|local] [-4|-6] [-c|--copy]
 
 # Load JXL. See "Loading JXL" in dots/README.md.
 source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
@@ -20,7 +20,7 @@ readonly UNAME
 
 MODE=opendns
 IP_FAMILY=4
-DO_COPY=1
+DO_COPY=0
 _MODE_SET=0
 
 function parse_cli() {
@@ -41,8 +41,7 @@ function parse_cli() {
       --local | -l)   select_mode local "--local" ;;
       -4 | --ipv4)    IP_FAMILY=4 ;;
       -6 | --ipv6)    IP_FAMILY=6 ;;
-      --copy)         DO_COPY=1 ;;
-      --no-copy)      DO_COPY=0 ;;
+      -c | --copy)    DO_COPY=1 ;;
       -*)
         jxl::std_opt "$arg" || die "Unexpected option: ${arg}. See '$PROGRAM_NAME --help' for usage"
         if [[ $_JXL_WANT_HELP == 1 ]]; then echo "$HELP_SCREEN"; exit 0; fi
@@ -83,7 +82,7 @@ IFS= read -r -d '' HELP_SCREEN <<EOHELP || true
 ${PROGRAM_NAME} - report this machine's IP address, by one of several methods
 
 Usage:
-  ${PROGRAM_NAME} [--mode opendns|ifconfigme|local] [-4|-6] [--no-copy]
+  ${PROGRAM_NAME} [--mode opendns|ifconfigme|local] [-4|-6] [-c|--copy]
 
 Modes (default: opendns; two different ones together is an error):
         --mode M      select a mode explicitly: opendns, ifconfigme, or local
@@ -94,8 +93,7 @@ Modes (default: opendns; two different ones together is an error):
 Options:
     -4, --ipv4        report an IPv4 address (default)
     -6, --ipv6        report an IPv6 address
-        --copy        copy the result to the clipboard (default)
-        --no-copy     don't copy the result to the clipboard
+    -c, --copy        copy the result to the clipboard
 $(jxl::std_options_help)
 EOHELP
 readonly HELP_SCREEN
