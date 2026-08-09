@@ -23,29 +23,6 @@ trap cleanup_fake_homes EXIT
 
 BASHYRC="$REPO/dots/all-os/flat/dotlib/bashyrc.sh"
 
-function source_bashyrc() {
-  # Echoes the combined output of sourcing bashyrc.sh under the given shell, with $HOME
-  # pointed at a throwaway dir. The trailing snippet can probe what got defined.
-  local shell="$1" home="$2" snippet="${3:-}"
-  HOME="$home" "$shell" -c "
-    source '$BASHYRC'
-    $snippet
-  " 2>&1 || true
-}
-
-function assert_all_shells_bashyrc() {
-  local home="$1" snippet="$2" want="$3" desc="$4"
-  local sh got
-  for sh in "${TEST_SHELLS[@]}"; do
-    got=$(source_bashyrc "$sh" "$home" "$snippet")
-    if [[ "$got" != *"$want"* ]]; then
-      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted to contain '$want'"
-      return
-    fi
-  done
-  ok "$desc"
-}
-
 # shellcheck disable=SC2016  # single-quoted $... is code for the inner shell
 function main() {
   select_test_shells
@@ -97,6 +74,29 @@ function main() {
   assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'ermission denied' \
       'the shell distinguishes unreadable from missing, so we need not'
   chmod 644 "$FAKE_HOME/.dotlib/jxl-lib.sh"   # so cleanup can remove it
+}
+
+function source_bashyrc() {
+  # Echoes the combined output of sourcing bashyrc.sh under the given shell, with $HOME
+  # pointed at a throwaway dir. The trailing snippet can probe what got defined.
+  local shell="$1" home="$2" snippet="${3:-}"
+  HOME="$home" "$shell" -c "
+    source '$BASHYRC'
+    $snippet
+  " 2>&1 || true
+}
+
+function assert_all_shells_bashyrc() {
+  local home="$1" snippet="$2" want="$3" desc="$4"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(source_bashyrc "$sh" "$home" "$snippet")
+    if [[ "$got" != *"$want"* ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted to contain '$want'"
+      return
+    fi
+  done
+  ok "$desc"
 }
 
 main

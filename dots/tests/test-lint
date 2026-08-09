@@ -31,40 +31,6 @@ source "$REPO/dots/tests/lib.sh"
 LINT="$REPO/tools/lint"
 FIXTURE_DIR=""   # set up in main(); outside the repo, so a full lint run can't see it
 
-function fixture() {
-  # Writes a runnable fixture script and echoes its absolute path.
-  local name="$1"
-  shift
-  local path="$FIXTURE_DIR/$name.sh"
-  { printf '#!/bin/bash\n'; printf '%s\n' "$@"; } > "$path"
-  printf '%s\n' "$path"
-}
-
-function lint_output() {
-  local path="$1" out
-  # Findings mean a non-zero exit, which is the normal case here.
-  out=$("$LINT" "$path" 2>&1) || true
-  printf '%s\n' "$out"
-}
-
-function assert_flags() {
-  # assert_flags NAME NEEDLE DESCR LINE...
-  local name="$1" needle="$2" descr="$3"
-  shift 3
-  local path
-  path=$(fixture "$name" "$@")
-  assert_contains "$(lint_output "$path")" "$needle" "$descr"
-}
-
-function assert_does_not_flag() {
-  # assert_does_not_flag NAME NEEDLE DESCR LINE...
-  local name="$1" needle="$2" descr="$3"
-  shift 3
-  local path
-  path=$(fixture "$name" "$@")
-  assert_not_contains "$(lint_output "$path")" "$needle" "$descr"
-}
-
 # shellcheck disable=SC2016  # the single-quoted ${...} below is fixture text, not code
 function main() {
   FIXTURE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test.lint.XXXXXX")
@@ -144,6 +110,40 @@ function main() {
   out=$("$LINT" 2>&1) || true
   assert_contains "$out" 'bash 3.2 compat: clean' 'a full run over the repo is clean'
   assert_not_contains "$out" 'every file opted out' 'no file has opted itself out'
+}
+
+function fixture() {
+  # Writes a runnable fixture script and echoes its absolute path.
+  local name="$1"
+  shift
+  local path="$FIXTURE_DIR/$name.sh"
+  { printf '#!/bin/bash\n'; printf '%s\n' "$@"; } > "$path"
+  printf '%s\n' "$path"
+}
+
+function lint_output() {
+  local path="$1" out
+  # Findings mean a non-zero exit, which is the normal case here.
+  out=$("$LINT" "$path" 2>&1) || true
+  printf '%s\n' "$out"
+}
+
+function assert_flags() {
+  # assert_flags NAME NEEDLE DESCR LINE...
+  local name="$1" needle="$2" descr="$3"
+  shift 3
+  local path
+  path=$(fixture "$name" "$@")
+  assert_contains "$(lint_output "$path")" "$needle" "$descr"
+}
+
+function assert_does_not_flag() {
+  # assert_does_not_flag NAME NEEDLE DESCR LINE...
+  local name="$1" needle="$2" descr="$3"
+  shift 3
+  local path
+  path=$(fixture "$name" "$@")
+  assert_not_contains "$(lint_output "$path")" "$needle" "$descr"
 }
 
 main

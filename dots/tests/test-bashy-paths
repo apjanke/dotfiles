@@ -23,36 +23,6 @@ source "$REPO/dots/tests/lib.sh"
 PATHS_FILE="$REPO/dots/all-os/flat/dotlib/bashy-paths.sh"
 TEST_DIRS=""      # set up in main(); real dirs, since the function skips nonexistent ones
 
-function run_case() {
-  # Echoes $PATH after running the snippet under the given shell.
-  #
-  # Sourcing the file runs its own jx_maybe_add_path calls at the bottom, so $PATH is set
-  # afterward to a known value: the function definition survives, the side effects don't.
-  local shell="$1" base_path="$2" snippet="$3"
-  "$shell" -c "
-    source '$PATHS_FILE' >/dev/null 2>&1
-    __uname=\$(uname)
-    PATH='$base_path'
-    $snippet
-    printf '%s' \"\$PATH\"
-  " 2>/dev/null
-}
-
-function assert_all_shells() {
-  # Every shell in $TEST_SHELLS must agree. Reports the first that disagrees, naming its
-  # version -- "bash disagreed" is not much use when two bash builds are in play.
-  local base="$1" snippet="$2" want="$3" desc="$4"
-  local sh got
-  for sh in "${TEST_SHELLS[@]}"; do
-    got=$(run_case "$sh" "$base" "$snippet")
-    if [[ "$got" != "$want" ]]; then
-      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
-      return
-    fi
-  done
-  ok "$desc"
-}
-
 function main() {
   local d out rc
 
@@ -121,6 +91,36 @@ function main() {
   rc=0
   bash -c "source '$PATHS_FILE' >/dev/null 2>&1; jx_maybe_add_path --case maybe /tmp" >/dev/null 2>&1 || rc=$?
   assert_eq "$rc" "1" 'an invalid --case value returns non-zero'
+}
+
+function run_case() {
+  # Echoes $PATH after running the snippet under the given shell.
+  #
+  # Sourcing the file runs its own jx_maybe_add_path calls at the bottom, so $PATH is set
+  # afterward to a known value: the function definition survives, the side effects don't.
+  local shell="$1" base_path="$2" snippet="$3"
+  "$shell" -c "
+    source '$PATHS_FILE' >/dev/null 2>&1
+    __uname=\$(uname)
+    PATH='$base_path'
+    $snippet
+    printf '%s' \"\$PATH\"
+  " 2>/dev/null
+}
+
+function assert_all_shells() {
+  # Every shell in $TEST_SHELLS must agree. Reports the first that disagrees, naming its
+  # version -- "bash disagreed" is not much use when two bash builds are in play.
+  local base="$1" snippet="$2" want="$3" desc="$4"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_case "$sh" "$base" "$snippet")
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
 }
 
 main

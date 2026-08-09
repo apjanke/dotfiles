@@ -24,82 +24,6 @@ source "$REPO/dots/tests/lib.sh"
 
 LIB="$REPO/dots/all-os/flat/dotlib/jxl-lib.sh"
 
-function run_in() {
-  # Echoes the snippet's combined output, run under the given shell with JXL sourced.
-  #
-  # The `|| true` matters: several snippets deliberately end in a failing state, and this
-  # script runs under errexit, so without it a non-zero snippet aborts the whole run at
-  # the `got=$(run_in ...)` assignment instead of failing that one assertion.
-  local shell="$1" snippet="$2"
-  "$shell" -c "
-    source '$LIB'
-    $snippet
-  " 2>&1 || true
-}
-
-function assert_all_shells() {
-  # Every shell in $TEST_SHELLS must agree. Reports the first that disagrees, naming its
-  # version -- "bash disagreed" is not much use with two bash builds in play.
-  local snippet="$1" want="$2" desc="$3"
-  local sh got
-  for sh in "${TEST_SHELLS[@]}"; do
-    got=$(run_in "$sh" "$snippet")
-    if [[ "$got" != "$want" ]]; then
-      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
-      return
-    fi
-  done
-  ok "$desc"
-}
-
-function assert_one_family() {
-  # assert_one_family bash|zsh SNIPPET WANT DESC
-  #
-  # For behavior the two families could not share an expected value for even in
-  # principle -- zsh has no shopt, bash has no emulate, and their defaults for an
-  # unmatched glob differ (bash leaves the pattern, zsh errors).
-  local family="$1" snippet="$2" want="$3" desc="$4"
-  local sh got ran=0
-  for sh in "${TEST_SHELLS[@]}"; do
-    case "${sh##*/}" in "$family") ;; *) continue ;; esac
-    ran=1
-    got=$(run_in "$sh" "$snippet")
-    if [[ "$got" != "$want" ]]; then
-      fail "$desc" "${family} $(shell_version "$sh"): got '$got', wanted '$want'"
-      return
-    fi
-  done
-  if [[ $ran == 0 ]]; then
-    fail "$desc" "no ${family} build found to test under"
-    return
-  fi
-  ok "$desc"
-}
-
-# A command function used by several cases below. Kept in one string so the isolation and
-# argument-parsing tests all exercise the same shape a real command has.
-#
-# shellcheck disable=SC2016  # single-quoted $... is source code for the inner shell
-DEMO='
-function jx-demo() {
-  local do_long=0
-  local -a _JXL_COMMAND_INFO=( usage_headline "Demo" synopsis_args "[--long]" )
-  jxl::run_command jx::demo "$@"
-}
-function jx::demo_parse_cli() {
-  local arg
-  local -a leftover=()
-  while [[ $# -ge 1 ]]; do
-    arg="$1"; shift
-    case "$arg" in
-      --long | -l)  do_long=1 ;;
-      *)            leftover+=("$arg") ;;
-    esac
-  done
-  _JXL_CLI_ARGS=( ${leftover[@]+"${leftover[@]}"} )
-}
-'
-
 # shellcheck disable=SC2016  # the single-quoted snippets are code for the inner shell
 function main() {
   select_test_shells
@@ -426,6 +350,82 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     jx-inline --verbose
     if [[ -n ${_JXL_VERBOSE+x} ]]; then echo LEAKED; else echo clean; fi' 'clean' \
       'even inline mode leaves no JXL state in the calling shell'
+}
+
+# A command function used by several cases above. Kept in one string so the isolation and
+# argument-parsing tests all exercise the same shape a real command has.
+#
+# shellcheck disable=SC2016  # single-quoted $... is source code for the inner shell
+DEMO='
+function jx-demo() {
+  local do_long=0
+  local -a _JXL_COMMAND_INFO=( usage_headline "Demo" synopsis_args "[--long]" )
+  jxl::run_command jx::demo "$@"
+}
+function jx::demo_parse_cli() {
+  local arg
+  local -a leftover=()
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --long | -l)  do_long=1 ;;
+      *)            leftover+=("$arg") ;;
+    esac
+  done
+  _JXL_CLI_ARGS=( ${leftover[@]+"${leftover[@]}"} )
+}
+'
+
+function run_in() {
+  # Echoes the snippet's combined output, run under the given shell with JXL sourced.
+  #
+  # The `|| true` matters: several snippets deliberately end in a failing state, and this
+  # script runs under errexit, so without it a non-zero snippet aborts the whole run at
+  # the `got=$(run_in ...)` assignment instead of failing that one assertion.
+  local shell="$1" snippet="$2"
+  "$shell" -c "
+    source '$LIB'
+    $snippet
+  " 2>&1 || true
+}
+
+function assert_all_shells() {
+  # Every shell in $TEST_SHELLS must agree. Reports the first that disagrees, naming its
+  # version -- "bash disagreed" is not much use with two bash builds in play.
+  local snippet="$1" want="$2" desc="$3"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_in "$sh" "$snippet")
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+function assert_one_family() {
+  # assert_one_family bash|zsh SNIPPET WANT DESC
+  #
+  # For behavior the two families could not share an expected value for even in
+  # principle -- zsh has no shopt, bash has no emulate, and their defaults for an
+  # unmatched glob differ (bash leaves the pattern, zsh errors).
+  local family="$1" snippet="$2" want="$3" desc="$4"
+  local sh got ran=0
+  for sh in "${TEST_SHELLS[@]}"; do
+    case "${sh##*/}" in "$family") ;; *) continue ;; esac
+    ran=1
+    got=$(run_in "$sh" "$snippet")
+    if [[ "$got" != "$want" ]]; then
+      fail "$desc" "${family} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  if [[ $ran == 0 ]]; then
+    fail "$desc" "no ${family} build found to test under"
+    return
+  fi
+  ok "$desc"
 }
 
 main

@@ -26,6 +26,131 @@ REPO="$PWD"
 source "$REPO/dots/tests/lib.sh"
 trap cleanup_fake_homes EXIT
 
+function main() {
+  select_test_shells
+  print_test_env
+
+  # A fake home wired up exactly as install-dotfiles would, plus one local file
+  # (.bashyrc-user) carrying synthetic JX_* variables -- an array, a multi-line value, an
+  # exported scalar, and an undeclared name -- so the array/multi-line/export-marker and
+  # discover-beyond-the-known-list cases all run through the REAL discovery sweep in
+  # bashyrc.sh, not a hand-called jxl::show_var.
+  new_fake_home
+  local home="$FAKE_HOME"
+  ln -sfn "$REPO/dots/all-os/flat/dotlib" "$home/.dotlib"
+  ln -sfn "$REPO/dots/all-os/flat/profile.sh" "$home/.profile"
+  cat > "$home/.bashyrc-user" <<'EOF'
+JX_TEST_ARR=(one two "three four")
+JX_TEST_MULTI=$(printf 'line1\nline2')
+export JX_TEST_EXP=1
+EOF
+
+  echo "===== sections and standard variables ====="
+  assert_all_shells_shell_info "$home" '' 'Standard variables:' \
+      'the standard-variables section is present'
+  assert_all_shells_shell_info "$home" '' 'EDITOR' \
+      'EDITOR appears under standard variables'
+  assert_all_shells_shell_info "$home" '' 'JX dotfiles variables:' \
+      'the JX dotfiles variables section is present'
+
+  echo "===== JX custom variables ====="
+  assert_all_shells_shell_info "$home" '' 'JX custom variables:' \
+      'the JX-custom section is present when DROPBOX is set'
+  assert_all_shells_shell_info "$home" '' 'DROPBOX' \
+      'DROPBOX appears in the JX-custom section'
+  # DROPBOX is exported (fixed 2026-08-08); the JX-custom section is real-world proof an
+  # unexported var would show no ^, since every other custom-var candidate is hypothetical.
+  assert_all_shells_shell_info "$home" '' 'DROPBOX ^' \
+      'DROPBOX shows the ^ sigil, now that it is exported'
+  assert_all_shells_shell_info_not "$home" '' 'Vars:' \
+      'the old ad-hoc "Vars:" line is gone'
+
+  echo "===== array and multi-line values from real discovery ====="
+  assert_all_shells_shell_info "$home" '' "JX_TEST_ARR             @  = ( one two 'three four' )" \
+      'an array JX_* variable renders with @ and every element, spaces quoted'
+  assert_all_shells_shell_info "$home" '' 'JX_TEST_EXP             ^  = 1' \
+      'an exported scalar JX_* variable gets the ^ sigil'
+  assert_all_shells_shell_info "$home" '' \
+      "$(printf 'JX_TEST_MULTI              = line1\n      line2')" \
+      'a multi-line JX_* value has its continuation line indented'
+  assert_all_shells_shell_info "$home" '' 'JX_TEST_ARR' \
+      'an undeclared JX_* name still appears -- discovery is not limited to the known list'
+
+  echo "===== unset known names: hidden by default, shown under --verbose ====="
+  assert_all_shells_shell_info_not "$home" '' 'JX_TRACE_SHELL_STARTUP' \
+      'an unset known JX_* name is hidden by default'
+  assert_all_shells_shell_info "$home" '--verbose' 'JX_TRACE_SHELL_STARTUP' \
+      '--verbose shows an unset known JX_* name'
+  assert_all_shells_shell_info "$home" '--verbose' 'JX_TRACE_SHELL_STARTUP     (unset)' \
+      '--verbose marks it unset rather than inventing a value'
+
+  echo "===== local files ====="
+  assert_all_shells_shell_info "$home" '' '.bashyrc-user   present' \
+      'a present local file is listed by default'
+  assert_all_shells_shell_info_not "$home" '' '.bashyrc-local  absent' \
+      'an absent local file is hidden by default'
+  assert_all_shells_shell_info "$home" '--verbose' '.bashyrc-local  absent' \
+      '--verbose lists an absent local file too'
+
+  echo "===== internal state ====="
+  assert_all_shells_shell_info_not "$home" '' 'Internal state:' \
+      'the internal-state section is hidden by default'
+  assert_all_shells_shell_info "$home" '--verbose' 'Internal state:' \
+      '--verbose shows the internal-state section'
+  assert_all_shells_shell_info "$home" '--verbose' '_JX_DEBUG' \
+      '--verbose shows _JX_DEBUG'
+
+  echo "===== \$PATH pretty-printing ====="
+  # /aa /bb /cc /d d, prefixed with /bin:/usr/bin so jx-shell-info's own internals keep
+  # working (see run_shell_info_path) -- six entries total, one containing a space.
+  local test_path='/aa:/bb:/cc:/d d'
+  local want_pretty want_long want_raw
+  want_pretty=$(printf "PATH (6 entries):\n  /bin /usr/bin\n  /aa /bb /cc\n  '/d d'\n")
+  want_long=$(printf 'PATH:\n  /bin\n  /usr/bin\n  /aa\n  /bb\n  /cc\n  /d d\n')
+  want_raw=$(printf 'PATH: /bin:/usr/bin:/aa:/bb:/cc:/d d\n')
+
+  assert_all_shells_shell_info_path "$home" "$test_path" '--width 15' "$want_pretty" \
+      'default pretty-wrap breaks at the given width and quotes the space-bearing entry'
+  assert_all_shells_shell_info_path "$home" "$test_path" '--long-path' "$want_long" \
+      '--long-path gives one raw, unquoted entry per line'
+  assert_all_shells_shell_info_path "$home" "$test_path" '--raw-path' "$want_raw" \
+      '--raw-path reproduces the old verbatim one-line form'
+  assert_all_shells_shell_info_columns "$home" "$test_path" 15 "$want_pretty" \
+      'COLUMNS drives the default wrap width when --width is not given'
+  # A non-interactive/non-tty environment can export COLUMNS as a literal "0" rather than
+  # leaving it unset (observed running this suite itself) -- found by the manual smoke
+  # test, not by a planned case. That has to fall through to the 80-column default like
+  # unset does, not sail through and silently degrade to one-entry-per-line.
+  assert_all_shells_shell_info_columns "$home" "$test_path" 0 \
+      "$(printf "PATH (6 entries):\n  /bin /usr/bin /aa /bb /cc '/d d'\n")" \
+      'COLUMNS=0 falls through to the 80-column default, not a degenerate width'
+
+  assert_all_shells_shell_info_bad_option "$home" '--width abc' \
+      'a non-numeric --width fails cleanly without killing the shell'
+  assert_all_shells_shell_info "$home" '--width abc' \
+      'ERROR: --width wants a positive integer' \
+      'the --width error names the bad value'
+
+  echo "===== --jxl ====="
+  assert_all_shells_shell_info_not "$home" '' 'JXL 0.1.0' \
+      'the JXL section is absent without --jxl'
+  assert_all_shells_shell_info "$home" '--jxl' 'JXL 0.1.0' \
+      '--jxl appends jxl::show_shell_info'
+
+  echo "===== --help and a bad option ====="
+  assert_all_shells_shell_info "$home" '--help' 'Dump some info about this shell' \
+      '--help renders the headline'
+  assert_all_shells_shell_info "$home" '--help' '--jxl' \
+      '--help documents --jxl'
+  assert_all_shells_shell_info "$home" '--help' '--raw-path' \
+      '--help documents --raw-path'
+  assert_all_shells_shell_info "$home" '--help' '--width' \
+      '--help documents --width'
+
+  assert_all_shells_shell_info_bad_option "$home" --nope \
+      'a bad option fails without killing the shell'
+}
+
 function run_shell_info() {
   # Echoes the combined output of `jx-shell-info ARGS` under the given shell, with $HOME
   # pointed at a throwaway dir carrying .profile and .dotlib.
@@ -160,131 +285,6 @@ function assert_all_shells_shell_info_not() {
     fi
   done
   ok "$desc"
-}
-
-function main() {
-  select_test_shells
-  print_test_env
-
-  # A fake home wired up exactly as install-dotfiles would, plus one local file
-  # (.bashyrc-user) carrying synthetic JX_* variables -- an array, a multi-line value, an
-  # exported scalar, and an undeclared name -- so the array/multi-line/export-marker and
-  # discover-beyond-the-known-list cases all run through the REAL discovery sweep in
-  # bashyrc.sh, not a hand-called jxl::show_var.
-  new_fake_home
-  local home="$FAKE_HOME"
-  ln -sfn "$REPO/dots/all-os/flat/dotlib" "$home/.dotlib"
-  ln -sfn "$REPO/dots/all-os/flat/profile.sh" "$home/.profile"
-  cat > "$home/.bashyrc-user" <<'EOF'
-JX_TEST_ARR=(one two "three four")
-JX_TEST_MULTI=$(printf 'line1\nline2')
-export JX_TEST_EXP=1
-EOF
-
-  echo "===== sections and standard variables ====="
-  assert_all_shells_shell_info "$home" '' 'Standard variables:' \
-      'the standard-variables section is present'
-  assert_all_shells_shell_info "$home" '' 'EDITOR' \
-      'EDITOR appears under standard variables'
-  assert_all_shells_shell_info "$home" '' 'JX dotfiles variables:' \
-      'the JX dotfiles variables section is present'
-
-  echo "===== JX custom variables ====="
-  assert_all_shells_shell_info "$home" '' 'JX custom variables:' \
-      'the JX-custom section is present when DROPBOX is set'
-  assert_all_shells_shell_info "$home" '' 'DROPBOX' \
-      'DROPBOX appears in the JX-custom section'
-  # DROPBOX is exported (fixed 2026-08-08); the JX-custom section is real-world proof an
-  # unexported var would show no ^, since every other custom-var candidate is hypothetical.
-  assert_all_shells_shell_info "$home" '' 'DROPBOX ^' \
-      'DROPBOX shows the ^ sigil, now that it is exported'
-  assert_all_shells_shell_info_not "$home" '' 'Vars:' \
-      'the old ad-hoc "Vars:" line is gone'
-
-  echo "===== array and multi-line values from real discovery ====="
-  assert_all_shells_shell_info "$home" '' "JX_TEST_ARR             @  = ( one two 'three four' )" \
-      'an array JX_* variable renders with @ and every element, spaces quoted'
-  assert_all_shells_shell_info "$home" '' 'JX_TEST_EXP             ^  = 1' \
-      'an exported scalar JX_* variable gets the ^ sigil'
-  assert_all_shells_shell_info "$home" '' \
-      "$(printf 'JX_TEST_MULTI              = line1\n      line2')" \
-      'a multi-line JX_* value has its continuation line indented'
-  assert_all_shells_shell_info "$home" '' 'JX_TEST_ARR' \
-      'an undeclared JX_* name still appears -- discovery is not limited to the known list'
-
-  echo "===== unset known names: hidden by default, shown under --verbose ====="
-  assert_all_shells_shell_info_not "$home" '' 'JX_TRACE_SHELL_STARTUP' \
-      'an unset known JX_* name is hidden by default'
-  assert_all_shells_shell_info "$home" '--verbose' 'JX_TRACE_SHELL_STARTUP' \
-      '--verbose shows an unset known JX_* name'
-  assert_all_shells_shell_info "$home" '--verbose' 'JX_TRACE_SHELL_STARTUP     (unset)' \
-      '--verbose marks it unset rather than inventing a value'
-
-  echo "===== local files ====="
-  assert_all_shells_shell_info "$home" '' '.bashyrc-user   present' \
-      'a present local file is listed by default'
-  assert_all_shells_shell_info_not "$home" '' '.bashyrc-local  absent' \
-      'an absent local file is hidden by default'
-  assert_all_shells_shell_info "$home" '--verbose' '.bashyrc-local  absent' \
-      '--verbose lists an absent local file too'
-
-  echo "===== internal state ====="
-  assert_all_shells_shell_info_not "$home" '' 'Internal state:' \
-      'the internal-state section is hidden by default'
-  assert_all_shells_shell_info "$home" '--verbose' 'Internal state:' \
-      '--verbose shows the internal-state section'
-  assert_all_shells_shell_info "$home" '--verbose' '_JX_DEBUG' \
-      '--verbose shows _JX_DEBUG'
-
-  echo "===== \$PATH pretty-printing ====="
-  # /aa /bb /cc /d d, prefixed with /bin:/usr/bin so jx-shell-info's own internals keep
-  # working (see run_shell_info_path) -- six entries total, one containing a space.
-  local test_path='/aa:/bb:/cc:/d d'
-  local want_pretty want_long want_raw
-  want_pretty=$(printf "PATH (6 entries):\n  /bin /usr/bin\n  /aa /bb /cc\n  '/d d'\n")
-  want_long=$(printf 'PATH:\n  /bin\n  /usr/bin\n  /aa\n  /bb\n  /cc\n  /d d\n')
-  want_raw=$(printf 'PATH: /bin:/usr/bin:/aa:/bb:/cc:/d d\n')
-
-  assert_all_shells_shell_info_path "$home" "$test_path" '--width 15' "$want_pretty" \
-      'default pretty-wrap breaks at the given width and quotes the space-bearing entry'
-  assert_all_shells_shell_info_path "$home" "$test_path" '--long-path' "$want_long" \
-      '--long-path gives one raw, unquoted entry per line'
-  assert_all_shells_shell_info_path "$home" "$test_path" '--raw-path' "$want_raw" \
-      '--raw-path reproduces the old verbatim one-line form'
-  assert_all_shells_shell_info_columns "$home" "$test_path" 15 "$want_pretty" \
-      'COLUMNS drives the default wrap width when --width is not given'
-  # A non-interactive/non-tty environment can export COLUMNS as a literal "0" rather than
-  # leaving it unset (observed running this suite itself) -- found by the manual smoke
-  # test, not by a planned case. That has to fall through to the 80-column default like
-  # unset does, not sail through and silently degrade to one-entry-per-line.
-  assert_all_shells_shell_info_columns "$home" "$test_path" 0 \
-      "$(printf "PATH (6 entries):\n  /bin /usr/bin /aa /bb /cc '/d d'\n")" \
-      'COLUMNS=0 falls through to the 80-column default, not a degenerate width'
-
-  assert_all_shells_shell_info_bad_option "$home" '--width abc' \
-      'a non-numeric --width fails cleanly without killing the shell'
-  assert_all_shells_shell_info "$home" '--width abc' \
-      'ERROR: --width wants a positive integer' \
-      'the --width error names the bad value'
-
-  echo "===== --jxl ====="
-  assert_all_shells_shell_info_not "$home" '' 'JXL 0.1.0' \
-      'the JXL section is absent without --jxl'
-  assert_all_shells_shell_info "$home" '--jxl' 'JXL 0.1.0' \
-      '--jxl appends jxl::show_shell_info'
-
-  echo "===== --help and a bad option ====="
-  assert_all_shells_shell_info "$home" '--help' 'Dump some info about this shell' \
-      '--help renders the headline'
-  assert_all_shells_shell_info "$home" '--help' '--jxl' \
-      '--help documents --jxl'
-  assert_all_shells_shell_info "$home" '--help' '--raw-path' \
-      '--help documents --raw-path'
-  assert_all_shells_shell_info "$home" '--help' '--width' \
-      '--help documents --width'
-
-  assert_all_shells_shell_info_bad_option "$home" --nope \
-      'a bad option fails without killing the shell'
 }
 
 main
