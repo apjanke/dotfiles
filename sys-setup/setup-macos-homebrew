@@ -36,51 +36,6 @@ $(jxl::std_options_help)
 EOF
 }
 
-function parse_cli() {
-  local arg
-
-  while [[ $# -ge 1 ]]; do
-    arg="$1"; shift
-    case "$arg" in
-      --trace | -x)                 OPT_TRACE=1 ;;
-      --no-casks | -n)              NO_CASKS=1 ;;
-      *)
-        jxl::std_opt "$arg" \
-            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
-        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
-        ;;
-    esac
-  done
-
-  readonly OPT_TRACE NO_CASKS
-}
-
-function _do() {
-  echo "$@"
-  "$@"
-}
-
-function _read_lines() {
-  # Read FILE's non-blank lines into the global array $_read_lines_out.
-  #
-  # bash 3.2 (what /bin/bash is on macOS) has no mapfile, and `read -d ''` returns 1 at
-  # EOF, which errexit catches. The `|| [[ -n ... ]]` picks up a last line that has no
-  # trailing newline, which a plain `while read` drops silently.
-  _read_lines_out=()
-  local line
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ -n "$line" ]]; then _read_lines_out+=("$line"); fi
-  done < "$1"
-}
-
-# shellcheck disable=SC2329
-function ensure_github_user_fork_remote() {
-  local username="$1" repo="$2"
-  if ! git remote get-url "$username" &>/dev/null; then
-    _do git remote add "$username" "https://github.com/${username}/${repo}.git"
-  fi
-}
-
 function main() {
 if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
 
@@ -146,6 +101,51 @@ _do brew install ${formulae[@]+"${formulae[@]}"}
 echo ""
 echo "Homebrew setup complete."
 
+}
+
+function parse_cli() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --trace | -x)                 OPT_TRACE=1 ;;
+      --no-casks | -n)              NO_CASKS=1 ;;
+      *)
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
+    esac
+  done
+
+  readonly OPT_TRACE NO_CASKS
+}
+
+function _do() {
+  echo "$@"
+  "$@"
+}
+
+function _read_lines() {
+  # Read FILE's non-blank lines into the global array $_read_lines_out.
+  #
+  # bash 3.2 (what /bin/bash is on macOS) has no mapfile, and `read -d ''` returns 1 at
+  # EOF, which errexit catches. The `|| [[ -n ... ]]` picks up a last line that has no
+  # trailing newline, which a plain `while read` drops silently.
+  _read_lines_out=()
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ -n "$line" ]]; then _read_lines_out+=("$line"); fi
+  done < "$1"
+}
+
+# shellcheck disable=SC2329
+function ensure_github_user_fork_remote() {
+  local username="$1" repo="$2"
+  if ! git remote get-url "$username" &>/dev/null; then
+    _do git remote add "$username" "https://github.com/${username}/${repo}.git"
+  fi
 }
 
 parse_cli "$@"

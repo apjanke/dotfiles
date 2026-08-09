@@ -52,99 +52,6 @@ Environment:
 EOF
 }
 
-function parse_cli() {
-  local arg
-
-  while [[ $# -ge 1 ]]; do
-    arg="$1"; shift
-    case "$arg" in
-      --kill | -k)                  DO_KILL=1 ;;
-      --trace | -x)                 OPT_TRACE=1 ;;
-      *)
-        jxl::std_opt "$arg" \
-            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
-        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
-        ;;
-    esac
-  done
-
-  readonly DO_KILL OPT_TRACE
-}
-
-function CFPreferencesAppSynchronize() {
-  /usr/bin/python - <<END
-from Foundation import CFPreferencesAppSynchronize
-CFPreferencesAppSynchronize('$1')
-END
-}
-
-function changed-something() {
-  # This can be reset locally to track groups of changes
-  CHANGED=1
-  # Don't reset this; it should reflect if any change was made the whole run
-  ANY_CHANGED=1
-}
-
-function v_echo() {
-  # --verbose is JXL's now, so ask it rather than keeping a second copy of the flag.
-  if is_verbose; then
-    echo "$@"
-  fi
-}
-
-# Conditionally do a defaults-write
-function defaults-write() {
-  local domain=$1; key=$2; shift 2
-  local value value_type current expected
-  if [[ ${1:0:1} == '-' ]]; then
-    value="$2"; value_type="${1:1}"
-  else
-    value="$1"; value_type=string
-  fi
-  current=$(defaults read "$domain" "$key" 2>/dev/null)
-  #echo "current is '$current', want '$value'"
-  # booleans are written as true/false, but read back as 1/0
-  if [[ "$value_type" == bool ]]; then
-    if [[ "$value" == true ]]; then expected=1; else expected=0; fi
-  else
-    expected="$value"
-  fi
-  # This changed-value check is not perfect; it gets false positives for complex types
-  if [[ "$current" == "$expected" ]]; then
-    v_echo "defaults-write: $domain $key is already set: $current"
-  else
-    defaults write "$domain" "$key" "$@"
-    v_echo "defaults-write: wrote defaults $domain $key: $value"
-    changed-something
-  fi
-}
-
-# Delete a default quietly and idempotently
-function defaults-delete() {
-  local domain="$1"
-  local key="$2"
-  if defaults read "$domain" "$key" &>/dev/null; then
-    defaults delete "$domain" "$key"
-    v_echo "Deleted defaults $domain $key"
-    changed-something
-  else
-    v_echo "defaults $domain $key is already deleted"
-  fi
-}
-
-function remove-dock-persistent-app() {
-  local file_label=$1
-  local dockPrefsPlistFile ix
-  dockPrefsPlistFile="$HOME/Library/Preferences/com.apple.dock.plist"
-  ix=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$file_label/  {print NR}")
-  if [[ -n "$ix" ]]; then
-    ix=$(( ix - 1 ))
-    /usr/libexec/PlistBuddy -c "Delete persistent-apps:$ix" "$dockPrefsPlistFile"
-    v_echo "Deleted persistent Dock app $file_label"
-    changed-something
-  fi
-}
-
 function main() {
 
 OSX_VERSION=$(sw_vers -productVersion)
@@ -886,6 +793,99 @@ if [[ $ANY_CHANGED == 1 ]]; then
   echo "Done. Some of these changes may require a logout/restart to take effect."
 fi
 
+}
+
+function parse_cli() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --kill | -k)                  DO_KILL=1 ;;
+      --trace | -x)                 OPT_TRACE=1 ;;
+      *)
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
+    esac
+  done
+
+  readonly DO_KILL OPT_TRACE
+}
+
+function CFPreferencesAppSynchronize() {
+  /usr/bin/python - <<END
+from Foundation import CFPreferencesAppSynchronize
+CFPreferencesAppSynchronize('$1')
+END
+}
+
+function changed-something() {
+  # This can be reset locally to track groups of changes
+  CHANGED=1
+  # Don't reset this; it should reflect if any change was made the whole run
+  ANY_CHANGED=1
+}
+
+function v_echo() {
+  # --verbose is JXL's now, so ask it rather than keeping a second copy of the flag.
+  if is_verbose; then
+    echo "$@"
+  fi
+}
+
+# Conditionally do a defaults-write
+function defaults-write() {
+  local domain=$1; key=$2; shift 2
+  local value value_type current expected
+  if [[ ${1:0:1} == '-' ]]; then
+    value="$2"; value_type="${1:1}"
+  else
+    value="$1"; value_type=string
+  fi
+  current=$(defaults read "$domain" "$key" 2>/dev/null)
+  #echo "current is '$current', want '$value'"
+  # booleans are written as true/false, but read back as 1/0
+  if [[ "$value_type" == bool ]]; then
+    if [[ "$value" == true ]]; then expected=1; else expected=0; fi
+  else
+    expected="$value"
+  fi
+  # This changed-value check is not perfect; it gets false positives for complex types
+  if [[ "$current" == "$expected" ]]; then
+    v_echo "defaults-write: $domain $key is already set: $current"
+  else
+    defaults write "$domain" "$key" "$@"
+    v_echo "defaults-write: wrote defaults $domain $key: $value"
+    changed-something
+  fi
+}
+
+# Delete a default quietly and idempotently
+function defaults-delete() {
+  local domain="$1"
+  local key="$2"
+  if defaults read "$domain" "$key" &>/dev/null; then
+    defaults delete "$domain" "$key"
+    v_echo "Deleted defaults $domain $key"
+    changed-something
+  else
+    v_echo "defaults $domain $key is already deleted"
+  fi
+}
+
+function remove-dock-persistent-app() {
+  local file_label=$1
+  local dockPrefsPlistFile ix
+  dockPrefsPlistFile="$HOME/Library/Preferences/com.apple.dock.plist"
+  ix=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$file_label/  {print NR}")
+  if [[ -n "$ix" ]]; then
+    ix=$(( ix - 1 ))
+    /usr/libexec/PlistBuddy -c "Delete persistent-apps:$ix" "$dockPrefsPlistFile"
+    v_echo "Deleted persistent Dock app $file_label"
+    changed-something
+  fi
 }
 
 parse_cli "$@"

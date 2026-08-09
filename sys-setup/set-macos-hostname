@@ -34,6 +34,12 @@ $(jxl::std_options_help)
 EOF
 }
 
+function main() {
+  if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
+
+  set-macos-hostname "$HOSTNAME_ARG"
+}
+
 function parse_cli() {
   local arg
   local -a positionals=()
@@ -72,12 +78,6 @@ function set-macos-hostname() {
   sudo scutil --set HostName "$name"
   sudo scutil --set LocalHostName "$name"
   sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "$name"
-}
-
-function main() {
-  if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
-
-  set-macos-hostname "$HOSTNAME_ARG"
 }
 
 parse_cli "$@"

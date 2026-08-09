@@ -28,6 +28,18 @@ $(jxl::std_options_help)
 EOF
 }
 
+function main() {
+  if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
+
+  THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
+  my_macports_cfg_dir="$THISDIR/macports"
+  _read_lines "$my_macports_cfg_dir/macports-ports-standard"
+  ports=( ${_read_lines_out[@]+"${_read_lines_out[@]}"} )
+
+  sudo port selfupdate
+  sudo port -N install ${ports[@]+"${ports[@]}"}
+}
+
 function parse_cli() {
   local arg
 
@@ -63,18 +75,6 @@ function _read_lines() {
   while IFS= read -r line || [[ -n "$line" ]]; do
     if [[ -n "$line" ]]; then _read_lines_out+=("$line"); fi
   done < "$1"
-}
-
-function main() {
-  if [[ $OPT_TRACE = 1 ]]; then set -o xtrace; fi
-
-  THISDIR="$( dirname "${BASH_SOURCE[0]}" )"
-  my_macports_cfg_dir="$THISDIR/macports"
-  _read_lines "$my_macports_cfg_dir/macports-ports-standard"
-  ports=( ${_read_lines_out[@]+"${_read_lines_out[@]}"} )
-
-  sudo port selfupdate
-  sudo port -N install ${ports[@]+"${ports[@]}"}
 }
 
 parse_cli "$@"

@@ -30,24 +30,6 @@ $(jxl::std_options_help)
 EOF
 }
 
-function parse_cli() {
-  local arg
-
-  while [[ $# -ge 1 ]]; do
-    arg="$1"; shift
-    case "$arg" in
-      --trace | -x)                 OPT_TRACE=1 ;;
-      *)
-        jxl::std_opt "$arg" \
-            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
-        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
-        ;;
-    esac
-  done
-
-  readonly OPT_TRACE
-}
-
 function main() {
 
 # Prompt for administrator password up front
@@ -161,6 +143,24 @@ fi
 
 echo "Done."
 
+}
+
+function parse_cli() {
+  local arg
+
+  while [[ $# -ge 1 ]]; do
+    arg="$1"; shift
+    case "$arg" in
+      --trace | -x)                 OPT_TRACE=1 ;;
+      *)
+        jxl::std_opt "$arg" \
+            || die "Unexpected argument: ${arg}. See '$PROGRAM_NAME --help' for usage"
+        if [[ $_JXL_WANT_HELP == 1 ]]; then usage; exit 0; fi
+        ;;
+    esac
+  done
+
+  readonly OPT_TRACE
 }
 
 parse_cli "$@"
