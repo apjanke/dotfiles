@@ -42,6 +42,8 @@
 - Homebrew/MacPorts loading
   - "auto" option for loading only one or the other of Homebrew or MacPorts if they both exist. Right now, set `$JX_USE_{HOMEBREW,MACPORTS}` both to true, and you get both loaded if they both exist.
      - That prob means switching to a single variable to control package managers, with values `homebrew`, `macports`, `auto`, `both`, and `none`. And the default should prob be `auto`. Along with another variable that sets the preferred one for `auto` for the case that both exist.
+- Not sure I like the name `wet_vrb`. Maybe pick a better name? Or switch names `wet` and `wet_vrb`, interpreting `wet_vrb` to mean "`wet`, always with verbose-style output (regardless of whether `--verbose` enabled more)? And maybe it should also echo the command when `--debug` but not `--verbose` was given too?
+- Make sure the `wet` output call is safe against `-` characters; maybe need to switch to printf?
 
 ### Big "framework + config" repo split?
 
