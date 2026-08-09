@@ -24,6 +24,9 @@
 # ~/.foo, so the dot is implicit and needs no marker, while in nested/ only some
 # components are dotted, so they have to be marked. See dots/README.md for the longer
 # version.
+#
+# The linking engine itself lives in lib/dotinstall-lib.sh, shared with other repos'
+# installers (e.g. dotfiles-private's install-dotfiles-private).
 
 # Load JXL. See "Loading JXL" in dots/README.md.
 source "$(cd "$(dirname "$0")" && pwd -P)/dots/all-os/flat/dotlib/jxl-lib.sh" \
@@ -31,6 +34,9 @@ source "$(cd "$(dirname "$0")" && pwd -P)/dots/all-os/flat/dotlib/jxl-lib.sh" \
 
 jxl::init_script
 jxl::use_short_names
+
+source "$(cd "$(dirname "$0")" && pwd -P)/lib/dotinstall-lib.sh" \
+    || { echo >&2 "ERROR: failed to load dotinstall-lib.sh"; exit 1; }
 
 
 function usage() {
@@ -51,8 +57,6 @@ EOF
 OPT_TRACE=0
 OPT_DOTS_DIR=''
 
-ANY_CHANGED=0 ALREADY=0 SKIPPED=0 FAILED=0
-
 function main() {
   if [[ $OPT_TRACE = 1 ]]; then
     set -o xtrace
@@ -65,28 +69,15 @@ function main() {
   dotdir="${OPT_DOTS_DIR:-$sourcedir/dots}"
   todir=$HOME
 
-  detect_os_type
+  dotinstall::detect_os_type
   cd "$todir"
 
-  install_dotfiles_flat
-  install_dotfiles_nested
+  dotinstall::install_flat_tree "$dotdir"
+  dotinstall::install_nested_tree "$dotdir"
   install_bin
 
-  local msg='' rc=0
-  if [[ $ANY_CHANGED == 0 ]]; then
-    msg=$(append_msg "$msg" 'All links were already up to date.')
-  fi
-  if [[ $SKIPPED != 0 ]]; then
-    msg=$(append_msg "$msg" "Skipped $SKIPPED files.")
-  fi
-  if [[ $FAILED != 0 ]]; then
-    rc=1
-    info "FAILED linking $FAILED files."
-  fi
-  # Only when there is something to say: an unconditional info prints a blank line.
-  if [[ -n "$msg" ]]; then
-    info "$msg"
-  fi
+  local rc=0
+  dotinstall::summary || rc=1
 
   info "Dotfiles are now linked to $dotdir."
   # Last, so it is the line still on screen. Everything above describes what a real run
@@ -95,16 +86,6 @@ function main() {
     info 'DRY-RUN: This was a dry run. No data was actually written.'
   fi
   exit "$rc"
-}
-
-function append_msg () {
-  # Append a string, with space separator.
-  local msg="$1" add="$2"
-  if [[ -n $add ]]; then
-    [[ -n $msg ]] && msg+=' '
-    msg+="$add"
-  fi
-  echo "$msg"
 }
 
 function parse_cli() {
@@ -128,178 +109,11 @@ function parse_cli() {
 
 # ========== Script-specific code ==========
 
-function symlink() {
-  # out: $ANY_CHANGED, $THIS_CHANGED, $ALREADY, $SKIPPED, $FAILED
-  local source="$1" target="$2"
-  THIS_CHANGED=0
-  local current_source='' descr
-  descr=$(printf '%-18s -> %s\n' "$target" "$source")
-  if [[ -L "$target" ]]; then
-    current_source=$(readlink "$target")
-    if [[ "$current_source" == "$source" ]]; then
-      log_vrb "Already set up: $descr"
-      ALREADY=$((ALREADY + 1))
-    fi
-  elif [[ -e "$target" && ! -L "$target" ]]; then
-    local file_type
-    if [[ -f "$target" ]]; then
-      file_type='regular file'
-    elif [[ -d "$target" ]]; then
-      file_type='non-symlink directory'
-    else
-      file_type='file of some sort (neither regular file nor symlink)'
-    fi
-    info "SKIPPED: $target is a $file_type"
-    SKIPPED=$((SKIPPED + 1))
-  else
-    # Main case: do the linking
-    # wet_vrb, not wet: on a dry run the raw `ln` line is verbose-only detail, while the
-    # "Linked:" message below is the preview worth seeing. Running the normal logging path
-    # is half the value of a dry run -- it exercises those branches too.
-    if wet_vrb ln -sfn "$source" "$target"; then
-      ANY_CHANGED=1; THIS_CHANGED=1
-      info "Linked: $descr"
-    else
-      FAILED=$((FAILED + 1))
-      error "Failed: $descr"
-    fi
-  fi
-}
-
-function detect_os_type() {
-  # Post: $OSNAME is set, or script has exited with an error status
-  uname=$(uname)
-  case $uname in
-    Darwin)
-      # Apple renamed "Mac OS X" to "macOS" at some point; accept both.
-      if which sw_vers &>/dev/null && [[ $(sw_vers -productName) == "Mac OS X" || $(sw_vers -productName) == "macOS" ]]; then
-        OSNAME=macos
-      else
-        OSNAME=darwin
-      fi
-      ;;
-    *)
-      OSNAME="$uname"
-      ;;
-  esac
-}
-
-function install_dotfiles_flat() {
-  # dots/{all-os,$OSNAME}/flat/ -> ~/.foo. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
-  local dotfiles file tofile fromfile seen_targets=""
-  local allosdir="$dotdir/all-os/flat" osdir="$dotdir/$OSNAME/flat"
-
-  if [[ -d "$osdir" ]]; then
-      # shellcheck disable=SC2207
-      dotfiles=( $( (ls "$allosdir"; ls "$osdir") | sort | uniq ) )
-  else
-      # shellcheck disable=SC2207
-      dotfiles=($(ls "$allosdir"))
-  fi
-
-  # Catch e.g. a stale zshrc.sh next to zshrc.zsh before linking anything.
-  for file in "${dotfiles[@]}"; do
-    tofile=$(munge_dotfile_name "$file")
-    if [[ " $seen_targets " == *" $tofile "* ]]; then
-      die "ERROR: Two source files in $dotdir both install as '$tofile'." \
-          "Nothing was changed. Most likely a rename left a stale file behind."
-    fi
-    seen_targets+=" $tofile"
-  done
-
-  for file in "${dotfiles[@]}"; do
-    tofile=$(munge_dotfile_name "$file")
-    if [[ -e "$osdir/$file" ]]; then
-      fromfile="$osdir/$file"
-    else
-      fromfile="$allosdir/$file"
-    fi
-    symlink "$fromfile" "$tofile"
-  done
-}
-
-function munge_dotfile_name() {
-  # Turn a flat-tree source filename into the name it installs as in ~.
-  #
-  # Use a case rather than the tidier extglob one-liner ".${1%.@(sh|zsh|bash)}" bc
-  # extglob is off by default in bash and you get wrong names.
-  local name="$1"
-  case "$name" in
-    *.sh)    echo ".${name%.sh}"   ;;
-    *.zsh)   echo ".${name%.zsh}"  ;;
-    *.bash)  echo ".${name%.bash}" ;;
-    *)       echo ".$name"         ;;
-  esac
-}
-
-function install_dotfiles_nested() {
-  # dots/{all-os,$OSNAME}/nested/, munged via munge_nested_path. $OSNAME overrides all-os
-  # on a matching target. Pre: cwd is $HOME. Reads $dotdir, $OSNAME.
-  local tier srcdir file relpath tofile dir i found
-  local -a targets=() sources=()
-
-  for tier in all-os "$OSNAME"; do
-    srcdir="$dotdir/$tier/nested"
-    [[ -d "$srcdir" ]] || continue
-    while IFS= read -r -d '' file; do
-      relpath="${file#"$srcdir"/}"
-      # Filter on the relpath, not find's absolute path: '*/.* ' would otherwise also match
-      # a dot component in an ancestor directory (e.g. a repo checked out under
-      # ~/.dotfiles), and silently skip every nested file.
-      case "/$relpath" in
-        */.*) continue ;;  # skip repo-control dotfiles like .gitkeep
-      esac
-      tofile=$(munge_nested_path "$relpath")
-      found=-1
-      for i in "${!targets[@]}"; do
-        [[ "${targets[$i]}" == "$tofile" ]] && { found=$i; break; }
-      done
-      if [[ $found -ge 0 ]]; then
-        sources[found]="$file"
-      else
-        targets+=("$tofile")
-        sources+=("$file")
-      fi
-    done < <(find "$srcdir" -type f -print0 | sort -z)
-  done
-
-  for i in "${!targets[@]}"; do
-    tofile="${targets[$i]}"
-    dir=$(dirname "$tofile")
-    if [[ "$dir" != "." && ! -d "$dir" ]]; then
-      wet_vrb mkdir -p "$dir"
-      log_vrb "Created directory '$dir'"
-      case "$dir" in
-        .ssh | .ssh/* | .gnupg | .gnupg/*) wet_vrb chmod 700 "$dir" ;;  # sshd StrictModes
-      esac
-    fi
-    symlink "${sources[$i]}" "$tofile"
-  done
-}
-
-function munge_nested_path() {
-  # nested-relative path -> installed path, per component: _x -> .x, __x -> _x, x -> x.
-  local relpath="$1" part out=""
-  local IFS=/
-  local -a parts
-  read -ra parts <<< "$relpath"
-  for part in "${parts[@]}"; do
-    # __x first, so it can't fall through to the _x arm. Escapes names that really do
-    # start with an underscore, like zsh completion functions (_git, _docker).
-    case "$part" in
-      __*) part="${part#_}"  ;;
-      _*)  part=".${part#_}" ;;
-    esac
-    out="${out:+$out/}$part"
-  done
-  echo "$out"
-}
-
 function install_bin() {
   # repo home-bin/ -> ~/bin. Pre: cwd is $HOME. Reads $dotfiles_repo_dir.
-  local THIS_CHANGED
-  symlink "${dotfiles_repo_dir}/home-bin" "bin"
-  if [[ $THIS_CHANGED == 1 ]]; then
+  local _DOTINSTALL_THIS_CHANGED
+  dotinstall::symlink "${dotfiles_repo_dir}/home-bin" "bin"
+  if [[ $_DOTINSTALL_THIS_CHANGED == 1 ]]; then
     echo "Linked the ~/bin directory. Don't forget to add it to your \$PATH."
   fi
 }
