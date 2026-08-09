@@ -2,6 +2,7 @@
 
 ## General
 
+- Pull myip()/lip()/whatismyip out from bashyrc to an external command/program in `home-bin`. These are prob too big for functions now.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
@@ -24,11 +25,7 @@
   - Add support for relative symlinks, like `.hgignore_global -> .gitignore_global`?
 - `install-dotfiles`
   - Make it safer.
-    - Done: `--clobber --yes-really` replaces existing non-symlink files (and now directories, and symlinks not recognizable as repo-managed) that would otherwise be left alone. Backups are always made, as `<name>.bak` (or a dated/PID-qualified variant if that's taken). Clobbered content is never just deleted.
-    - Done: a symlink pointing somewhere other than the computed source is no longer silently left alone — it's reported `SKIPPED` (naming its current target), and a new `--relink` flag force-updates it. Found via a real migration (`install-dotfiles-private`'s `files/` → `dots/` move): every `~/.claude/*` entry hit the old silent no-op, and `--dry-run` claimed everything was already up to date while every link still pointed at the stale location.
-    - Done: `--relink` is no longer blunt — it only touches a symlink whose current target is already recognizable as pointing into a known dotfiles repo (`install-dotfiles-private` recognizes both itself and the public `dotfiles` repo it depends on). A symlink pointing anywhere else needs `--clobber --yes-really` instead. `--clobber` implies `--relink`'s effect on repo-recognized links too.
-    - New, smaller gap this introduced: recognition is by literal path prefix against the *current* repo location, so relocating the whole repo/synced directory to a new path (the scenario `dots/README.md` describes under "Loading JXL" and elsewhere) makes every old link "foreign" rather than "ours, stale" — `--relink` alone no longer fixes that case, `--clobber --yes-really` is needed. Documented in `dots/README.md`; a smarter match (e.g. recognizing the repo's own internal directory shape regardless of prefix) would close this, but wasn't asked for.
-    - Also still open: an *intermediate* parent directory in the nested tree that's itself a real file or a foreign symlink-to-a-directory isn't handled by `--clobber` at all -- `install_nested_tree`'s `mkdir -p` either fails outright or silently follows the symlink and writes leaf links inside someone else's directory, before `dotinstall::symlink` (and so `--clobber`) ever sees it.
+    - Still open: an *intermediate* parent directory in the nested tree that's itself a real file or a foreign symlink-to-a-directory isn't handled by `--clobber` at all -- `install_nested_tree`'s `mkdir -p` either fails outright or silently follows the symlink and writes leaf links inside someone else's directory, before `dotinstall::symlink` (and so `--clobber`) ever sees it.
   - Safely handle case-insensitive filesystems and link target files that differ only in case. Maybe include option to normalize them to the current case of the files in the repo, or even do that by default.
 - Cleanup: Remove old symlinks for files that have been removed from this repo. Keep a list of files which were here in the past but removed, check for symlinks in home pointing to those files *in this repo but not elsewhere*, and delete them.
   - When adding the first `nested/_ssh/` or `nested/_gnupg/` content, verify and add a test for the `chmod 700` in `install_dotfiles_nested`. That branch has never run, and it fails silently when wrong: a group-writable `~/.ssh` under a umask of 002 makes sshd's StrictModes refuse public-key auth, which shows up much later as an unexplained fallback to password auth.
@@ -45,7 +42,6 @@
 - Homebrew/MacPorts loading
   - "auto" option for loading only one or the other of Homebrew or MacPorts if they both exist. Right now, set `$JX_USE_{HOMEBREW,MACPORTS}` both to true, and you get both loaded if they both exist.
      - That prob means switching to a single variable to control package managers, with values `homebrew`, `macports`, `auto`, `both`, and `none`. And the default should prob be `auto`. Along with another variable that sets the preferred one for `auto` for the case that both exist.
-- Pull myip()/lip()/whatismyip out from bashyrc to an external command/program in `home-bin`. These are prob too big for functions now.
 
 ### Big "framework + config" repo split?
 

@@ -346,7 +346,7 @@ function run_tests() {
     fail 'its contents survived'
   fi
 
-  echo "===== a leaf-file symlink pointing elsewhere is skipped by default, not silently left ====="
+  echo "===== a repo-managed-but-stale leaf-file symlink is relinked by default ====="
   # Regression test: dotinstall::symlink used to fall through its -L branch with no else
   # when the existing symlink pointed somewhere else -- not relinked, not counted, not
   # reported. A real migration (an install-dotfiles-private tree moving from files/ to
@@ -358,33 +358,41 @@ function run_tests() {
   local stale_file="$REPO/dots/all-os/flat/profile.sh"
   new_fake_home
   ln -s "$stale_file" "$FAKE_HOME/.bashrc"
-  out=$(install_into_fake_home)
-  assert_contains "$out" "SKIPPED: .bashrc is a symlink to '$stale_file'" \
-      'a symlink pointing elsewhere is reported as skipped, naming its current target'
-  assert_symlink_to '.bashrc' "$stale_file" \
-      'and is left untouched, not silently ignored nor relinked'
-
-  echo "===== --relink forces it to update instead ====="
-  new_fake_home
-  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
-  out=$(install_into_fake_home --relink -v)
-  assert_contains "$out" 'Relinked: .bashrc' '--relink reports the relink'
+  out=$(install_into_fake_home -v)
+  assert_contains "$out" 'Relinked: .bashrc' 'relinking happens with no flag needed'
   assert_contains "$out" "(was -> $stale_file)" 'and names what it was pointing at before'
   assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
       'and it now points at the correct target'
 
-  echo "===== --relink --dry-run previews without writing ====="
+  echo "===== --no-relink opts back out, to the old default behavior ====="
   new_fake_home
   ln -s "$stale_file" "$FAKE_HOME/.bashrc"
-  out=$(install_into_fake_home --relink --dry-run) || true
+  out=$(install_into_fake_home --no-relink)
+  assert_contains "$out" "SKIPPED: .bashrc is a symlink to '$stale_file'" \
+      '--no-relink reports it as skipped, naming its current target'
+  assert_symlink_to '.bashrc' "$stale_file" \
+      'and --no-relink leaves it untouched, not silently ignored nor relinked'
+
+  echo "===== --relink is still accepted explicitly, redundant with the default ====="
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --relink -v)
+  assert_contains "$out" 'Relinked: .bashrc' 'explicit --relink still reports the relink'
+  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
+      'and it now points at the correct target'
+
+  echo "===== --dry-run previews the now-default relink without writing ====="
+  new_fake_home
+  ln -s "$stale_file" "$FAKE_HOME/.bashrc"
+  out=$(install_into_fake_home --dry-run) || true
   assert_contains "$out" 'Relinked: .bashrc' 'dry run previews the relink'
   assert_symlink_to '.bashrc' "$stale_file" 'dry run leaves the stale link exactly as it was'
 
-  echo "===== a second --relink run against an already-correct link is a no-op ====="
+  echo "===== a second run against an already-correct link is a no-op ====="
   new_fake_home
   ln -s "$stale_file" "$FAKE_HOME/.bashrc"
-  install_into_fake_home --relink > /dev/null
-  out2=$(install_into_fake_home --relink -v)
+  install_into_fake_home > /dev/null
+  out2=$(install_into_fake_home -v)
   assert_contains "$out2" 'Already set up: .bashrc ' \
       'a link already pointing correctly is reported unchanged, not relinked again'
   assert_not_contains "$out2" 'Relinked:' 'and no Relinked line appears'
@@ -399,13 +407,20 @@ function run_tests() {
   touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
   ln -s "$stale_dir" "$FAKE_HOME/.foo"
   out=$(install_into_fake_home --dots-dir "$FAKE_DOTS")
-  assert_contains "$out" "SKIPPED: .foo is a symlink to '$stale_dir'" \
-      'by default, a stale whole-directory link is reported as skipped'
-  assert_symlink_to '.foo' "$stale_dir" 'and left untouched'
-  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS" --relink)
-  assert_contains "$out" 'Relinked: .foo' 'with --relink, it is updated'
+  assert_contains "$out" 'Relinked: .foo' 'relinked by default, no flag needed'
   assert_symlink_to '.foo' "$FAKE_DOTS/all-os/nested/_foo" \
       'and now points at the correct whole-linked directory'
+
+  echo "===== --no-relink leaves a stale whole-directory link alone too ====="
+  new_fake_home
+  new_fake_dots
+  mkdir -p "$FAKE_DOTS/all-os/nested/_foo"
+  touch "$FAKE_DOTS/all-os/nested/_foo/.linkdir"
+  ln -s "$stale_dir" "$FAKE_HOME/.foo"
+  out=$(install_into_fake_home --dots-dir "$FAKE_DOTS" --no-relink)
+  assert_contains "$out" "SKIPPED: .foo is a symlink to '$stale_dir'" \
+      '--no-relink reports the whole-directory link as skipped'
+  assert_symlink_to '.foo' "$stale_dir" 'and left untouched'
 
   echo "===== --relink does not touch a symlink pointing outside any recognized repo ====="
   new_fake_home
@@ -581,14 +596,15 @@ function run_tests() {
   assert_eq "$after_listing" "$before_listing" \
       'dry run leaves the target home completely unchanged'
 
-  echo "===== --clobber alone (no explicit --relink) still fixes a repo-managed stale link ====="
+  echo "===== --no-relink together with --clobber is refused as likely a mistake ====="
   new_fake_home
   ln -s "$stale_file" "$FAKE_HOME/.bashrc"
-  out=$(install_into_fake_home --clobber --yes-really)
-  assert_contains "$out" 'Relinked: .bashrc' \
-      '--clobber implies fixing a symlink already recognized as repo-managed'
-  assert_symlink_to '.bashrc' "$REPO/dots/all-os/flat/bashrc.sh" \
-      'and it now points at the correct target'
+  rc=0
+  out=$(install_into_fake_home --no-relink --clobber --yes-really) || rc=$?
+  assert_eq "$rc" 1 '--no-relink with --clobber exits non-zero'
+  assert_contains "$out" '--no-relink' 'the error names --no-relink'
+  assert_contains "$out" '--clobber' 'and --clobber'
+  assert_symlink_to '.bashrc' "$stale_file" 'and nothing was changed'
 
   echo "===== the real \$HOME was never touched ====="
   # Compare against a snapshot taken before any test ran, rather than against the current

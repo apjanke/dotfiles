@@ -8,15 +8,17 @@
 # symlink pointing anywhere unexpected is left alone and reported as skipped. An existing
 # symlink already pointing at the right place is left alone too, silently.
 #
-# --relink force-updates a symlink that's recognizable as repo-managed (its current
-# target is somewhere under this repo) but currently points at the wrong place within it
-# -- e.g. after a file moves. A symlink pointing somewhere NOT recognizable as this repo
-# is untouched by --relink; it needs --clobber instead.
+# By default, a symlink that's recognizable as repo-managed (its current target is
+# somewhere under this repo) but currently points at the wrong place within it -- e.g.
+# after a file moves -- gets force-updated. Pass --no-relink to leave those alone too,
+# reported as skipped, like the old default. A symlink pointing somewhere NOT
+# recognizable as this repo is never touched by relinking either way; it needs --clobber.
 #
 # --clobber replaces that: any pre-existing local content this run would otherwise skip,
 # repo-managed or not. Requires --yes-really alongside it, or it refuses to run at all.
 # The original is always renamed to a `.bak` file first, never deleted outright.
-# --clobber implies --relink's effect too.
+# --clobber implies relinking repo-managed links too; combining it with --no-relink is
+# refused outright as a likely mistake, rather than silently picking a side.
 #
 # Two source trees, siblings under each `dots/<osname>/` root. ("all-os" applies to
 # all OSes; per-OS entries take precedence over it in both trees.)
@@ -64,11 +66,15 @@ Options:
     -x, --trace         trace program execution
         --dots-dir DIR  install from DIR instead of the repo's own dots/ (for tests)
         --relink        force-relink a symlink recognized as repo-managed but pointing
-                         somewhere else, instead of leaving it alone and reporting it as
-                         skipped
+                         somewhere else (this is the default; --relink is accepted
+                         explicitly too)
+        --no-relink     leave a repo-managed-but-stale symlink alone instead, reporting
+                         it as skipped -- the old default. Refused together with
+                         --clobber.
         --clobber       replace existing local content this run would otherwise skip
                          (repo-managed or not) -- backed up to a .bak file first, never
-                         just deleted. Implies --relink. Requires --yes-really.
+                         just deleted. Implies relinking repo-managed links too, so it
+                         cannot be combined with --no-relink. Requires --yes-really.
         --yes-really    confirms a dangerous operation (currently: --clobber) is really
                          wanted; doesn't change what it does, only whether it's allowed
                          to run at all
@@ -78,7 +84,7 @@ EOF
 
 OPT_TRACE=0
 OPT_DOTS_DIR=''
-OPT_RELINK=0
+OPT_RELINK=1
 OPT_CLOBBER=0
 OPT_YES_REALLY=0
 
@@ -125,6 +131,7 @@ function parse_cli() {
       --trace | -x)   OPT_TRACE=1 ;;
       --dots-dir)     OPT_DOTS_DIR="$1"; shift ;;
       --relink)       OPT_RELINK=1 ;;
+      --no-relink)    OPT_RELINK=0 ;;
       --clobber)      OPT_CLOBBER=1 ;;
       --yes-really)   OPT_YES_REALLY=1 ;;
       *)
@@ -137,6 +144,12 @@ function parse_cli() {
 
   if [[ $OPT_CLOBBER == 1 && $OPT_YES_REALLY != 1 ]]; then
     die "You must also specify --yes-really when using --clobber."
+  fi
+  # OPT_RELINK can only be 0 here via an explicit --no-relink (the default is 1), so this
+  # unambiguously means both were given together.
+  if [[ $OPT_CLOBBER == 1 && $OPT_RELINK == 0 ]]; then
+    die "--no-relink and --clobber cannot be combined -- --clobber implies relinking" \
+        "repo-managed links too, and a carve-out for --no-relink is very likely a mistake."
   fi
 
   readonly OPT_TRACE OPT_DOTS_DIR OPT_RELINK OPT_CLOBBER OPT_YES_REALLY
