@@ -221,8 +221,9 @@ JX_GRIN_EXCLUDES=(
 # recursive grep, excluding big dumb managed subdirs
 # This is prob redundant with, and inferior to, 'grin' now, and can prob be ditched soon.
 alias grepx="grep -rIn --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json"
-# no -n in this, because I don't actually want line numbers, oh well
-function grhino() { grep -rhIo "$@" | sort -u; }
+# Delegates to grin so the exclusions live in one place; grin always adds -n, so strip
+# the leading "N:" grep -o leaves on every match before deduping.
+function grhino() { grin -ho "$@" | cut -d: -f2- | sort -u; }
 
 # Do a find but exclude .git repo directories
 # Generify: expand to cover .svn, .cvs, .venv etc., and rename

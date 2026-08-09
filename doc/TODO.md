@@ -50,7 +50,3 @@
 
 - Look in to the XDG spec and its `~/.config` etc dirs, and see which programs support that now.
 - Is there some way to *forcibly* prevent `conda init` from modifying the user and system init files, even when the user manually runs `conda init`?
-
-## Aliases and functions
-
-- Have `grhino` respect the `grin` exclusions?
