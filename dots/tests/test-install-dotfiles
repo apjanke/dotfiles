@@ -48,6 +48,8 @@ function run_tests() {
   assert_symlink_to '.hushlogin' "$REPO/dots/all-os/flat/hushlogin"  'no extension to strip: .hushlogin'
   assert_symlink_to '.gitconfig' "$REPO/dots/macos/flat/gitconfig"    'OS-specific file shadows all-os: .gitconfig'
   assert_symlink_to '.dotlib'    "$REPO/dots/all-os/flat/dotlib"     'a directory in the flat tree links whole: .dotlib'
+  assert_symlink_to '.hgignore_global' "$REPO/dots/all-os/flat/hgignore_global" \
+      'flat tree: a symlink source installs as a link to the symlink itself'
 
   assert_symlink_to '.config/btop/btop.conf'   "$REPO/dots/all-os/nested/_config/btop/btop.conf"  'nested tree: nested file is linked'
   assert_symlink_to '.config/fish/config.fish' "$REPO/dots/all-os/nested/_config/fish/config.fish" 'nested tree: another nested file'

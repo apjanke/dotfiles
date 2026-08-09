@@ -21,8 +21,6 @@
 - `zshrc-ohmyzsh.zsh`
   - Pull default values for ZSH_THEME up into .zshenv or .profile?
 - `.profile-early` hook - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough, before any conditional stuff in `.profile` or `.{bash,bashy,zsh}rc`, to work
-- Make .hgignore_global a symlink to .gitignore_global?
-  - Add support for relative symlinks, like `.hgignore_global -> .gitignore_global`?
 - `install-dotfiles`
   - Make it safer.
     - Still open: an *intermediate* parent directory in the nested tree that's itself a real file or a foreign symlink-to-a-directory isn't handled by `--clobber` at all -- `install_nested_tree`'s `mkdir -p` either fails outright or silently follows the symlink and writes leaf links inside someone else's directory, before `dotinstall::symlink` (and so `--clobber`) ever sees it.

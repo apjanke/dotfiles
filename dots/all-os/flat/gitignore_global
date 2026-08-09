@@ -1,4 +1,19 @@
-# Andrew's custom gitignore
+# Andrew's custom gitignore -- and ALSO the Mercurial global ignore file.
+#
+# hgignore_global is a symlink to this file, so every pattern has to mean the same thing
+# to both. git-only syntax that fails SILENTLY under hg, so don't use it here:
+#
+#   /foo   leading-slash anchoring -- hg matches nothing at all
+#   !foo   negation -- hg reads it as a glob for a file literally named "!foo"
+#   foo/   directory-only in git; hg also matches a plain file named "foo"
+#
+# To actually use one of those, split hgignore_global back out into its own real file
+# first.
+
+# Required by hg, which otherwise reads these patterns as regexps and aborts. Must be on
+# a line by itself -- hg takes the whole rest of the line as the syntax name, so even a
+# trailing comment breaks it. git just sees a pattern matching a file named "syntax: glob".
+syntax: glob
 
 # Typical temp files
 
