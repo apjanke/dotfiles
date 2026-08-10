@@ -655,6 +655,66 @@ function jxl::quote_elem() {
   esac
 }
 
+function jxl::strjoin() {
+  # jxl::strjoin DELIM [STR...] -- join arguments with DELIM, to stdout.
+  #
+  # `IFS=x; "${arr[*]}"` does this natively in both shells, but only for a single-character
+  # delimiter, only from an array, and only by touching IFS. This has none of those limits.
+  #
+  # Not the ${out:+${out}$delim} accumulator idiom: that reads an empty accumulator as
+  # unset, so a leading empty argument loses its delimiter.
+  local _jxl_strjoin_delim="$1"; shift
+  local _jxl_strjoin_out='' _jxl_strjoin_s _jxl_strjoin_first=1
+
+  for _jxl_strjoin_s in "$@"; do
+    if [[ $_jxl_strjoin_first == 1 ]]; then
+      _jxl_strjoin_out="$_jxl_strjoin_s"
+      _jxl_strjoin_first=0
+    else
+      _jxl_strjoin_out="${_jxl_strjoin_out}${_jxl_strjoin_delim}${_jxl_strjoin_s}"
+    fi
+  done
+  printf '%s\n' "$_jxl_strjoin_out"
+}
+
+function jxl::strsplit() {
+  # jxl::strsplit OUT_ARRAY_NAME STRING [DELIM] -- split STRING on DELIM (default ":").
+  #
+  # Empty components are dropped: callers split config strings into patterns and arguments,
+  # where an empty element is never meant and often harmful (`--exclude-dir=`, `-name ''`).
+  #
+  # String surgery, not `for x in $str`: zsh does not word-split unquoted expansions even
+  # with IFS set. Same reason as jx_maybe_add_path in bashy-paths.sh.
+  local _jxl_strsplit_out="$1" _jxl_strsplit_rest="$2" _jxl_strsplit_delim="${3-:}"
+  local _jxl_strsplit_item
+  local -a _jxl_strsplit_parts=()
+
+  # An empty delimiter would match everywhere and never shrink $rest.
+  if [[ -z $_jxl_strsplit_delim ]]; then
+    jxl::error "jxl::strsplit: DELIM must not be empty"
+    return 1
+  fi
+  while [[ -n $_jxl_strsplit_rest ]]; do
+    # "$delim" quoted in all three patterns: unquoted, a delimiter of "*" becomes a glob
+    # that matches strings not containing it, and the loop spins forever.
+    case "$_jxl_strsplit_rest" in
+      *"$_jxl_strsplit_delim"*)
+        _jxl_strsplit_item="${_jxl_strsplit_rest%%"$_jxl_strsplit_delim"*}"
+        _jxl_strsplit_rest="${_jxl_strsplit_rest#*"$_jxl_strsplit_delim"}"
+        ;;
+      *)
+        _jxl_strsplit_item="$_jxl_strsplit_rest"
+        _jxl_strsplit_rest=''
+        ;;
+    esac
+    if [[ -n $_jxl_strsplit_item ]]; then
+      _jxl_strsplit_parts+=("$_jxl_strsplit_item")
+    fi
+  done
+  # Escaped $ so eval's own parse expands the array, keeping elements with spaces intact.
+  eval "$_jxl_strsplit_out=( \${_jxl_strsplit_parts[@]+\"\${_jxl_strsplit_parts[@]}\"} )"
+}
+
 function jxl::thous() {
   # Format numbers with thousands separators.
   local py_script s

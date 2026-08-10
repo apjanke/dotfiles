@@ -13,7 +13,10 @@ set -o pipefail
 if [[ ${TRACE:-0} == "1" ]]; then set -o xtrace; fi
 
 function main() {
-  for mp4file in "$@"; do
+  local -a files=("$@")
+  local mp4file filebase m4afile
+
+  for mp4file in "${files[@]}"; do
     filebase="${mp4file%.*}"
     m4afile="$filebase.m4a"
 
