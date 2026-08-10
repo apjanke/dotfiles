@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "mads-hartmann.bash-ide-vscode",
+    "stkb.rewrap",
+    "EditorConfig.EditorConfig",
+    "DavidAnson.vscode-markdownlint"
+  ]
+}
