@@ -6,6 +6,16 @@ I don't care much about `ksh`, and not at all about `dash`/`ash`, so while the
 implementation supports them in many places, I won't bother mentioning them in
 documentation like this.
 
+## References
+
+This repo generally follows, or at least is inspired by, the guidelines in these documents. These are just guidelines/inspirations, though, and my house style supersedes them.
+
+- [Google's Shell Style Guide ("shellguide")](https://google.github.io/styleguide/shellguide.html)
+- [Greg's Wiki - wooledge.org](https://mywiki.wooledge.org/)
+  - [DotFiles on Greg's Wiki](https://mywiki.wooledge.org/DotFiles)
+- [`shellcheck`'s rules](https://www.shellcheck.net/wiki/)
+- [The Sharat's Shell Script Best Practices](https://sharats.me/posts/shell-script-best-practices/)
+
 ## Formatting conventions
 
 See `.editorconfig` for formatting conventions. This doc only lists things `.editorconfig`
