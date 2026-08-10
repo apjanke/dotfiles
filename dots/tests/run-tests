@@ -44,7 +44,7 @@ function main() {
   for test_script in ${SELECTED_TESTS[@]+"${SELECTED_TESTS[@]}"}; do
     heading "$test_script"
     rc=0
-    if [[ -x "$TESTS_DIR/$test_script" ]]; then
+    if [[ -x $TESTS_DIR/$test_script ]]; then
       "$TESTS_DIR/$test_script" || rc=$?
     else
       # Only reachable from the glob, which takes whatever matches; a named test that
@@ -77,7 +77,7 @@ function select_test_scripts() {
     # all tests
     for name in test-*; do
       # An unmatched glob expands to the pattern itself, so check before taking it.
-      if [[ -e "$name" ]]; then SELECTED_TESTS+=("$name"); fi
+      if [[ -e $name ]]; then SELECTED_TESTS+=("$name"); fi
     done
     if [[ ${#SELECTED_TESTS[@]} -eq 0 ]]; then
       die "no test scripts found in $TESTS_DIR"
@@ -89,9 +89,9 @@ function select_test_scripts() {
         test-*) name="$arg" ;;
         *)      name="test-$arg" ;;
       esac
-      if [[ ! -x "$TESTS_DIR/$name" ]]; then
+      if [[ ! -x $TESTS_DIR/$name ]]; then
         note=''
-        if [[ -e "$TESTS_DIR/$name" ]]; then note=' (file exists but is not executable)'; fi
+        if [[ -e $TESTS_DIR/$name ]]; then note=' (file exists but is not executable)'; fi
         die "no such test script: $name${note} ($TESTS_DIR/$name)"
       fi
       SELECTED_TESTS+=("$name")

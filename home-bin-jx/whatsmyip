@@ -66,7 +66,7 @@ function select_mode() {
     opendns | ifconfigme | local) ;;
     *) die "Unrecognized mode: '${new_mode}'. Valid modes: opendns, ifconfigme, local" ;;
   esac
-  if [[ $_MODE_SET == 1 && "$MODE" != "$new_mode" ]]; then
+  if [[ $_MODE_SET == 1 && $MODE != "$new_mode" ]]; then
     die "Conflicting mode options: already selected '${MODE}', then got '${flag}'"
   fi
   MODE="$new_mode"
@@ -113,12 +113,12 @@ function main() {
   # skips the network call and reports what it would have run, leaving $ip empty here.
   # `local` never touches the network (just this machine's own routing table and
   # interfaces), so it always runs for real; see get_ip_local.
-  if is_dry_run && [[ "$MODE" != local ]]; then
+  if is_dry_run && [[ $MODE != local ]]; then
     info "dry-run: no lookup performed; no address to report"
     exit 0
   fi
 
-  if [[ -z "$ip" ]]; then
+  if [[ -z $ip ]]; then
     die "Failed to determine an IP address (mode: ${MODE}, family: IPv${IP_FAMILY})"
   fi
 
@@ -177,9 +177,9 @@ function get_ip_local_bsd() {
   local iface ip cand
 
   iface=$(bsd_default_route_iface)
-  if [[ -n "$iface" ]]; then
+  if [[ -n $iface ]]; then
     ip=$(bsd_iface_addr "$iface")
-    if [[ -n "$ip" ]]; then
+    if [[ -n $ip ]]; then
       echo "$ip"
       return 0
     fi
@@ -190,7 +190,7 @@ function get_ip_local_bsd() {
   # code found it only by luck of trying en0 first and falling through.
   for cand in en0 en1 bridge0; do
     ip=$(bsd_iface_addr "$cand")
-    if [[ -n "$ip" ]]; then
+    if [[ -n $ip ]]; then
       echo "$ip"
       return 0
     fi
@@ -202,7 +202,7 @@ function bsd_default_route_iface() {
   # returns 0 -- "not found" is a legitimate outcome here, signaled by empty output, not a
   # script-ending error.
   local -a cmd=(route -n get)
-  [[ "$IP_FAMILY" == 6 ]] && cmd+=(-inet6)
+  [[ $IP_FAMILY == 6 ]] && cmd+=(-inet6)
   cmd+=(default)
 
   if command -v route >/dev/null 2>&1; then
@@ -216,7 +216,7 @@ function bsd_iface_addr() {
   # returns 0, same reasoning as bsd_default_route_iface.
   local iface="$1"
 
-  if [[ "$IP_FAMILY" == 4 ]]; then
+  if [[ $IP_FAMILY == 4 ]]; then
     if command -v ipconfig >/dev/null 2>&1; then
       ipconfig getifaddr "$iface" 2>/dev/null
     fi
@@ -237,7 +237,7 @@ function get_ip_local_linux() {
   local ip cand
 
   ip=$(linux_default_route_addr)
-  if [[ -n "$ip" ]]; then
+  if [[ -n $ip ]]; then
     echo "$ip"
     return 0
   fi
@@ -246,7 +246,7 @@ function get_ip_local_linux() {
   # ipconfig/ifconfig.
   for cand in en0 en1 bridge0 eth0 wlan0; do
     ip=$(linux_iface_addr "$cand")
-    if [[ -n "$ip" ]]; then
+    if [[ -n $ip ]]; then
       echo "$ip"
       return 0
     fi

@@ -41,7 +41,7 @@ function main() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(source_bashyrc "$sh" "$good_home" 'true')
-    if [[ "$got" == *ERROR* ]]; then
+    if [[ $got == *ERROR* ]]; then
       fail 'a good load produces no complaint' "${sh##*/}: got '$got'"
       return
     fi
@@ -91,7 +91,7 @@ function assert_all_shells_bashyrc() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(source_bashyrc "$sh" "$home" "$snippet")
-    if [[ "$got" != *"$want"* ]]; then
+    if [[ $got != *"$want"* ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted to contain '$want'"
       return
     fi

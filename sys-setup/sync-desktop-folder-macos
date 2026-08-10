@@ -22,7 +22,7 @@ DESKTOP="$HOME/Desktop"
 echo "Configuring local Desktop to sync with Dropbox"
 
 # Don't reconfigure already-synced folders
-if [[ -h "$DESKTOP" ]]; then
+if [[ -h $DESKTOP ]]; then
   echo >&2 "Looks like '$DESKTOP' is already synced (it's a symlink)"
   exit 0
 fi
@@ -33,7 +33,7 @@ fi
 for file in "$DESKTOP"/*; do
   base_file=$(basename "$file")
   synced_file="$DROPBOX_DESKTOP/$base_file"
-  if [[ -f "$synced_file" ]]; then
+  if [[ -f $synced_file ]]; then
   	echo >&2 "ERROR: Synced file $synced_file already exists; aborting"
   	exit 1
   fi

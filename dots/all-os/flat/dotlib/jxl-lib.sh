@@ -85,7 +85,7 @@
 # script, locals inside a command function. bashyrc.sh sources this into every interactive
 # shell, and none of that state belongs in the user's namespace.
 #
-if [[ -n "${_JXL_VERSION:-}" ]]; then
+if [[ -n ${_JXL_VERSION:-} ]]; then
   return 0
 fi
 
@@ -107,7 +107,7 @@ unset _jxl_v
 # Which copy of this file got loaded. With a repo copy, an installed copy, and an
 # idempotence guard all in play, that is a real question -- jxl::show_shell_info reports
 # it, and the debug load notice at the bottom prints it.
-if [[ -n "${BASH_VERSION:-}" ]]; then
+if [[ -n ${BASH_VERSION:-} ]]; then
   _JXL_LIB_PATH="${BASH_SOURCE[0]}"
 else
   # zsh's equivalent of $BASH_SOURCE for the file being sourced. bash parses this fine
@@ -118,7 +118,7 @@ else
 fi
 
 # Set JXL_NO_READONLY=1 to skip this, for the rare in-shell reload while hacking on JXL.
-if [[ "${JXL_NO_READONLY:-0}" == 0 ]]; then
+if [[ ${JXL_NO_READONLY:-0} == 0 ]]; then
   readonly _JXL_VERSION _JXL_VERSION_ARR _JXL_LIB_PATH
 fi
 
@@ -148,7 +148,7 @@ function jxl::init_script() {
   fi
   set -o nounset
   set -o pipefail
-  if [[ "${TRACE:-0}" == "1" ]]; then
+  if [[ ${TRACE:-0} == "1" ]]; then
     set -o xtrace
   fi
 
@@ -276,7 +276,7 @@ function jxl::_run_command_body() {
   #
   # $_JXL_EMIT_PROGNAME and $_JXL_EMIT_TIMESTAMP stay writable on purpose: they are the
   # impl's own log format, which it may reasonably change partway through.
-  if [[ "${_jxl_isolation:-subshell}" == subshell && "${JXL_NO_READONLY:-0}" == 0 ]]; then
+  if [[ ${_jxl_isolation:-subshell} == subshell && ${JXL_NO_READONLY:-0} == 0 ]]; then
     readonly PROGRAM_NAME _JXL_VERBOSE _JXL_DEBUG _JXL_DRY_RUN
   fi
 
@@ -299,7 +299,7 @@ function jxl::_normalize_shell_options() {
   local had_noclobber=0
   if [[ -o noclobber ]]; then had_noclobber=1; fi
 
-  if [[ -n "${ZSH_VERSION:-}" ]]; then
+  if [[ -n ${ZSH_VERSION:-} ]]; then
     # zsh hands us the whole job in one builtin: back to zsh defaults, undoing
     # `emulate sh`, ksh_arrays, sh_word_split and the rest. It is thorough enough to take
     # noclobber with it, so put that back.
@@ -364,7 +364,7 @@ function jxl::_calling_command_name() {
     return 0
   fi
   # shellcheck disable=SC2154  # funcstack is zsh's; guarded by the bash test
-  if [[ -n "${BASH_VERSION:-}" ]]; then
+  if [[ -n ${BASH_VERSION:-} ]]; then
     printf '%s\n' "${FUNCNAME[3]:-jxl}"
   else
     printf '%s\n' "${funcstack[4]:-jxl}"
@@ -422,12 +422,12 @@ function jxl::command_help() {
   fi
 
   printf '\n'
-  if [[ -n "$headline" ]]; then
+  if [[ -n $headline ]]; then
     printf '%s - %s\n\n' "${PROGRAM_NAME:-???}" "$headline"
   fi
   printf 'Usage:\n  %s %s\n\n' "${PROGRAM_NAME:-???}" "$synopsis"
   printf 'Options:\n'
-  if [[ -n "$options" ]]; then
+  if [[ -n $options ]]; then
     printf '%s\n' "$options"
   fi
   jxl::std_options_help
@@ -458,10 +458,10 @@ function jxl::emit() {
   # All diagnostics go to stderr, including progress and success -- stdout is reserved for
   # the program's actual work product.
   local msgline="$*"
-  if [[ "${_JXL_EMIT_PROGNAME:-0}" == 1 ]]; then
+  if [[ ${_JXL_EMIT_PROGNAME:-0} == 1 ]]; then
     msgline="${PROGRAM_NAME:-???}: ${msgline}"
   fi
-  if [[ "${_JXL_EMIT_TIMESTAMP:-0}" == 1 ]]; then
+  if [[ ${_JXL_EMIT_TIMESTAMP:-0} == 1 ]]; then
     msgline="$(jxl::now): ${msgline}"
   fi
   echo >&2 "$msgline"
@@ -470,9 +470,9 @@ function jxl::emit() {
 function jxl::now() { date +'%Y-%m-%d %H:%M:%S'; }
 
 # A bare [[ ]] is already the return status, so no if/then/else wrapper is needed.
-function jxl::is_verbose() { [[ "${_JXL_VERBOSE:-0}" != 0 ]]; }
-function jxl::is_debug()   { [[ "${_JXL_DEBUG:-0}"   != 0 ]]; }
-function jxl::is_dry_run() { [[ "${_JXL_DRY_RUN:-0}" != 0 ]]; }
+function jxl::is_verbose() { [[ ${_JXL_VERBOSE:-0} != 0 ]]; }
+function jxl::is_debug()   { [[ ${_JXL_DEBUG:-0}   != 0 ]]; }
+function jxl::is_dry_run() { [[ ${_JXL_DRY_RUN:-0} != 0 ]]; }
 
 
 # ========== Dry run ==========
@@ -600,7 +600,7 @@ function jxl::assocarray_at() {
     return 2
   fi
   while [[ $# -ge 2 ]]; do
-    if [[ "$1" == "$_key" ]]; then
+    if [[ $1 == "$_key" ]]; then
       eval "$_out=\$2"
       return 0
     fi
@@ -621,7 +621,7 @@ function jxl::assocarray_has() {
     return 2
   fi
   while [[ $# -ge 2 ]]; do
-    if [[ "$1" == "$_key" ]]; then return 0; fi
+    if [[ $1 == "$_key" ]]; then return 0; fi
     shift 2
   done
   return 1
@@ -757,14 +757,14 @@ function jxl::use_short_names() {
   else
     msg='Defined short-name JXL functions.'
   fi
-  if [[ -z "$redefined$shadowed_alias$shadowed_cmd" ]]; then
+  if [[ -z $redefined$shadowed_alias$shadowed_cmd ]]; then
     msg="$msg Nothing redefined or shadowed."
   else
-    [[ -n "$redefined" ]]      && msg="$msg Redefined functions: ${redefined}."
-    [[ -n "$shadowed_alias" ]] && msg="$msg Shadowed aliases: ${shadowed_alias}."
-    [[ -n "$shadowed_cmd" ]]   && msg="$msg Shadowed commands: ${shadowed_cmd}."
+    [[ -n $redefined ]]      && msg="$msg Redefined functions: ${redefined}."
+    [[ -n $shadowed_alias ]] && msg="$msg Shadowed aliases: ${shadowed_alias}."
+    [[ -n $shadowed_cmd ]]   && msg="$msg Shadowed commands: ${shadowed_cmd}."
   fi
-  [[ -n "$skipped" ]] && msg="$msg Skipped (--safe): ${skipped}."
+  [[ -n $skipped ]] && msg="$msg Skipped (--safe): ${skipped}."
   jxl::log_dbg "$msg"
 }
 
@@ -787,9 +787,9 @@ function jxl::show_shell_info() {
   # and zsh prints `export FOO=...`, but both contain " FOO=", which is all we check.
   exports=$(export -p 2>/dev/null || true)
 
-  if [[ -n "${BASH_VERSION:-}" ]]; then
+  if [[ -n ${BASH_VERSION:-} ]]; then
     shell_name=bash; shell_ver="$BASH_VERSION"; depth="${BASH_SUBSHELL:-?}"
-  elif [[ -n "${ZSH_VERSION:-}" ]]; then
+  elif [[ -n ${ZSH_VERSION:-} ]]; then
     # shellcheck disable=SC2154  # ZSH_SUBSHELL is zsh's; guarded by the version test
     shell_name=zsh;  shell_ver="$ZSH_VERSION";  depth="${ZSH_SUBSHELL:-?}"
   fi
@@ -839,7 +839,7 @@ function jxl::show_var() {
   local _set _kind _sigils
 
   eval "_set=\${${_name}+x}"
-  if [[ -z "${_set:-}" ]]; then
+  if [[ -z ${_set:-} ]]; then
     printf '  %-*s    (unset)\n' "$_width" "$_name"
     return 0
   fi
@@ -851,7 +851,7 @@ function jxl::show_var() {
     array) _sigils='@' ;;
     assoc) _sigils='%' ;;
   esac
-  if [[ -n "$_exports" ]]; then
+  if [[ -n $_exports ]]; then
     case "$_exports" in
       *" ${_name}="*) _sigils="${_sigils}^" ;;
     esac
@@ -920,8 +920,8 @@ function jxl::_show_var_render_array() {
   local _out="$1" _name="$2" _kind="$3"
   local _buf='' _elem _key
 
-  if [[ "$_kind" == assoc ]]; then
-    if [[ -n "${ZSH_VERSION:-}" ]]; then
+  if [[ $_kind == assoc ]]; then
+    if [[ -n ${ZSH_VERSION:-} ]]; then
       # zsh-only key expansion, ${(k)...}. Wrapped in eval so it is a string to bash's
       # parser rather than literal syntax -- unlike _JXL_LIB_PATH's ${(%):-%x} above, this
       # needs no shellcheck disable, and bash -n never has to parse it at all.
@@ -947,7 +947,7 @@ function jxl::_show_options() {
   # as off, so bash 3.2 does not claim to have globstar.
   local opt line=''
   for opt in errexit nounset pipefail noclobber noglob allexport xtrace verbose; do
-    if [[ -o "$opt" ]]; then
+    if [[ -o $opt ]]; then
       line="${line:+${line}  }${opt}=on"
     else
       line="${line:+${line}  }${opt}=off"
@@ -955,7 +955,7 @@ function jxl::_show_options() {
   done
   printf '  %s\n' "$line"
 
-  if [[ -z "${BASH_VERSION:-}" ]]; then
+  if [[ -z ${BASH_VERSION:-} ]]; then
     return 0
   fi
   line=''
@@ -988,9 +988,9 @@ function jxl::_show_short_names() {
     fi
   done
 
-  if [[ -n "$defined" ]]; then printf '  JXL wrappers: %s\n' "$defined"; fi
-  if [[ -n "$foreign" ]]; then printf '  defined but NOT JXL: %s\n' "$foreign"; fi
-  if [[ -n "$missing" ]]; then printf '  not defined: %s\n' "$missing"; fi
+  if [[ -n $defined ]]; then printf '  JXL wrappers: %s\n' "$defined"; fi
+  if [[ -n $foreign ]]; then printf '  defined but NOT JXL: %s\n' "$foreign"; fi
+  if [[ -n $missing ]]; then printf '  not defined: %s\n' "$missing"; fi
 }
 
 function jxl::_call_stack() {
@@ -1001,7 +1001,7 @@ function jxl::_call_stack() {
   local -a frames=()
   local f out=''
 
-  if [[ -n "${BASH_VERSION:-}" ]]; then
+  if [[ -n ${BASH_VERSION:-} ]]; then
     frames=( ${FUNCNAME[@]+"${FUNCNAME[@]}"} )
   else
     # shellcheck disable=SC2154  # funcstack is zsh's; guarded by the bash test
@@ -1019,7 +1019,7 @@ function jxl::_call_stack() {
 # Announce the load when debugging. Reads the interface variables directly rather than
 # $_JXL_DEBUG, which by design does not exist until a script or command function seeds it,
 # and jxl::emit rather than jxl::log_dbg, which gates on that same variable.
-if [[ "${JXL_DEBUG:-${DEBUG:-0}}" != 0 ]]; then
+if [[ ${JXL_DEBUG:-${DEBUG:-0}} != 0 ]]; then
   jxl::emit "debug: JXL ${_JXL_VERSION} loaded from ${_JXL_LIB_PATH}"
 fi
 

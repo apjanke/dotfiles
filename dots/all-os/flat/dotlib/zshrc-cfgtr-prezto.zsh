@@ -6,7 +6,7 @@
 # configuration file.
 
 # Source Prezto.
-if [[ -f "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+if [[ -f ${ZDOTDIR:-$HOME}/.zprezto/init.zsh ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 

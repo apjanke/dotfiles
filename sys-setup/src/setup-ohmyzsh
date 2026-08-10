@@ -26,7 +26,7 @@ function main() {
 
 omz_repos_dir="${HOME}/local/opp/ohmyzsh"
 mkdir -p "$omz_repos_dir"
-if [[ ! -e "$omz_repos_dir/ohmyzsh" ]]; then
+if [[ ! -e $omz_repos_dir/ohmyzsh ]]; then
   (
     cd "$omz_repos_dir"
     echo "Cloning ohmyzsh"
@@ -36,13 +36,13 @@ if [[ ! -e "$omz_repos_dir/ohmyzsh" ]]; then
     git fetch --all --tags
   )
 fi
-if [[ ! -e "$omz_repos_dir/ohmyzsh-custom" ]]; then
+if [[ ! -e $omz_repos_dir/ohmyzsh-custom ]]; then
   (
     cd "$omz_repos_dir"
     # TODO: I think this will only work for public GitHub repos
     local not_found
     not_found=$(curl -s https://api.github.com/repos/$MY_GITHUB_USER/ohmyzsh-custom | grep "Not Found")
-    if [[ -z "$not_found" ]]; then
+    if [[ -z $not_found ]]; then
       echo "Cloning ohmyzsh-custom"
       git clone https://github.com/$MY_GITHUB_USER/ohmyzsh-custom "$omz_repos_dir/ohmyzsh-custom"
     else
@@ -58,7 +58,7 @@ else
   echo "An ~/.oh-my-zsh already exists. Not changing it."
 fi
 if [[ ! -e ~/.ohmyzsh-custom ]]; then
-  if [[ -e "$omz_repos_dir/ohmyzsh-custom" ]]; then
+  if [[ -e $omz_repos_dir/ohmyzsh-custom ]]; then
     echo "Linking ~/.ohmyzsh-custom"
     ln -s "$omz_repos_dir/ohmyzsh-custom" ~/.ohmyzsh-custom
   else
@@ -78,7 +78,7 @@ if [[ $(uname) = Darwin ]]; then
 else
   curr_shell=$(echo "$SHELL" | grep zsh 2>/dev/null)
 fi
-if [[ -z "$curr_shell" ]]; then
+if [[ -z $curr_shell ]]; then
   echo "NOTE: Your current shell is not zsh. You will need to change it to zsh if you want to use oh-my-zsh."
 fi
 

@@ -57,7 +57,7 @@ fi
 #  $JX_OMZ_THEME - theme for OMZ
 #  $JX_PREZTO_THEME - theme for Prezto
 
-if [[ $JX_ZSH_CONFIGURATOR == "ohmyzsh" && -d "$HOME/.oh-my-zsh" ]]; then
+if [[ $JX_ZSH_CONFIGURATOR == "ohmyzsh" && -d $HOME/.oh-my-zsh ]]; then
   # _OMZ_DEBUG=1
   # _OMZ_DEBUG_SMKX=1
   # DISABLE_OH_MY_ZSH_CUSTOM=1
@@ -82,7 +82,7 @@ if [[ $JX_ZSH_CONFIGURATOR == "ohmyzsh" && -d "$HOME/.oh-my-zsh" ]]; then
   ZSH=${ZSH:-$HOME/.oh-my-zsh}
   plugins=( macos themes )
   source ~/.dotlib/zshrc-cfgtr-ohmyzsh.zsh
-elif [[ $JX_ZSH_CONFIGURATOR == "prezto" && -d "$HOME/.zprezto" ]]; then
+elif [[ $JX_ZSH_CONFIGURATOR == "prezto" && -d $HOME/.zprezto ]]; then
   source ~/.dotlib/zshrc-cfgtr-prezto.zsh
 else
   source ~/.dotlib/zshrc-cfgtr-none.zsh
@@ -99,7 +99,7 @@ unalias mv 2>/dev/null
 # This goes after the configurator, so we can override its actions by clobbering.
 
 # Pull in common bash/zsh configuration
-if [[ -f "$HOME/.dotlib/bashyrc.sh" ]]; then
+if [[ -f $HOME/.dotlib/bashyrc.sh ]]; then
   source "$HOME/.dotlib/bashyrc.sh"
 fi
 

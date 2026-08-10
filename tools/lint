@@ -71,7 +71,7 @@ function main() {
     # An explicitly named file gets checked whatever it is; the classifier only picks
     # which checker to use, defaulting to shellcheck.
     for file in "${FILE_ARGS[@]}"; do
-      if [[ "$(script_kind "$file")" == zsh ]]; then
+      if [[ $(script_kind "$file") == zsh ]]; then
         zsh_targets+=("$file")
       else
         sh_targets+=("$file")
@@ -192,13 +192,13 @@ function run_bash3_compat_check() {
     if [[ $grep_rc -gt 1 ]]; then
       die "grep exited $grep_rc on pattern: $pat"
     fi
-    [[ -n "$raw" ]] || continue
+    [[ -n $raw ]] || continue
     hits=""
     while IFS= read -r line; do
-      if [[ "$line" =~ $BASH4_SKIP_LINE_RE ]]; then continue; fi
+      if [[ $line =~ $BASH4_SKIP_LINE_RE ]]; then continue; fi
       hits="${hits:+$hits$nl}    $line"
     done <<< "$raw"
-    if [[ -n "$hits" ]]; then
+    if [[ -n $hits ]]; then
       printf '%s\n%s\n' "$descr" "$hits"
       rc=1
     fi
@@ -270,7 +270,7 @@ function collect_targets() {
   # /local and /zz-local are gitignored scratch dirs, not part of the project.
   find . \( -name .git -o -name zz-local -o -name local \) -prune -o -type f -print0 \
     | while IFS= read -r -d '' file; do
-        if [[ "$(script_kind "$file")" == "$want" ]]; then
+        if [[ $(script_kind "$file") == "$want" ]]; then
           printf '%s\0' "$file"
         fi
       done \

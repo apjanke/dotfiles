@@ -72,8 +72,8 @@ function _read_lines() {
   # trailing newline, which a plain `while read` drops silently.
   _read_lines_out=()
   local line
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ -n "$line" ]]; then _read_lines_out+=("$line"); fi
+  while IFS= read -r line || [[ -n $line ]]; do
+    if [[ -n $line ]]; then _read_lines_out+=("$line"); fi
   done < "$1"
 }
 

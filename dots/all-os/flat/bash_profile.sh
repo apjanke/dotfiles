@@ -10,10 +10,10 @@ if [[ $JX_TRACE_SHELL_STARTUP = 1 ]]; then
 fi
 
 # Include common bashlike configuration
-if [[ -f "$HOME/.profile" ]]; then source "$HOME/.profile"; fi
+if [[ -f $HOME/.profile ]]; then source "$HOME/.profile"; fi
 
 # Include interactive bash settings
-if [[ -f "$HOME/.bashrc" ]]; then source "$HOME/.bashrc"; fi
+if [[ -f $HOME/.bashrc ]]; then source "$HOME/.bashrc"; fi
 
 # Bash-specific stuff
 

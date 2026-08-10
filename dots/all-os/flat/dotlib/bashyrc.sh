@@ -73,7 +73,7 @@ fi
 # of clobbering here.
 export LSCOLORS="${LSCOLORS:-gxxxdxdxdxexexdxdxgxgx}"
 # Same baseline as LSCOLORS, in different (GNU) format
-if [[ -z "${LS_COLORS:-}" ]]; then
+if [[ -z ${LS_COLORS:-} ]]; then
   export LS_COLORS="di=36:so=33:pi=33:ex=33:bd=34:cd=34:su=33:sg=33:tw=36:ow=36"
   # GNU-specific extras
   LS_COLORS="${LS_COLORS}:ln=00;04"
@@ -139,7 +139,7 @@ if [[ $__jx_uname = "Darwin" ]]; then
       '/usr/local/homebrew'
     )
     for _brew_prefix in "${_cand_brew_prefixes[@]}"; do
-      if [[ -f "${_brew_prefix}/bin/brew" ]]; then
+      if [[ -f ${_brew_prefix}/bin/brew ]]; then
         # Homebrew tries not to replace system commands, so at end of path should be fine?
         export JX_HOMEBREW_PREFIX="$_brew_prefix"
         PATH="${JX_HOMEBREW_PREFIX}/bin:${JX_HOMEBREW_PREFIX}/sbin:$PATH"
@@ -183,7 +183,7 @@ fi
 
 # Languages and dev platforms
 
-if [[ -f "$HOME/.dotlib/bashy-langs.sh" ]]; then
+if [[ -f $HOME/.dotlib/bashy-langs.sh ]]; then
   source "$HOME/.dotlib/bashy-langs.sh"
 fi
 
@@ -416,7 +416,7 @@ EOS
   jx::shell_info_internal_state "$exports"
 
   local path_width_effective
-  if [[ -n "$path_width" ]]; then
+  if [[ -n $path_width ]]; then
     path_width_effective="$path_width"
   else
     # $COLUMNS is not always merely unset -- a non-interactive/non-tty environment can
@@ -426,7 +426,7 @@ EOS
     # as unset, for both $COLUMNS and the tput fallback.
     path_width_effective="${COLUMNS:-}"
     case "$path_width_effective" in ''|*[!0-9]*|0) path_width_effective='' ;; esac
-    if [[ -z "$path_width_effective" ]]; then
+    if [[ -z $path_width_effective ]]; then
       path_width_effective=$(tput cols 2>/dev/null) || true
       case "$path_width_effective" in ''|*[!0-9]*|0) path_width_effective='' ;; esac
     fi
@@ -463,7 +463,7 @@ function jx::shell_info_custom_vars() {
 
   for v in "${names[@]}"; do
     eval "is_set=\${${v}+x}"
-    if [[ -n "${is_set:-}" ]]; then
+    if [[ -n ${is_set:-} ]]; then
       set_names+=("$v")
     fi
   done
@@ -498,7 +498,7 @@ function jx::shell_info_jx_vars() {
     JX_USE_HOMEBREW JX_USE_MACPORTS JX_ZSH_CONFIGURATOR
   )
 
-  while IFS= read -r jx_line || [[ -n "$jx_line" ]]; do
+  while IFS= read -r jx_line || [[ -n $jx_line ]]; do
     set_names+=("$jx_line")
   done < <(set | grep '^JX_[A-Za-z0-9_]*=' | sed -e 's/=.*//' | sort -u)
 
@@ -540,7 +540,7 @@ function jx::shell_info_local_files() {
   width=$(jxl::max_strlen "${names[@]}")
   printf 'Local files:\n'
   for f in "${names[@]}"; do
-    if [[ -e "$HOME/$f" ]]; then
+    if [[ -e $HOME/$f ]]; then
       n=$(( n + 1 ))
       printf '  %-*s present\n' "$width" "$f"
     elif jxl::is_verbose; then
@@ -590,7 +590,7 @@ function jx::shell_info_path() {
     long)
       printf 'PATH:\n'
       rest="${PATH:-}"
-      while [[ -n "$rest" ]]; do
+      while [[ -n $rest ]]; do
         case "$rest" in
           *:*) item="${rest%%:*}"; rest="${rest#*:}" ;;
           *)   item="$rest"; rest='' ;;
@@ -608,14 +608,14 @@ function jx::shell_info_path() {
   # accepted regardless of length, same as ordinary text-wrap conventions.
   local avail=$(( width - 2 ))
   rest="${PATH:-}"
-  while [[ -n "$rest" ]]; do
+  while [[ -n $rest ]]; do
     case "$rest" in
       *:*) item="${rest%%:*}"; rest="${rest#*:}" ;;
       *)   item="$rest"; rest='' ;;
     esac
     count=$(( count + 1 ))
     quoted=$(jxl::quote_elem "$item")
-    if [[ -z "${line:-}" ]]; then
+    if [[ -z ${line:-} ]]; then
       line="$quoted"
     elif [[ $(( ${#line} + 1 + ${#quoted} )) -le $avail ]]; then
       line="${line} ${quoted}"
@@ -624,7 +624,7 @@ function jx::shell_info_path() {
       line="$quoted"
     fi
   done
-  if [[ -n "${line:-}" ]]; then
+  if [[ -n ${line:-} ]]; then
     lines+=("$line")
   fi
 

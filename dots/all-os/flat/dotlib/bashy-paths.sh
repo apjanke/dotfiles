@@ -71,7 +71,7 @@ function jx_maybe_add_path() {
         continue
         ;;
     esac
-    [[ -d "$dir" ]] || continue
+    [[ -d $dir ]] || continue
 
     # Find the existing entry, keeping its original spelling: a case-insensitive match on
     # /Users/Foo against an existing /users/foo has to move /users/foo, not re-add ours.
@@ -88,7 +88,7 @@ function jx_maybe_add_path() {
       lc_rest="${lc_all%%$'\n'*}"
       lc_dir="${lc_all#*$'\n'}"
       rest="$PATH"
-      while [[ -n "$rest" ]]; do
+      while [[ -n $rest ]]; do
         case "$rest" in
           *:*) item="${rest%%:*}"; rest="${rest#*:}" ;;
           *)   item="$rest"; rest="" ;;
@@ -97,14 +97,14 @@ function jx_maybe_add_path() {
           *:*) lc_item="${lc_rest%%:*}"; lc_rest="${lc_rest#*:}" ;;
           *)   lc_item="$lc_rest"; lc_rest="" ;;
         esac
-        if [[ "$lc_item" == "$lc_dir" ]]; then
+        if [[ $lc_item == "$lc_dir" ]]; then
           found_entry="$item"
           break
         fi
       done
     fi
 
-    if [[ -n "$found_entry" ]]; then
+    if [[ -n $found_entry ]]; then
       [[ $move == 1 ]] || continue
       # Already at the requested end? Nothing to do.
       if [[ $where == prepend ]]; then
@@ -114,12 +114,12 @@ function jx_maybe_add_path() {
       fi
       newpath=""
       rest="$PATH"
-      while [[ -n "$rest" ]]; do
+      while [[ -n $rest ]]; do
         case "$rest" in
           *:*) item="${rest%%:*}"; rest="${rest#*:}" ;;
           *)   item="$rest"; rest="" ;;
         esac
-        if [[ "$item" != "$found_entry" ]]; then
+        if [[ $item != "$found_entry" ]]; then
           newpath="${newpath:+${newpath}:}${item}"
         fi
       done

@@ -17,7 +17,6 @@
 - `jxl::show_shell_info()`
   - Reverse the call stack display order, so it goes top -> bottom.
   - Sort or otherwise order the variables displayed in "Caller-set interface" and "Invocation state"
-- Remove unneeded double-quotes on variables inside `[[ ... ]]` tests.
 - new `jx*` functions from `.profile` vs. local replacement files
   - `install-dotfiles` doesn't clobber an existing regular (non-symlink) `~/.profile`, which is intentional - the idea was to let a plain local file supersede the dotfiles-managed one, per-file. But `.dotlib/bashyrc.sh`'s per-machine local-loading loop now hard-depends on the `jx::*`/`_jx_source_maybe` functions defined in `.profile` (added 2026-08-08), so a superseding non-JX-aware `.profile` silently breaks that loop. Revisit: maybe factor those function definitions out of `.profile` into their own file, so `bashyrc.sh` doesn't depend on `.profile` having actually run.
 - Make `--dry-run` opt-in per command in JXL. A script or command function should be able to declare (through `$_JXL_COMMAND_INFO`, or an equivalent for shebang scripts) that it has no dry-run mode, after which `jxl::std_opt` rejects `--dry-run` as an unrecognized option and `jxl::std_options_help` stops advertising it. Today every JXL command advertises a `--dry-run` it may not actually implement, and `jxl::forbid_dry_run` only catches that after the user has already typed it.

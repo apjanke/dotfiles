@@ -54,13 +54,13 @@ function select_test_shells() {
     # Then everything on $PATH: `which -a`, not `command -v`, to get every hit rather
     # than just the first.
     while IFS= read -r cand; do
-      if [[ -n "$cand" ]]; then candidates+=("$cand"); fi
+      if [[ -n $cand ]]; then candidates+=("$cand"); fi
     done < <(which -a "$name" 2>/dev/null || true)
 
     for cand in "${candidates[@]}"; do
-      if [[ ! -x "$cand" ]]; then continue; fi
+      if [[ ! -x $cand ]]; then continue; fi
       ver=$(shell_version "$cand")
-      if [[ -z "$ver" ]]; then continue; fi
+      if [[ -z $ver ]]; then continue; fi
       key="${name}:${ver}"
       case " $seen " in *" $key "*) continue ;; esac
       seen="$seen $key"
@@ -89,14 +89,14 @@ function fail() {
   TESTS=$((TESTS + 1))
   FAILS=$((FAILS + 1))
   printf '  FAIL %s\n' "$descr"
-  if [[ -n "$detail" ]]; then
+  if [[ -n $detail ]]; then
     printf '         %s\n' "$detail"
   fi
 }
 
 function assert_eq() {
   local got="$1" want="$2" descr="$3"
-  if [[ "$got" == "$want" ]]; then
+  if [[ $got == "$want" ]]; then
     ok "$descr"
   else
     fail "$descr" "got '$got', wanted '$want'"
@@ -134,16 +134,16 @@ function print_summary() {
 
 function assert_symlink_to() {
   local path="$FAKE_HOME/$1" want="$2" desc="$3" got
-  if [[ ! -L "$path" ]]; then
+  if [[ ! -L $path ]]; then
     fail "$desc" "not a symlink: $path"
     return
   fi
   got=$(readlink "$path")
-  if [[ "$got" != "$want" ]]; then
+  if [[ $got != "$want" ]]; then
     fail "$desc" "points at $got, wanted $want"
     return
   fi
-  if [[ ! -e "$path" ]]; then
+  if [[ ! -e $path ]]; then
     fail "$desc" "symlink is dangling: $path -> $got"
     return
   fi
@@ -152,7 +152,7 @@ function assert_symlink_to() {
 
 function assert_real_dir() {
   local path="$FAKE_HOME/$1" desc="$2"
-  if [[ -d "$path" && ! -L "$path" ]]; then
+  if [[ -d $path && ! -L $path ]]; then
     ok "$desc"
   else
     fail "$desc" "not a real directory: $path"
@@ -161,7 +161,7 @@ function assert_real_dir() {
 
 function assert_absent() {
   local path="$FAKE_HOME/$1" desc="$2"
-  if [[ -e "$path" || -L "$path" ]]; then
+  if [[ -e $path || -L $path ]]; then
     fail "$desc" "exists but should not: $path"
   else
     ok "$desc"

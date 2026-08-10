@@ -7,7 +7,7 @@ fi
 # Include common bashlike env configuration, which is in the bash profile
 # (I put common bash and zsh env setup in my .profile, not a bashyenv.sh.)
 # Intentionally not guarded by a $JX_ENV_LOADED check, so manual re-sourcing gets it.
-if [[ -f "$HOME/.profile" ]]; then
+if [[ -f $HOME/.profile ]]; then
   source "$HOME/.profile"
 fi
 

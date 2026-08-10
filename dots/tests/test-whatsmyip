@@ -182,10 +182,10 @@ EOF
   write_stub "$STUB_BIN" dig <<'EOF'
 #!/bin/bash
 echo "$@" >> "$STUB_LOG/dig.calls"
-if [[ "${STUB_DIG_FAIL:-0}" == 1 ]]; then
+if [[ ${STUB_DIG_FAIL:-0} == 1 ]]; then
   exit 1
 fi
-if [[ "${STUB_DIG_EMPTY:-0}" == 1 ]]; then
+if [[ ${STUB_DIG_EMPTY:-0} == 1 ]]; then
   # The real bug this guards against: OpenDNS answering with an empty answer section
   # (rc=0, no output) when dig queries over the wrong transport family.
   exit 0
@@ -199,7 +199,7 @@ EOF
   write_stub "$STUB_BIN" curl <<'EOF'
 #!/bin/bash
 echo "$@" >> "$STUB_LOG/curl.calls"
-if [[ "${STUB_CURL_FAIL:-0}" == 1 ]]; then
+if [[ ${STUB_CURL_FAIL:-0} == 1 ]]; then
   exit 1
 fi
 case " $* " in
@@ -224,7 +224,7 @@ EOF
   write_stub "$STUB_BIN" ipconfig <<'EOF'
 #!/bin/bash
 echo "$@" >> "$STUB_LOG/ipconfig.calls"
-if [[ "$1" == getifaddr && "$2" == en9 ]]; then
+if [[ $1 == getifaddr && $2 == en9 ]]; then
   echo '203.0.113.9'
   exit 0
 fi
@@ -234,7 +234,7 @@ EOF
   write_stub "$STUB_BIN" ifconfig <<'EOF'
 #!/bin/bash
 echo "$@" >> "$STUB_LOG/ifconfig.calls"
-if [[ "$1" == en9v6 ]]; then
+if [[ $1 == en9v6 ]]; then
   # A link-local line first, then a deprecated temporary one, then the stable global
   # address -- get_ip_local_bsd must skip the first two and land on the third, same as it
   # would against real `ifconfig` output.
@@ -268,7 +268,7 @@ EOF
 
   write_stub "$STUB_BIN" pbcopy <<'EOF'
 #!/bin/bash
-if [[ "${STUB_PBCOPY_FAIL:-0}" == 1 ]]; then
+if [[ ${STUB_PBCOPY_FAIL:-0} == 1 ]]; then
   cat > /dev/null
   exit 1
 fi
@@ -289,7 +289,7 @@ EOF
   write_stub "$MINIMAL_STUB_BIN" dirname <<'EOF'
 #!/bin/bash
 d="${1%/*}"
-if [[ "$d" == "$1" ]]; then d='.'; fi
+if [[ $d == "$1" ]]; then d='.'; fi
 echo "$d"
 EOF
 
@@ -318,12 +318,12 @@ function run_whatsmyip() {
 
 function assert_file_exists() {
   local path="$1" desc="$2"
-  if [[ -e "$path" ]]; then ok "$desc"; else fail "$desc" "missing: $path"; fi
+  if [[ -e $path ]]; then ok "$desc"; else fail "$desc" "missing: $path"; fi
 }
 
 function assert_file_absent() {
   local path="$1" desc="$2"
-  if [[ ! -e "$path" ]]; then ok "$desc"; else fail "$desc" "unexpectedly exists: $path"; fi
+  if [[ ! -e $path ]]; then ok "$desc"; else fail "$desc" "unexpectedly exists: $path"; fi
 }
 
 main

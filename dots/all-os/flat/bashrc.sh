@@ -35,7 +35,7 @@ shopt -s checkwinsize
 
 # Appearance
 
-if [[ "$USER" = "janke" ]]; then
+if [[ $USER = "janke" ]]; then
   export PS1="[\W] \$ "
 else
   export PS1="[\h: \W] \$ "

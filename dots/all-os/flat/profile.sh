@@ -66,7 +66,7 @@ if [[ $__jx_uname = "Darwin" ]]; then
     # In reverse order of addition
     bindirs=( '/opt/local/sbin' '/opt/local/bin' )
     for bindir in "${bindirs[@]}"; do
-      if [[ -d "$bindir" ]]; then
+      if [[ -d $bindir ]]; then
         PATH="${bindir}:$PATH"
       fi
     done
@@ -83,7 +83,7 @@ fi
 # convention: .zshenv's and .dotlib/bashyrc.sh's own local-loading loops, later in the same
 # shell session, reuse them too. This is JX's own layer, kept independent of JXL (see
 # .dotlib/jxl-lib.sh) since JXL isn't loaded this early.
-function jx::is_debug() { [[ "${_JX_DEBUG:-0}" != 0 ]]; }
+function jx::is_debug() { [[ ${_JX_DEBUG:-0} != 0 ]]; }
 function jx::debug()    { jx::is_debug && jx::emit "$*"; }
 function jx::error()    { jx::emit "ERROR: $*"; }
 function jx::emit()     { echo >&2 "jx: $*"; }

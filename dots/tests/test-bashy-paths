@@ -115,7 +115,7 @@ function assert_all_shells() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(run_case "$sh" "$base" "$snippet")
-    if [[ "$got" != "$want" ]]; then
+    if [[ $got != "$want" ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
       return
     fi

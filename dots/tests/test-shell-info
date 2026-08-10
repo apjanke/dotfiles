@@ -174,7 +174,7 @@ function assert_all_shells_shell_info() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(run_shell_info "$sh" "$home" "$args")
-    if [[ "$got" != *"$needle"* ]]; then
+    if [[ $got != *"$needle"* ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): output did not contain: $needle"
       return
     fi
@@ -208,7 +208,7 @@ function assert_all_shells_shell_info_bad_option() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(shell_info_rc "$sh" "$home" "$args")
-    if [[ "$got" != *'rc=1'* || "$got" != *alive* ]]; then
+    if [[ $got != *'rc=1'* || $got != *alive* ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got'"
       return
     fi
@@ -249,7 +249,7 @@ function assert_all_shells_shell_info_columns() {
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(run_shell_info_path_columns "$sh" "$home" "$path" "$columns" \
         | sed -n '/^PATH/,/^$/p')
-    if [[ "$got" != "$want" ]]; then
+    if [[ $got != "$want" ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
       return
     fi
@@ -265,7 +265,7 @@ function assert_all_shells_shell_info_path() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(run_shell_info_path "$sh" "$home" "$path" "$args" | sed -n '/^PATH/,/^$/p')
-    if [[ "$got" != "$want" ]]; then
+    if [[ $got != "$want" ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
       return
     fi
@@ -279,7 +279,7 @@ function assert_all_shells_shell_info_not() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(run_shell_info "$sh" "$home" "$args")
-    if [[ "$got" == *"$needle"* ]]; then
+    if [[ $got == *"$needle"* ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): output unexpectedly contained: $needle"
       return
     fi

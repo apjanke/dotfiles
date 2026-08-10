@@ -62,7 +62,7 @@ function jx-rbenvmgr-load () {
 
   if [[ $envmgr == rbenv ]]; then
     if command -v rbenv &>/dev/null; then
-      if [[ -n "$ZSH_VERSION" ]]; then my_shell="zsh"; else my_shell="bash"; fi
+      if [[ -n $ZSH_VERSION ]]; then my_shell="zsh"; else my_shell="bash"; fi
       eval "$(rbenv init - $my_shell)"
     else
       if [[ $be_quiet != quiet ]]; then
@@ -70,7 +70,7 @@ function jx-rbenvmgr-load () {
       fi
     fi
   elif [[ $envmgr == rvm ]]; then
-    if [[ -s "$HOME/.rvm/scripts/rvm" ]]; then
+    if [[ -s $HOME/.rvm/scripts/rvm ]]; then
       source "$HOME/.rvm/scripts/rvm"
     else
       if [[ $be_quiet != quiet ]]; then
@@ -105,13 +105,13 @@ function jx-conda-load () {
   conda_prefix_cands=("${HOME}" '/opt/pythons' '/opt' '/usr/local')
   conda_impl_cands=('miniforge3' 'miniforge' 'anaconda3' 'anaconda')
 
-  if [[ -n "$ZSH_VERSION" ]]; then my_shell="zsh"; else my_shell="bash"; fi
+  if [[ -n $ZSH_VERSION ]]; then my_shell="zsh"; else my_shell="bash"; fi
  
   for conda_prefix in "${conda_prefix_cands[@]}"; do
     for conda_impl in "${conda_impl_cands[@]}"; do
       conda_path_cand="${conda_prefix}/${conda_impl}"
       # echo "Checking for conda at ${conda_path_cand}"
-      if [[ -f "${conda_path_cand}/bin/conda" ]]; then
+      if [[ -f ${conda_path_cand}/bin/conda ]]; then
         # echo "Found ${conda_path_cand}/bin/conda"
         conda_path="$conda_path_cand"
         conda_setup_code="$("${conda_path}/bin/conda" "shell.${my_shell}" 'hook' 2> /dev/null)"
@@ -119,13 +119,13 @@ function jx-conda-load () {
         if [[ $? = 0 ]]; then
           eval "$conda_setup_code"
         else
-          if [[ -f "${conda_path}/etc/profile.d/conda.sh" ]]; then
+          if [[ -f ${conda_path}/etc/profile.d/conda.sh ]]; then
             source "${conda_path}/etc/profile.d/conda.sh"
           else
             PATH="${conda_path}/bin:$PATH"
           fi
         fi
-        if [[ -f "${conda_path}/etc/profile.d/mamba.sh" ]]; then
+        if [[ -f ${conda_path}/etc/profile.d/mamba.sh ]]; then
           source "${conda_path}/etc/profile.d/mamba.sh"
         fi
 
@@ -133,7 +133,7 @@ function jx-conda-load () {
         break
       fi
     done
-    if [[ -n "$conda_path" ]]; then
+    if [[ -n $conda_path ]]; then
       break
     fi
   done
@@ -161,7 +161,7 @@ function jx-nvm-load() {
   local flag="$1"
   local -a nvm_locn_cands
   local cand found verbose=0
-  if [[ "$flag" == '-v' ]]; then
+  if [[ $flag == '-v' ]]; then
     verbose=1
   fi
 
@@ -184,14 +184,14 @@ function jx-nvm-load() {
     # /opt/local/share/nvm
   )
   for cand in "${nvm_locn_cands[@]}"; do
-    if [[ -s "${cand}/nvm.sh" ]]; then
+    if [[ -s ${cand}/nvm.sh ]]; then
       found="${cand}"
       break
     fi
   done
-  if [[ -n "$found" ]]; then
+  if [[ -n $found ]]; then
     source "${found}/nvm.sh"
-    if [[ "$verbose" == 1 ]]; then
+    if [[ $verbose == 1 ]]; then
       echo >&2 "Loaded NVM from ${found}"
     fi
   else
@@ -221,7 +221,7 @@ if [[ $__jx_uname = "Darwin" ]]; then
                         R2020b R2020a R2019b R2019a R2018b R2018a R2017b R2017a)
       for matlab_rel in "${want_matlab_rels[@]}"; do
         matlab_app="/Applications/MATLAB_${matlab_rel}.app"
-        if [[ -f "$matlab_app/bin/matlab" ]]; then
+        if [[ -f $matlab_app/bin/matlab ]]; then
           PATH="$PATH:$matlab_app/bin"
           break
         fi

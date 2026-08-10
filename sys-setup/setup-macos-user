@@ -502,7 +502,7 @@ defaults-write com.googlecode.iterm2 PromptOnQuit -bool false
 CHANGED=0
 function update_iterm_prefs() {
 local ITERM_PREFS_DIR="$DOTFILES_REPO_PATH/iTerm2/$ITERM_PREFERENCES_SET"
-if [[ ! -d "$ITERM_PREFS_DIR" ]]; then
+if [[ ! -d $ITERM_PREFS_DIR ]]; then
   echo >&2 "WARNING: Not updating iTerm2 shared prefs dir because dir does not exist: '$ITERM_PREFS_DIR'"
   return
 fi
@@ -653,7 +653,7 @@ mkdir -p "$ST2_PREFS_DIR/Packages/User"
 cp "$MYDIR/../manual-settings/Sublime Text 2/Preferences.sublime-settings" "$ST2_PREFS_DIR/Packages/User"
 mkdir -p "$ST2_PREFS_DIR/Settings"
 ST2_LICENSE_FILE="$SERIALS_DIR/Sublime Text 2 license.txt"
-if [[ -e "$ST2_LICENSE_FILE" ]]; then
+if [[ -e $ST2_LICENSE_FILE ]]; then
   cp "$ST2_LICENSE_FILE" "$ST2_PREFS_DIR/Settings/License.sublime_license"
 fi
 
@@ -662,7 +662,7 @@ fi
 ################################################
 
 BBEDIT_SERIAL_FILE="$SERIALS_DIR/BBEdit 11 license.txt"
-if [[ -e "$BBEDIT_SERIAL_FILE" ]]; then
+if [[ -e $BBEDIT_SERIAL_FILE ]]; then
   BBEDIT_SERIAL=$(cat "$BBEDIT_SERIAL_FILE")
   defaults-write com.barebones.bbedit BBEditSerialNumber:11.0 "$BBEDIT_SERIAL"
 fi
@@ -716,8 +716,8 @@ defaults-write org.herf.Flux wakeTime -int 600
 ################################################
 
 mkdir -p ~/local/RubymineProjects
-if [[ ! -e "$HOME/local/RubymineProjects/Homebrew-local" ]]; then
-  if [[ -e "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz" ]]; then
+if [[ ! -e $HOME/local/RubymineProjects/Homebrew-local ]]; then
+  if [[ -e $MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz ]]; then
     (
       cd ~/local/RubymineProjects || return
       tar xf "$MANUAL_SETTINGS_PATH/Rubymine/rubymine-homebrew-local.tgz"
@@ -735,9 +735,9 @@ fi
 # Prezto
 ################################################
 
-if [[ -d "$HOME/Dropbox/#repos/prezto" ]]; then
+if [[ -d $HOME/Dropbox/#repos/prezto ]]; then
   ln -s "$HOME/Dropbox/#repos/prezto" "$HOME/.zprezto"
-elif [[ -d "$HOME/repos/prezto" ]]; then
+elif [[ -d $HOME/repos/prezto ]]; then
   ln -s "$HOME/repos/prezto" "$HOME/.zprezto"
 else
   echo "No prezto repo found; not linking to ~/.zprezto."
@@ -847,13 +847,13 @@ function defaults-write() {
   current=$(defaults read "$domain" "$key" 2>/dev/null)
   #echo "current is '$current', want '$value'"
   # booleans are written as true/false, but read back as 1/0
-  if [[ "$value_type" == bool ]]; then
-    if [[ "$value" == true ]]; then expected=1; else expected=0; fi
+  if [[ $value_type == bool ]]; then
+    if [[ $value == true ]]; then expected=1; else expected=0; fi
   else
     expected="$value"
   fi
   # This changed-value check is not perfect; it gets false positives for complex types
-  if [[ "$current" == "$expected" ]]; then
+  if [[ $current == "$expected" ]]; then
     v_echo "defaults-write: $domain $key is already set: $current"
   else
     defaults write "$domain" "$key" "$@"
@@ -880,7 +880,7 @@ function remove-dock-persistent-app() {
   local dockPrefsPlistFile ix
   dockPrefsPlistFile="$HOME/Library/Preferences/com.apple.dock.plist"
   ix=$(defaults read com.apple.dock persistent-apps | grep file-label | awk "/$file_label/  {print NR}")
-  if [[ -n "$ix" ]]; then
+  if [[ -n $ix ]]; then
     ix=$(( ix - 1 ))
     /usr/libexec/PlistBuddy -c "Delete persistent-apps:$ix" "$dockPrefsPlistFile"
     v_echo "Deleted persistent Dock app $file_label"
