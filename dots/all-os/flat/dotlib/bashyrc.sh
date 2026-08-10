@@ -209,29 +209,74 @@ alias fn='find . -iname'
 
 # Grepping and finding
 
-# grin - grep with exclusions
-function grin()  { grep -rIn    "${JX_GRIN_EXCLUDES[@]}" "$@"; }
-function griin() { grep -rIn -i "${JX_GRIN_EXCLUDES[@]}" "$@"; }
-JX_GRIN_EXCLUDES=(
-  --exclude-dir=.git --exclude-dir=.cvs --exclude-dir=.hg --exclude-dir=.svn
-  --exclude-dir=venv --exclude-dir=.venv --exclude-dir=node_modules
-  --exclude-dir=wp-includes
-  '--exclude=*.ipynb'
-)
-# recursive grep, excluding big dumb managed subdirs
-# This is prob redundant with, and inferior to, 'grin' now, and can prob be ditched soon.
-alias grepx="grep -rIn --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json"
-# Delegates to grin so the exclusions live in one place; grin always adds -n, so strip
-# the leading "N:" grep -o leaves on every match before deduping.
-function grhino() { grin -ho "$@" | cut -d: -f2- | sort -u; }
+# Exclusions for both grin and findd. These are glob patterns.
+JX_GRIN_EXCLUDE_DIRS=( .git .cvs .hg .svn venv .venv node_modules wp-includes )
+JX_GRIN_EXCLUDE_FILES=( '*.ipynb' )
 
-# Do a find but exclude .git repo directories
-# Generify: expand to cover .svn, .cvs, .venv etc., and rename
-function find-no-git {
-  local dir="$1"; shift
-  local args=( "$@" )
-  find "$dir" \( -type d -name .git -prune \) -o "${args[@]}"
+# grin - grep, with exclusions
+function grin()  { _grep_nogit -rIn    "$@"; }
+function griin() { _grep_nogit -rIn -i "$@"; }
+function _grep_nogit() {
+  grep -r "${JX_GRIN_EXCLUDE_DIRS[@]/#/--exclude-dir=}" \
+      "${JX_GRIN_EXCLUDE_FILES[@]/#/--exclude=}" "$@"
 }
+# grhino: grep -rhiNo, with dir exclusions
+function grhino()  { _grep_nogit -rhiNo "$@" | sort -u; }
+
+# findd - find, with same dir & file exclusions as grin
+function findd {
+  if [[ $# -eq 0 ]]; then
+    echo >&2 'findd: error: must supply at least 1 argument'
+    return 1
+  fi
+
+  # Split "$@" into args1 (find's own [-H|-L|-P] [-EXdsx]-style leading options, plus the
+  # path(s)) and args2 (the expression). Purely positional: anything before the first
+  # non-"-" arg is a leading option, then paths until the first "-"-looking arg; args2 starts
+  # there. Doesn't bother special-casing value-taking leading options like GNU find's
+  # "-D debugopts", or a path that itself starts with "-" and requires '-f <path>'.
+  local -a args1=() args2=()
+  local a path_seen=0 in_expr=0
+  for a in "$@"; do
+    if [[ $in_expr == 1 ]]; then
+      args2+=( "$a" )
+    elif [[ $path_seen == 1 && $a == -* ]]; then
+      in_expr=1; args2+=( "$a" )
+    else
+      args1+=( "$a" )
+      [[ $a == -* ]] || path_seen=1
+    fi
+  done
+
+  # Have to build the arg list manually-ish bc of find's syntax
+  local d f first=1
+  local -a prune_expr=( -type d '(' )
+  for d in "${JX_GRIN_EXCLUDE_DIRS[@]}"; do
+    if [[ $first -eq 0 ]]; then prune_expr+=( -or ); fi
+    prune_expr+=( -name "$d" )
+    first=0
+  done
+  prune_expr+=( ')' -prune )
+  for f in "${JX_GRIN_EXCLUDE_FILES[@]}"; do
+    prune_expr+=( -or -name "$f" )
+  done
+
+  # Without an explicit action here, find's implicit default -print applies to the
+  # -prune branch too, so excluded dirs still show up in the output themselves. But if the
+  # caller already passed an action of their own, adding -print on top double-prints.
+  local has_action=0
+  for a in "${args2[@]}"; do
+    case "$a" in
+      -print | -print0 | -printf | -fprint | -fprint0 | -fprintf \
+          | -ls | -fls | -exec | -execdir | -ok | -okdir | -delete | -quit)
+        has_action=1; break ;;
+    esac
+  done
+  local -a tail_expr=( "${args2[@]}" )
+  if [[ $has_action == 0 ]]; then tail_expr+=( -print ); fi
+  find "${args1[@]}" \( "${prune_expr[@]}" \) -or \( "${tail_expr[@]}" \)
+}
+
 
 
 # Git stuff
