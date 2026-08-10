@@ -2,8 +2,6 @@
 
 ## General
 
-- `findd` - like `grin` but for `find`, that respects the same dir and pattern exclusions from `$JX_GRIN_EXCLUDES`
-  - Prob need to change the format of `$JX_GRIN_EXCLUDES`, bc it's currently `grep` option format, and `find` uses a different format. Maybe: Split in to two `$JX_GRIN_EXCLUDE_{DIRS,PATS}` vars that just have dir names and name patterns, ahd have `grin` and `findd` construct the appropriate command args from those.
 - Figure out the conventions for when shell env files should clobber variables vs. leave already-set variables alone.
   - Think I need this to make `~/.profile` shareable between zsh and bash, if I want `~/.zshenv` or `~/.zprofile` to source it.
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
