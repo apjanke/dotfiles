@@ -35,6 +35,10 @@ A space between `>` (or `<`) and a destination that names a *file*: `> /dev/null
 `>/dev/null`. No space when redirecting one stream to another by file descriptor: `2>&1`,
 not `2> &1`.
 
+### Quoting inside `[[ ... ]]`
+
+`[[ ... ]]` suppresses word-splitting. Omit double-quotes on variable expansions inside `[[ ]]`, except when actually needed to protect the RHS of `==`, `!=`, or `=~` from being interpreted as a pattern (glob/regex). Array expansions in `[[ ]]` still need to be quoted.
+
 ## Static checking
 
 `tools/lint` from the repo root; exits non-zero on findings.
