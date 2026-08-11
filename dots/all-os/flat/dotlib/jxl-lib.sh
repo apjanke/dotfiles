@@ -46,6 +46,8 @@
 #                             value turns the corresponding mode on.
 #   JXL_VERBOSE, JXL_DEBUG    JX-specific overrides; win over VERBOSE / DEBUG when set.
 #                             Use these if another tool's exported DEBUG gets in the way.
+#                             jxl::verbose and jxl::debug honor these directly before any
+#                             per-invocation state is seeded, so they work at source time too.
 #   TRACE                     Set to 1 for `set -o xtrace`; honored by jxl::init_script.
 #   JXL_NO_READONLY           Set to 1 to skip every `readonly` JXL would apply, so the
 #                             library can be re-sourced in a live shell while hacking on
@@ -451,8 +453,8 @@ function jxl::info()    { jxl::emit "$*"; }
 function jxl::warning() { jxl::emit "WARNING: $*"; }
 function jxl::error()   { jxl::emit "ERROR: $*"; }
 function jxl::die()     { jxl::error "$*"; exit 1; }
-function jxl::log_vrb() { if jxl::is_verbose; then jxl::info "$*"; fi; }
-function jxl::log_dbg() { if jxl::is_debug;   then jxl::info "debug: $*"; fi; }
+function jxl::verbose() { if jxl::is_verbose; then jxl::info "$*"; fi; }
+function jxl::debug()   { if jxl::is_debug;   then jxl::info "debug: $*"; fi; }
 
 function jxl::emit() {
   # All diagnostics go to stderr, including progress and success -- stdout is reserved for
@@ -470,24 +472,26 @@ function jxl::emit() {
 function jxl::now() { date +'%Y-%m-%d %H:%M:%S'; }
 
 # A bare [[ ]] is already the return status, so no if/then/else wrapper is needed.
-function jxl::is_verbose() { [[ ${_JXL_VERBOSE:-0} != 0 ]]; }
-function jxl::is_debug()   { [[ ${_JXL_DEBUG:-0}   != 0 ]]; }
+# The fallback chain matches jxl::_seed_std_vars, so these read correctly at source time too,
+# before any per-invocation state exists. Keep the two in sync.
+function jxl::is_verbose() { [[ ${_JXL_VERBOSE:-${JXL_VERBOSE:-${VERBOSE:-0}}} != 0 ]]; }
+function jxl::is_debug()   { [[ ${_JXL_DEBUG:-${JXL_DEBUG:-${DEBUG:-0}}}       != 0 ]]; }
 function jxl::is_dry_run() { [[ ${_JXL_DRY_RUN:-0} != 0 ]]; }
 
 
 # ========== Dry run ==========
 
 function jxl::dry()     { jxl::info "dry-run: would:" "$@"; }
-function jxl::dry_vrb() { jxl::log_vrb "dry-run: would:" "$@"; }
+function jxl::dry_vrb() { jxl::verbose "dry-run: would:" "$@"; }
 
 function jxl::wet() {
   # Run a command, or just report it when this is a dry run.
-  if jxl::is_dry_run; then jxl::dry "$@"; else jxl::log_vrb 'running:' "$@"; "$@"; fi
+  if jxl::is_dry_run; then jxl::dry "$@"; else jxl::verbose 'running:' "$@"; "$@"; fi
 }
 
 function jxl::wet_vrb() {
   # Same, but the dry-run report is verbose-only.
-  if jxl::is_dry_run; then jxl::dry_vrb "$@"; else jxl::log_vrb 'running:' "$@"; "$@"; fi
+  if jxl::is_dry_run; then jxl::dry_vrb "$@"; else jxl::verbose 'running:' "$@"; "$@"; fi
 }
 
 function jxl::forbid_dry_run() {
@@ -739,7 +743,7 @@ function jxl::_short_names() {
   # thous is deliberately absent -- a name worth leaving free, since it often gets defined
   # by hand for interactive use. Call jxl::thous when a script needs it.
   _jxl_names=(
-    info warning error die emit log_vrb log_dbg
+    info warning error die emit verbose debug
     is_verbose is_debug is_dry_run
     dry dry_vrb wet wet_vrb forbid_dry_run
     tick tock s2mmss say_tock timeit max_strlen
@@ -768,7 +772,7 @@ function jxl::use_short_names() {
   # Shebang scripts call this; rc files deliberately do not, so an interactive shell never
   # has ~19 common words claimed by JXL.
   #
-  # Reports what it did through jxl::log_dbg, naming anything it redefined or shadowed --
+  # Reports what it did through jxl::debug, naming anything it redefined or shadowed --
   # a silent redefinition of someone else's `error` is a miserable thing to debug.
   local arg safe=0 dry_run=0
   while [[ $# -ge 1 ]]; do
@@ -825,7 +829,7 @@ function jxl::use_short_names() {
     [[ -n $shadowed_cmd ]]   && msg="$msg Shadowed commands: ${shadowed_cmd}."
   fi
   [[ -n $skipped ]] && msg="$msg Skipped (--safe): ${skipped}."
-  jxl::log_dbg "$msg"
+  jxl::debug "$msg"
 }
 
 
@@ -1076,12 +1080,7 @@ function jxl::_call_stack() {
 
 # ========== Load notice ==========
 
-# Announce the load when debugging. Reads the interface variables directly rather than
-# $_JXL_DEBUG, which by design does not exist until a script or command function seeds it,
-# and jxl::emit rather than jxl::log_dbg, which gates on that same variable.
-if [[ ${JXL_DEBUG:-${DEBUG:-0}} != 0 ]]; then
-  jxl::emit "debug: JXL ${_JXL_VERSION} loaded from ${_JXL_LIB_PATH}"
-fi
+jxl::debug "JXL ${_JXL_VERSION} loaded from ${_JXL_LIB_PATH}"
 
 # Borrowed from Perl's `1;` at the end of a module: `source` returns the status of the
 # LAST command in the file, so without this the caller's "did it load?" check would be at

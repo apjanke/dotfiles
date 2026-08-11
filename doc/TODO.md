@@ -10,7 +10,6 @@
 - `-site`/`-user`/`-local` - is having all three excessive? File stat & IO can be slow if `/home` is on a slow network share.
 - `jxl-lib.sh` loading version check
   - `jxl-lib.sh` load-once guard (`if [[ -n "${_JXL_VERSION:-}" ]]`) should check whether a *different* version of JXL is already loaded in this shell, and emit a warning (maybe only when `$_JXL_DEBUG` is on) about the version difference, to catch the case when inconsistent source code is being used.
-- Add `jxl::debug()` like `info()`, that emits only when `$JXL_DEBUG` is on? Replaces inline `if [[ ... ]]` tests.
 - `jxl::show_shell_info()`
   - Reverse the call stack display order, so it goes top -> bottom.
   - Sort or otherwise order the variables displayed in "Caller-set interface" and "Invocation state"

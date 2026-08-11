@@ -145,7 +145,7 @@ function dotinstall::symlink() {
   if [[ -L $target ]]; then
     current_source=$(readlink "$target")
     if [[ $current_source == "$source" ]]; then
-      jxl::log_vrb "Already set up: $(printf '%-18s -> %s' "$target" "$source")"
+      jxl::verbose "Already set up: $(printf '%-18s -> %s' "$target" "$source")"
       _DOTINSTALL_ALREADY=$((_DOTINSTALL_ALREADY + 1))
     elif dotinstall::is_repo_managed "$current_source"; then
       if [[ $_DOTINSTALL_OPT_RELINK == 1 || $_DOTINSTALL_OPT_CLOBBER == 1 ]]; then
@@ -371,7 +371,7 @@ function dotinstall::install_nested_tree() {
     dir=$(dirname "$tofile")
     if [[ $dir != "." && ! -d $dir ]]; then
       jxl::wet_vrb mkdir -p "$dir"
-      jxl::log_vrb "Created directory '$dir'"
+      jxl::verbose "Created directory '$dir'"
       case "$dir" in
         .ssh | .ssh/* | .gnupg | .gnupg/*) jxl::wet_vrb chmod 700 "$dir" ;;  # sshd StrictModes
       esac

@@ -41,10 +41,29 @@ function main() {
       'prog: hi' '_JXL_EMIT_PROGNAME prefixes the program name'
 
   echo "===== verbosity and dry run ====="
-  assert_all_shells '_JXL_VERBOSE=0; jxl::log_vrb quiet 2>&1; echo end' 'end' \
-      'log_vrb is silent when not verbose'
-  assert_all_shells '_JXL_VERBOSE=1; jxl::log_vrb loud 2>&1 >/dev/null' 'loud' \
-      'log_vrb speaks when verbose'
+  assert_all_shells '_JXL_VERBOSE=0; jxl::verbose quiet 2>&1; echo end' 'end' \
+      'verbose is silent when not verbose'
+  assert_all_shells '_JXL_VERBOSE=1; jxl::verbose loud 2>&1 >/dev/null' 'loud' \
+      'verbose speaks when verbose'
+  assert_all_shells '_JXL_DEBUG=0; jxl::debug quiet 2>&1; echo end' 'end' \
+      'debug is silent when not debugging'
+  assert_all_shells '_JXL_DEBUG=1; jxl::debug loud 2>&1 >/dev/null' 'debug: loud' \
+      'debug speaks, prefixed, when debugging'
+
+  echo "===== verbose/debug fall back to the caller's environment ====="
+  # Unseeded (no _JXL_VERBOSE/_JXL_DEBUG), as at source time -- see the load notice below.
+  assert_all_shells 'unset VERBOSE DEBUG JXL_VERBOSE JXL_DEBUG
+    export DEBUG=1; jxl::debug loud 2>&1 >/dev/null' 'debug: loud' \
+      'debug honors DEBUG when unseeded'
+  assert_all_shells 'unset VERBOSE DEBUG JXL_VERBOSE JXL_DEBUG
+    export JXL_DEBUG=1; jxl::debug loud 2>&1 >/dev/null' 'debug: loud' \
+      'debug honors JXL_DEBUG when unseeded'
+  assert_all_shells 'unset VERBOSE DEBUG JXL_VERBOSE JXL_DEBUG
+    export DEBUG=1 JXL_DEBUG=0; jxl::debug quiet 2>&1; echo end' 'end' \
+      'JXL_DEBUG=0 overrides an exported DEBUG=1'
+  assert_all_shells 'unset VERBOSE DEBUG JXL_VERBOSE JXL_DEBUG
+    export VERBOSE=1; jxl::verbose loud 2>&1 >/dev/null' 'loud' \
+      'verbose honors VERBOSE when unseeded'
   assert_all_shells \
       '_JXL_DRY_RUN=1; jxl::wet echo SHOULD-NOT-RUN 2>/dev/null; echo end' 'end' \
       'wet does not run the command on a dry run'
@@ -231,6 +250,19 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
     function jx::demo() { echo "$_JXL_VERBOSE"; }
     export VERBOSE=1 JXL_VERBOSE=0
     jx-demo' '0' 'JXL_VERBOSE overrides VERBOSE'
+  assert_all_shells "$DEMO"'
+    function jx::demo() { env | grep "^DEBUG=" || echo "DEBUG=<absent>"; }
+    export DEBUG=0
+    jx-demo --debug' 'DEBUG=0' \
+      '--debug does not leak into the environment of child processes'
+  assert_all_shells "$DEMO"'
+    function jx::demo() { echo "$_JXL_DEBUG"; }
+    export DEBUG=1
+    jx-demo' '1' 'an exported DEBUG is inherited as the internal debug flag'
+  assert_all_shells "$DEMO"'
+    function jx::demo() { echo "$_JXL_DEBUG"; }
+    export DEBUG=1 JXL_DEBUG=0
+    jx-demo' '0' 'JXL_DEBUG overrides DEBUG'
 
   echo "===== short names and the include guard ====="
   assert_all_shells 'typeset -f info >/dev/null 2>&1 && echo defined || echo undefined' \
@@ -319,6 +351,9 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
       'the version is also available pre-split'
   assert_all_shells 'JXL_DEBUG=1; source "'"$LIB"'" 2>&1 | head -1' '' \
       'the load notice stays quiet on a guarded re-source'
+  assert_all_shells_fresh \
+      'export JXL_DEBUG=1; source "'"$LIB"'" 2>&1 | grep -c "debug: JXL .* loaded from"' '1' \
+      'the load notice actually fires on a first load'
 
   echo "===== command info drives the log format ====="
   assert_all_shells '
@@ -396,6 +431,27 @@ function assert_all_shells() {
   local sh got
   for sh in "${TEST_SHELLS[@]}"; do
     got=$(run_in "$sh" "$snippet")
+    if [[ $got != "$want" ]]; then
+      fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
+      return
+    fi
+  done
+  ok "$desc"
+}
+
+function run_fresh() {
+  # Like run_in, but the snippet does its own sourcing -- for cases that care about the
+  # moment $LIB is first loaded, which run_in's automatic pre-source would already be past.
+  local shell="$1" snippet="$2"
+  "$shell" -c "$snippet" 2>&1 || true
+}
+
+function assert_all_shells_fresh() {
+  # assert_all_shells, but via run_fresh. See its comment for why this pair exists.
+  local snippet="$1" want="$2" desc="$3"
+  local sh got
+  for sh in "${TEST_SHELLS[@]}"; do
+    got=$(run_fresh "$sh" "$snippet")
     if [[ $got != "$want" ]]; then
       fail "$desc" "${sh##*/} $(shell_version "$sh"): got '$got', wanted '$want'"
       return

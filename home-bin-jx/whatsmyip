@@ -311,7 +311,7 @@ function copy_to_clipboard() {
       # shellcheck disable=SC2086  # $args is a small fixed flag string, not user input
       printf '%s' "$ip" | "$name" $args || rc=$?
       if [[ $rc == 0 ]]; then
-        log_vrb "Copied to clipboard via ${name}"
+        verbose "Copied to clipboard via ${name}"
       else
         warning "Failed to copy to clipboard via '${name}' (exit ${rc})"
       fi
@@ -319,7 +319,7 @@ function copy_to_clipboard() {
     fi
   done
 
-  log_vrb "No clipboard tool found on \$PATH" \
+  verbose "No clipboard tool found on \$PATH" \
       "(looked for pbcopy, wl-copy, xclip, xsel, clip.exe); skipping copy"
 }
 
