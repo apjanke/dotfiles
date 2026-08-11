@@ -7,7 +7,6 @@
   - In `.profile`, don't auto-set all those `JX_*` variables. Just support them being unset everywhere. So you can tell the difference between something a user set and the scripts using the defaults.
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
   - Consider `: ${MY_VAR:=default}` expansion form.
-- Check in VS Code suggested-packages list: Bash IDE, Rewrap, maybe markdownlint
 - `-site`/`-user`/`-local` - is having all three excessive? File stat & IO can be slow if `/home` is on a slow network share.
 - `jxl-lib.sh` loading version check
   - `jxl-lib.sh` load-once guard (`if [[ -n "${_JXL_VERSION:-}" ]]`) should check whether a *different* version of JXL is already loaded in this shell, and emit a warning (maybe only when `$_JXL_DEBUG` is on) about the version difference, to catch the case when inconsistent source code is being used.
