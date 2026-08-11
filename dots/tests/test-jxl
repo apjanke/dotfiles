@@ -354,6 +354,14 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
   assert_all_shells_fresh \
       'export JXL_DEBUG=1; source "'"$LIB"'" 2>&1 | grep -c "debug: JXL .* loaded from"' '1' \
       'the load notice actually fires on a first load'
+  assert_all_shells_fresh \
+      '_JXL_VERSION=9.9.9; source "'"$LIB"'" 2>&1 | grep -c "WARNING: JXL version mismatch"' \
+      '1' 'a mismatched pre-set version warns'
+  assert_all_shells_fresh \
+      '_JXL_VERSION=9.9.9; source "'"$LIB"'" >/dev/null 2>&1; echo "$_JXL_VERSION"' '9.9.9' \
+      'a mismatched re-source does not clobber the already-loaded version'
+  assert_all_shells 'source "'"$LIB"'" 2>&1 | head -1' '' \
+      'a matching re-source stays quiet'
 
   echo "===== command info drives the log format ====="
   assert_all_shells '
@@ -372,7 +380,8 @@ alive' 'jxl::die in subshell mode does not kill the calling shell'
   # better be the only thing it leaves behind. Everything else is per-invocation state.
   assert_all_shells '
     for v in _JXL_VERBOSE _JXL_DEBUG _JXL_DRY_RUN _JXL_WANT_HELP \
-             _JXL_EMIT_PROGNAME _JXL_EMIT_TIMESTAMP PROGRAM_NAME; do
+             _JXL_EMIT_PROGNAME _JXL_EMIT_TIMESTAMP PROGRAM_NAME \
+             __jxl_ver_this_file __jxl_path_this_file; do
       eval "if [[ -n \${$v+x} ]]; then echo \"$v IS SET\"; fi"
     done
     echo clean' 'clean' 'sourcing sets nothing but _JXL_VERSION'

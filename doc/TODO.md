@@ -8,8 +8,6 @@
   - And figure out a place separation between a listing of all the vars that exist and their default values, vs. my actual user configuration of setting one. Distinguish between actual user configuration and shell script implementation of handling that configuration.
   - Consider `: ${MY_VAR:=default}` expansion form.
 - `-site`/`-user`/`-local` - is having all three excessive? File stat & IO can be slow if `/home` is on a slow network share.
-- `jxl-lib.sh` loading version check
-  - `jxl-lib.sh` load-once guard (`if [[ -n "${_JXL_VERSION:-}" ]]`) should check whether a *different* version of JXL is already loaded in this shell, and emit a warning (maybe only when `$_JXL_DEBUG` is on) about the version difference, to catch the case when inconsistent source code is being used.
 - `jxl::show_shell_info()`
   - Reverse the call stack display order, so it goes top -> bottom.
   - Sort or otherwise order the variables displayed in "Caller-set interface" and "Invocation state"
@@ -24,8 +22,6 @@
 - `zshrc-ohmyzsh.zsh`
   - Pull default values for ZSH_THEME up into .zshenv or .profile?
 - `.profile-early` hook - Also maybe a hook early enough in the process I can set `$JX_TRACE_SHELL_STARTUP` early enough, before any conditional stuff in `.profile` or `.{bash,bashy,zsh}rc`, to work
-- Namespace-prefix more internal variables, and add more `unset`/`unfunction` cleanup.
-- Fix everything to work with `sudo bash`.
 - Tool in zsh to quick switch to a simpler no-emoji theme suitable for copy-paste, in current session.
 - A `_jx_do` function to echo a command and then run it.
 - Make `jx-conda-load` work on bash too, and remove the unconditional conda load in `bashyrc.sh`.

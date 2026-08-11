@@ -73,56 +73,79 @@
 #
 # Defined by JXL at source time, for callers to inspect:
 #
-#   _JXL_VERSION              Version string, e.g. "0.1.0".
+#   _JXL_VERSION              Version of JXL actually loaded into this shell, e.g. "0.1.0".
 #   _JXL_VERSION_ARR          The same, pre-split: (0 1 0). Compare components from this
 #                             rather than parsing the string.
-#   _JXL_LIB_PATH             Path of the jxl-lib.sh that actually got sourced.
+#   _JXL_LIB_PATH             Path of the jxl-lib.sh that actually got loaded.
 
 # shellcheck shell=bash
 
-# Idempotent: sourcing twice is free, so scripts and rc files need not coordinate.
+# Idempotent: sourcing twice is free, so scripts and rc files need not coordinate. A
+# re-source of a *different* version warns (see below) rather than silently no-opping --
+# every file here is expected to come from one repo at one commit, so any version
+# difference at all is a bad smell worth surfacing.
 #
-# These two are the ONLY variables sourcing sets. Everything else is per-invocation state,
-# seeded by jxl::_seed_std_vars into whatever scope is current -- globals in a shebang
-# script, locals inside a command function. bashyrc.sh sources this into every interactive
-# shell, and none of that state belongs in the user's namespace.
+# _JXL_VERSION, _JXL_VERSION_ARR, and _JXL_LIB_PATH are the only variables sourcing sets.
+# Everything else is per-invocation state, seeded by jxl::_seed_std_vars into whatever
+# scope is current -- globals in a shebang script, locals inside a command function.
+# bashyrc.sh sources this into every interactive shell, and none of that state belongs in
+# the user's namespace.
 #
-if [[ -n ${_JXL_VERSION:-} ]]; then
-  return 0
-fi
-
-# SemVer-ish, kept as components so a future "at least X" check compares numbers rather
-# than parsing a string. Joined fork-free: this runs on every shell startup.
-#
-# `readonly` is safe here even though this lands in a live interactive shell: the guard
-# above means a re-source returns before ever reaching these assignments. The only cost is
-# that neither name can be unset for the life of the shell, and re-sourcing was never a
-# clean reload anyway -- it leaves renamed or deleted functions behind and does not reset
-# state set through other means. A new shell is the honest way to reload.
-_JXL_VERSION_ARR=(0 1 0)
-_JXL_VERSION=''
-for _jxl_v in "${_JXL_VERSION_ARR[@]}"; do
-  _JXL_VERSION="${_JXL_VERSION:+${_JXL_VERSION}.}${_jxl_v}"
-done
-unset _jxl_v
-
-# Which copy of this file got loaded. With a repo copy, an installed copy, and an
-# idempotence guard all in play, that is a real question -- jxl::show_shell_info reports
-# it, and the debug load notice at the bottom prints it.
+# __jxl_ver_this_file / __jxl_path_this_file describe the file now being sourced, as
+# opposed to _JXL_VERSION / _JXL_LIB_PATH, which describe whatever got loaded first. They
+# are file-local scratch, unset on every exit path below.
+__jxl_ver_this_file='0.1.0'
 if [[ -n ${BASH_VERSION:-} ]]; then
-  _JXL_LIB_PATH="${BASH_SOURCE[0]}"
+  __jxl_path_this_file="${BASH_SOURCE[0]}"
 else
   # zsh's equivalent of $BASH_SOURCE for the file being sourced. bash parses this fine
   # (verified with bash -n) and never reaches it; shellcheck reads it as bash and does not
   # know the (%) flag form.
   # shellcheck disable=SC2296
-  _JXL_LIB_PATH="${(%):-%x}"
+  __jxl_path_this_file="${(%):-%x}"
 fi
 
+if [[ -n ${_JXL_VERSION:-} ]]; then
+  if [[ ${_JXL_VERSION} != "$__jxl_ver_this_file" ]]; then
+    # Not jxl::warning: the already-loaded copy is a different version of JXL, so nothing
+    # about its function set -- including jxl::warning itself -- is guaranteed to exist or
+    # behave the same.
+    printf >&2 'WARNING: JXL version mismatch: %s already loaded from %s; ignoring %s (%s)\n' \
+      "$_JXL_VERSION" "${_JXL_LIB_PATH:-<unknown>}" "$__jxl_path_this_file" "$__jxl_ver_this_file"
+  fi
+  unset __jxl_ver_this_file __jxl_path_this_file
+  return 0
+fi
+
+# SemVer-ish, kept as components so a future "at least X" check compares numbers rather
+# than parsing a string. Split fork-free: this runs on every shell startup.
+_JXL_VERSION="$__jxl_ver_this_file"
+_JXL_VERSION_ARR=()
+_jxl_rest="$__jxl_ver_this_file"
+while [[ -n $_jxl_rest ]]; do
+  _JXL_VERSION_ARR+=("${_jxl_rest%%.*}")
+  [[ $_jxl_rest == *.* ]] || break
+  _jxl_rest="${_jxl_rest#*.}"
+done
+unset _jxl_rest
+
+# Which copy of this file got loaded. With a repo copy, an installed copy, and an
+# idempotence guard all in play, that is a real question -- jxl::show_shell_info reports
+# it, and the debug load notice at the bottom prints it.
+_JXL_LIB_PATH="$__jxl_path_this_file"
+
+# `readonly` is safe here even though this lands in a live interactive shell: the guard
+# above means a re-source returns before ever reaching these assignments. The only cost is
+# that neither name can be unset for the life of the shell, and re-sourcing was never a
+# clean reload anyway -- it leaves renamed or deleted functions behind and does not reset
+# state set through other means. A new shell is the honest way to reload.
+#
 # Set JXL_NO_READONLY=1 to skip this, for the rare in-shell reload while hacking on JXL.
 if [[ ${JXL_NO_READONLY:-0} == 0 ]]; then
   readonly _JXL_VERSION _JXL_VERSION_ARR _JXL_LIB_PATH
 fi
+
+unset __jxl_ver_this_file __jxl_path_this_file
 
 
 # ========== Entry points ==========
