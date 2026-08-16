@@ -6834,6 +6834,8 @@
 	<false/>
 	<key>ShowPaneTitles</key>
 	<true/>
+	<key>ShowSecureKeyboardEntryIndicator</key>
+	<false/>
 	<key>SmartPlacement</key>
 	<false/>
 	<key>SoundForEsc</key>
