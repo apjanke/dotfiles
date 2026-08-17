@@ -19,33 +19,46 @@ _jx_source_maybe "$HOME/.dotlib/bashyrc.sh"
 
 # Bash-specific settings
 
+set -o ignoreeof
+shopt -s cdspell
+# check the window size after each command and update LINES and COLUMNS.
+shopt -s checkwinsize
+# checkjobs and globstar arrived in bash 4.0; macOS still ships bash 3.2.
+if (( BASH_VERSINFO[0] >= 4 )); then
+  shopt -s checkjobs
+  shopt -s globstar
+fi
 
 # History and interaction
 
-# shellcheck disable=SC2034
-export HISTSIZE=32768   # Longer history (default is only 500)
-export HISTFILESIZE="$HISTSIZE"
-export HISTCONTROL=ignoredups
-export HISTIGNORE="&:ls:ls *:ls -la:[bf]g:cd:cd -:pwd:exit:date:* --help"
+HISTSIZE=32768   # Longer history (default is only 500)
+HISTFILESIZE="$HISTSIZE"
+# no duplicates or lines starting with space.
+HISTCONTROL=ignoreboth
+HISTIGNORE='&:ls:ls -la:[bf]g:cd:cd -:pwd:exit:date:* --help'
 shopt -s histappend
+#TODO: Better handle sharing history between concurrent sessions
 
-set -o ignoreeof
-shopt -s cdspell
-shopt -s checkwinsize
+# Completion
 
+# progcomp_alias arrived in bash 4.1; macOS still ships bash 3.2.
+if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 1) )); then
+  shopt -s progcomp_alias
+fi
+
+if ! shopt -oq posix; then
+  # Homebrew completion for when running on macOS
+  if command -v brew &> /dev/null; then
+    for _completion_file in "$(brew --prefix)"/etc/bash_completion.d/*; do
+      source "$_completion_file"
+    done
+  fi
+  unset _completion_file
+fi
 # Appearance
 
 if [[ $USER = "janke" ]]; then
-  export PS1="[\W] \$ "
+  export PS1='[\w]\n\$ '
 else
-  export PS1="[\h: \W] \$ "
+  export PS1='[\u@\h: \w]\n\$ '
 fi
-
-# Homebrew bash-specifics
-
-if command -v brew &> /dev/null; then
-  for _completion_file in "$(brew --prefix)"/etc/bash_completion.d/*; do
-    source "$_completion_file"
-  done
-fi
-unset _completion_file

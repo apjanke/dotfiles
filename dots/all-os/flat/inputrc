@@ -1,12 +1,32 @@
 # inputrc
 
+# Include system configuration
+$include /etc/inputrc
+
 # Use case-insensitive tab autocompletion
 set completion-ignore-case on
 
 # Make tab cycle through possible completions
-"\t": menu-complete
+# "\t": menu-complete
+
+set show-all-if-ambiguous off
+
+# do not bell on tab-completion
+set bell-style none
+# set bell-style visible
 
 # Use the string that has already been typed as the prefix for searching
 # through commands (i.e. more intelligent Up/Down behavior)
 "\e[B": history-search-forward
 "\e[A": history-search-backward
+
+# Immediately append a trailing slash when autocompleting symlinks to directories
+set mark-symlinked-directories on
+
+# Color-code matching completion prefixes (requires Bash 4.4+)
+set colored-completion-prefix on
+
+# Meta and 8-bit handling
+# Meta conversion turned off to allow input/pasting of non-ASCII Unicode
+set convert-meta off
+set output-meta on
