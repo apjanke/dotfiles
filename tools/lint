@@ -3,25 +3,32 @@
 # lint - static-check the shell scripts in this repo
 #
 # Usage:
-#   tools/lint              # check everything
-#   tools/lint -l           # just list what would be checked
-#   tools/lint FILE...      # check only these
+#   tools/lint                     # check everything
+#   tools/lint (--list | -l)       # just list what would be checked
+#   tools/lint (--list-type | -t)  # the same list, grouped by dialect
+#   tools/lint FILE...             # check only these
 #
-# Exits non-zero if either checker reports anything, so it is usable from CI.
+# Exits non-zero if any checker reports anything, so it is usable from CI.
 #
 # Scripts are found by extension (.sh/.bash/.ksh/.zsh) or, for extensionless files, by
 # reading the shebang -- the repo has a dozen-plus extensionless bash scripts in
 # home-bin-jx/, sys-setup/, and the root, and one Perl one, so "has a shebang" is not a
 # sufficient test.
 #
-# Two checkers, because shellcheck has no zsh dialect: it parses zsh as bash and reports
+# Split by dialect, because shellcheck has no zsh mode: it parses zsh as bash and reports
 # artifacts of that rather than real problems (an anonymous `() { ... }` function trips
 # SC1073). So bash/sh goes to shellcheck, and zsh gets `zsh -n`, which is syntax-only but
 # is the best available.
 #
-# bash/sh files also get a grep pass for constructs that need a bash newer than the 3.2
-# macOS ships. It's a blacklist and knows only what's in its table, so a clean run proves
-# nothing on its own -- see run_bash3_compat_check for why nothing better exists.
+# A third bucket, "bashy": the files both shells source -- ~/.profile and the ~/.dotlib
+# pieces under it. They have to parse under both, so they get every bash check AND
+# `zsh -n`. A file joins that bucket by carrying a marker comment line reading
+# `jx-lint-shells: bash zsh`; see is_dual_shell for why it is self-declared.
+#
+# bash/sh files also get `bash -n` and a grep pass for constructs that need a bash newer
+# than the 3.2 macOS ships. The grep is a blacklist and knows only what's in its table, so
+# a clean run proves nothing on its own -- see run_bash3_compat_check for why nothing
+# better exists.
 
 set -o errexit
 set -o nounset
@@ -42,27 +49,36 @@ function usage() {
 $PROGRAM_NAME - static-check the shell scripts in this repo
 
 Usage:
-  $PROGRAM_NAME [--list] [FILE...]
+  $PROGRAM_NAME [--list | --list-type] [FILE...]
   $PROGRAM_NAME --help
 
 Options:
-    -l, --list    list the files that would be checked, and exit
-    -h, --help    display help
+    -l, --list       list the files that would be checked, and exit
+    -t, --list-type  the same list, grouped by dialect, and exit
+    -h, --help       display help
 
-bash/sh files go to shellcheck; zsh files get 'zsh -n', since shellcheck has no zsh
-dialect. bash/sh files are also scanned for constructs requiring a bash newer than 3.2;
-that scan is a best-effort blacklist, not a guarantee.
+--list and --list-type are the same selection shown two ways, so the last one given wins
+rather than both printing.
+
+bash/sh files go to shellcheck and 'bash -n'; zsh files get 'zsh -n', since shellcheck
+has no zsh dialect. bash/sh files are also scanned for constructs requiring a bash newer
+than 3.2; that scan is a best-effort blacklist, not a guarantee.
 
 Suppress a bash-3.2 finding with a '# jx-lint-ok: bash4' comment on the line, or
 '# jx-lint-ok-file: bash4' anywhere in a file to exempt the whole file.
+
+Mark a file that both shells source with a '# jx-lint-shells: bash zsh' comment line;
+it then gets the bash checks and 'zsh -n' both.
 EOF
 }
 
 FILE_ARGS=()
-OPT_LIST=0
+# none | plain | typed. One variable rather than a flag per listing style, so --list and
+# --list-type cannot both be on at once and there is no "which wins" case to resolve.
+OPT_LIST_MODE=none
 
 function main() {
-  local -a sh_targets=() zsh_targets=()
+  local -a sh_targets=() zsh_targets=() bashy_targets=()
   local file rc=0
 
   cd "$(dirname "$PROGRAM_PATH")/.."
@@ -71,29 +87,49 @@ function main() {
     # An explicitly named file gets checked whatever it is; the classifier only picks
     # which checker to use, defaulting to shellcheck.
     for file in "${FILE_ARGS[@]}"; do
-      if [[ $(script_kind "$file") == zsh ]]; then
-        zsh_targets+=("$file")
-      else
-        sh_targets+=("$file")
-      fi
+      case $(script_kind "$file") in
+        zsh)   zsh_targets+=("$file")   ;;
+        bashy) bashy_targets+=("$file") ;;
+        *)     sh_targets+=("$file")    ;;
+      esac
     done
   else
-    while IFS= read -r -d '' file; do sh_targets+=("$file");  done < <(collect_targets sh)
-    while IFS= read -r -d '' file; do zsh_targets+=("$file"); done < <(collect_targets zsh)
+    while IFS= read -r -d '' file; do sh_targets+=("$file");    done < <(collect_targets sh)
+    while IFS= read -r -d '' file; do zsh_targets+=("$file");   done < <(collect_targets zsh)
+    while IFS= read -r -d '' file; do bashy_targets+=("$file"); done < <(collect_targets bashy)
   fi
 
-  if [[ ${#sh_targets[@]} -eq 0 && ${#zsh_targets[@]} -eq 0 ]]; then
+  if [[ ${#sh_targets[@]} -eq 0 && ${#zsh_targets[@]} -eq 0 && ${#bashy_targets[@]} -eq 0 ]]; then
     die "no shell scripts found"
   fi
 
-  if [[ $OPT_LIST == 1 ]]; then
-    if [[ ${#sh_targets[@]}  -gt 0 ]]; then printf '%s\n' "${sh_targets[@]}";  fi
-    if [[ ${#zsh_targets[@]} -gt 0 ]]; then printf '%s\n' "${zsh_targets[@]}"; fi
+  if [[ $OPT_LIST_MODE == plain ]]; then
+    if [[ ${#sh_targets[@]}    -gt 0 ]]; then printf '%s\n' "${sh_targets[@]}";    fi
+    if [[ ${#zsh_targets[@]}   -gt 0 ]]; then printf '%s\n' "${zsh_targets[@]}";   fi
+    if [[ ${#bashy_targets[@]} -gt 0 ]]; then printf '%s\n' "${bashy_targets[@]}"; fi
     return 0
+  fi
+
+  if [[ $OPT_LIST_MODE == typed ]]; then
+    # Labelled by dialect rather than by the internal bucket names: "bash+zsh" says what
+    # the constraint on those files actually is, where "bashy" only makes sense if you
+    # already know this script.
+    if [[ ${#sh_targets[@]}    -gt 0 ]]; then print_bucket 'bash'     "${sh_targets[@]}";    fi
+    if [[ ${#zsh_targets[@]}   -gt 0 ]]; then print_bucket 'zsh'      "${zsh_targets[@]}";   fi
+    if [[ ${#bashy_targets[@]} -gt 0 ]]; then print_bucket 'bash+zsh' "${bashy_targets[@]}"; fi
+    return 0
+  fi
+
+  # A dual-shell file has to parse under both, so it joins both lists rather than picking
+  # one. Merged after the listing above, so -l shows each file once rather than twice.
+  if [[ ${#bashy_targets[@]} -gt 0 ]]; then
+    sh_targets+=("${bashy_targets[@]}")
+    zsh_targets+=("${bashy_targets[@]}")
   fi
 
   if [[ ${#sh_targets[@]} -gt 0 ]]; then
     run_shellcheck "${sh_targets[@]}" || rc=1
+    run_bash_syntax_check "${sh_targets[@]}" || rc=1
     run_bash3_compat_check "${sh_targets[@]}" || rc=1
   fi
   if [[ ${#zsh_targets[@]} -gt 0 ]]; then
@@ -108,7 +144,8 @@ function parse_cli() {
   while [[ $# -ge 1 ]]; do
     arg="$1"; shift
     case "$arg" in
-      --list | -l)                  OPT_LIST=1 ;;
+      --list | -l)                  OPT_LIST_MODE=plain ;;
+      --list-type | -t)             OPT_LIST_MODE=typed ;;
       --help | -help | -h | '-?')   usage; exit 0 ;;
       --)                           break ;;
       -*)
@@ -119,7 +156,17 @@ function parse_cli() {
   # Whatever followed a `--` is a file name, however option-like it looks.
   FILE_ARGS+=("$@")
 
-  readonly OPT_LIST FILE_ARGS
+  readonly OPT_LIST_MODE FILE_ARGS
+}
+
+function print_bucket() {
+  # print_bucket LABEL FILE... -- a dialect heading with its files indented under it.
+  #
+  # Callers skip empty buckets rather than calling with no files, so a dialect nothing
+  # uses prints no heading at all, instead of a bare label with nothing beneath it.
+  local label="$1"; shift
+  printf '%s:\n' "$label"
+  printf '  %s\n' "$@"
 }
 
 function run_shellcheck() {
@@ -127,6 +174,24 @@ function run_shellcheck() {
   shellcheck "$@" || rc=$?
   if [[ $rc == 0 ]]; then
     info "shellcheck: clean ($# files)"
+  fi
+  return $rc
+}
+
+function run_bash_syntax_check() {
+  # bash -n parses without executing. Mostly redundant with shellcheck, which cannot
+  # analyze a file it cannot parse -- but only mostly: shellcheck brings its own parser
+  # rather than bash's, so the two can disagree, and this catches the case where the
+  # disagreement is shellcheck's fault. Cheap enough that the overlap doesn't matter.
+  #
+  # (A comment line here must not begin with the word "shellcheck": it gets read as a
+  # directive, and a malformed one is a hard SC1072 parse error. Hence the rewrap.)
+  local file rc=0
+  for file in "$@"; do
+    bash -n "$file" || rc=1
+  done
+  if [[ $rc == 0 ]]; then
+    info "bash -n: clean ($# files)"
   fi
   return $rc
 }
@@ -224,33 +289,49 @@ BASH4_CONSTRUCTS=(
   '(^|[^[:alnum:]_./-])(declare|local|typeset)[[:space:]]+-[a-zA-Z]{0,3}A([[:space:]]|$)'
       'bash 4.0: associative arrays (declare -A)'
   '(^|[^[:alnum:]_./-])(mapfile|readarray)([[:space:]]|$)'
-      'bash 4.0: mapfile / readarray'   # jx-lint-ok: bash4
+      'bash 4.0: mapfile / readarray'  # jx-lint-ok: bash4
   '\$\{[!#]?[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?(,|\^)'
-      'bash 4.0: case modification ${var,,} and ${var^^}'   # jx-lint-ok: bash4
+      'bash 4.0: case modification ${var,,} and ${var^^}'  # jx-lint-ok: bash4
   '\|[&]'
-      'bash 4.0: |& pipe of stdout and stderr (use 2>&1 |)'   # jx-lint-ok: bash4
+      'bash 4.0: |& pipe of stdout and stderr (use 2>&1 |)'  # jx-lint-ok: bash4
   '[&]>>'
-      'bash 4.0: &>> append of stdout and stderr (use >>file 2>&1)'   # jx-lint-ok: bash4
+      'bash 4.0: &>> append of stdout and stderr (use >>file 2>&1)'  # jx-lint-ok: bash4
   '(^|[^[:alnum:]_])coproc([[:space:]]|$)'
       'bash 4.0: coproc'
-  '[s]hopt[^#]*(globstar|lastpipe|autocd|checkjobs|dirspell)'
-      'bash 4.0/4.2: shell options globstar, lastpipe, autocd, checkjobs, dirspell'
+  # One entry per introducing version, not one per construct kind: the version is the
+  # actionable half of a finding, since it decides what the guard around the line has to
+  # test. Lumping these three groups together cost real time -- the merged entry read
+  # "4.0/4.2" and left progcomp_alias, actually a 5.0 option, looking covered by a 4.x
+  # guard. So the three shopt entries stay adjacent for scanning, each naming one version.
+  #
+  # Verified against the bash 3.2 through 5.2 docker images rather than the man page,
+  # which documents no version history. progcomp is present in every one of those builds,
+  # so progcomp_alias being absent before 5.0 is the option's age, not a stripped build.
+  '[s]hopt[^#]*(globstar|autocd|checkjobs|dirspell)'
+      'bash 4.0: shell options globstar, autocd, checkjobs, dirspell'
+  '[s]hopt[^#]*lastpipe'
+      'bash 4.2: shell option lastpipe'
+  '[s]hopt[^#]*progcomp_alias'
+      'bash 5.0: shell option progcomp_alias'
   ';;?[&]'
-      'bash 4.0: case fallthrough ;& and ;;&'   # jx-lint-ok: bash4
+      'bash 4.0: case fallthrough ;& and ;;&'  # jx-lint-ok: bash4
   '(^|[^[:alnum:]_./-])(declare|typeset)[[:space:]]+-[a-zA-Z]{0,3}g([[:space:]]|$)'
       'bash 4.2: declare -g'
   '(^|[^[:alnum:]_./-])(\[\[|\[|test)[[:space:]]+-v[[:space:]]'
-      'bash 4.2: [[ -v var ]] (use [[ -n ${var+x} ]])'   # jx-lint-ok: bash4
+      'bash 4.2: [[ -v var ]] (use [[ -n ${var+x} ]])'  # jx-lint-ok: bash4
   'printf[^#]*%\([^)]*\)T'
-      'bash 4.2: printf %()T time formatting'   # jx-lint-ok: bash4
+      'bash 4.2: printf %()T time formatting'  # jx-lint-ok: bash4
   '(^|[^[:alnum:]_./-])(declare|local|typeset)[[:space:]]+-[a-zA-Z]{0,3}n([[:space:]]|$)'
       'bash 4.3: namerefs (declare -n)'
   '(^|[^[:alnum:]_])wait[[:space:]]+-n([[:space:]]|$)'
       'bash 4.3: wait -n'
   '\$\{[!#]?[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])?@[a-zA-Z]\}'
-      'bash 4.4: parameter transformations ${var@Q}'   # jx-lint-ok: bash4
-  '\$\{?(EPOCHSECONDS|EPOCHREALTIME|SRANDOM|BASH_ARGV0)([^A-Za-z0-9_]|$)'
-      'bash 5.0: EPOCHSECONDS, EPOCHREALTIME, SRANDOM, BASH_ARGV0'
+      'bash 4.4: parameter transformations ${var@Q}'  # jx-lint-ok: bash4
+  '\$\{?(EPOCHSECONDS|EPOCHREALTIME|BASH_ARGV0)([^A-Za-z0-9_]|$)'
+      'bash 5.0: EPOCHSECONDS, EPOCHREALTIME, BASH_ARGV0'
+  # SRANDOM shipped a release after the three above, not alongside them.
+  '\$\{?SRANDOM([^A-Za-z0-9_]|$)'
+      'bash 5.1: SRANDOM'
 )
 
 # The colon is part of the name here, so the -file form doesn't also register as the
@@ -264,7 +345,7 @@ BASH4_SKIP_LINE_RE='jx-lint-ok:[[:space:]]*bash4'
 BASH4_SKIP_FILE_RE='^[[:space:]]*#[[:space:]]*jx-lint-ok-file:[[:space:]]*bash4$'
 
 function collect_targets() {
-  # Emits NUL-delimited paths of the given kind, sorted. Kind is "sh" or "zsh".
+  # Emits NUL-delimited paths of the given kind, sorted. Kind is "sh", "zsh", or "bashy".
   # Pre: cwd is the repo root.
   local want="$1" file
   # /local and /zz-local are gitignored scratch dirs, not part of the project.
@@ -278,20 +359,47 @@ function collect_targets() {
 }
 
 function script_kind() {
-  # Echoes "sh" for anything shellcheck can parse, "zsh" for zsh, nothing otherwise.
+  # Echoes "sh" for anything shellcheck can parse, "zsh" for zsh, "bashy" for a file both
+  # shells source, nothing otherwise.
   local file="$1" base interp
   base=${file##*/}
   case "$base" in
-    *.sh | *.bash | *.ksh) echo sh   ; return ;;
     *.zsh)                 echo zsh  ; return ;;
+    *.sh | *.bash | *.ksh)
+      if is_dual_shell "$file"; then echo bashy; else echo sh; fi
+      return ;;
     *.*)                               return ;;   # some other extension; not ours
   esac
+  # Extensionless. The marker is read before the shebang, not after, because a file meant
+  # to be sourced rather than run has no shebang to read.
+  if is_dual_shell "$file"; then echo bashy; return; fi
   interp=$(shebang_interp "$file")
   case "$interp" in
     sh | bash | ksh | dash | ash) echo sh  ;;
     zsh)                          echo zsh ;;
   esac
 }
+
+function is_dual_shell() {
+  # True if the file declares itself sourced by both bash and zsh, and so obliged to
+  # parse under both.
+  #
+  # Self-declaration rather than a list of paths kept here, because a path list goes
+  # stale on a rename with nothing to notice: the predecessor script carried exactly such
+  # a list, the tree was restructured out from under it, and the whole dual-shell check
+  # quietly stopped covering anything.
+  #
+  # No head/pipe: `head -n N | grep -q` can leave head killed by SIGPIPE once grep matches
+  # and exits, and under `set -o pipefail` that turns a match into a nonzero return. These
+  # files are small enough that reading them whole costs nothing.
+  grep -qsE -- "$DUAL_SHELL_RE" "$1"
+}
+
+# Anchored to a line holding nothing but the marker, the way BASH4_SKIP_FILE_RE is, so a
+# file that merely mentions the directive does not register as carrying it. Note the
+# regex would happily match this script: every reference to it here is worded so the
+# marker never begins a line.
+DUAL_SHELL_RE='^[[:space:]]*#[[:space:]]*jx-lint-shells:[[:space:]]*bash[[:space:]]+zsh[[:space:]]*$'
 
 function shebang_interp() {
   # Echoes the interpreter's basename from the file's shebang, or nothing.
