@@ -25,8 +25,8 @@ bindkey -e
 
 ZSH_THEME_SCM_CHECK_TIMEOUT=0.5
 #CASE_SENSITIVE=true
-if [[ -d $HOME/.oh-my-zsh-custom && $DISABLE_OH_MY_ZSH_CUSTOM != 1 ]]; then
-  ZSH_CUSTOM=$HOME/.oh-my-zsh-custom
+if [[ -d $HOME/.ohmyzsh-custom && $DISABLE_OH_MY_ZSH_CUSTOM != 1 ]]; then
+  ZSH_CUSTOM=$HOME/.ohmyzsh-custom
   ZSH_THEME=${ZSH_THEME:-apjanke-01}
 else
   ZSH_THEME=${ZSH_THEME:-robbyrussell}
