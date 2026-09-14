@@ -119,11 +119,24 @@ if [[ $__jx_uname = "Darwin" ]]; then
 
   # MacPorts setup
 
-  # MacPorts puts itself on the path at the system level (I think), so we don't have
-  # to load it, just detect whether it's there.
-  if command -v port &>/dev/null; then
-    export JX_MACPORTS_PREFIX
-    JX_MACPORTS_PREFIX=$(dirname "$(dirname "$(command -v port)")")
+  function jx-load-macports() {
+    local bindir
+    local -a bindirs
+    # In reverse order of addition
+    bindirs=( '/opt/local/sbin' '/opt/local/bin' )
+    for bindir in "${bindirs[@]}"; do
+      if [[ -d $bindir ]]; then
+        PATH="${bindir}:$PATH"
+      fi
+    done
+    if command -v port &>/dev/null; then
+      export JX_MACPORTS_PREFIX
+      JX_MACPORTS_PREFIX=$(dirname "$(dirname "$(command -v port)")")
+    fi
+  }
+
+  if [[ ${JX_USE_MACPORTS:-} = 1 ]]; then
+    jx-load-macports
   fi
 
   # Homebrew setup

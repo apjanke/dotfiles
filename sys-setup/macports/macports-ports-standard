@@ -27,7 +27,6 @@ macvim
 makedepend
 mercurial
 mpstats
-neofetch
 pkgconfig
 pstree
 rsync
@@ -35,6 +34,7 @@ sphinx
 subversion
 tiff
 tmux
+tmux-pasteboard
 trash
 tree
 watch

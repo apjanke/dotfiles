@@ -47,35 +47,8 @@ export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-0}"
 # MacOS specifics
 
 if [[ $__jx_uname = "Darwin" ]]; then
-
-  # Default $TMPPREFIX may be insecure? So clobber it.
-  # TODO: Find a citation for that and whether it's still relevant
-  # And also, OSTYPE says like "darwin23.0", not "D..." - is "==" case sensitive? Once
-  # that's resolved, remove the conditionality and either do it or don't, based on the
-  # same uname-based detection used elsewhere. And why does it say "zsh" here? Is
-  # TMPPREFIX zsh-specific?
-  if [[ ${OSTYPE:-} == Darwin* ]]; then
-    export TMPPREFIX="$TMPDIR/zsh"
-  fi
-
-  # MacPorts
-
-  function jx-load-macports() {
-    local bindir
-    local -a bindirs
-    # In reverse order of addition
-    bindirs=( '/opt/local/sbin' '/opt/local/bin' )
-    for bindir in "${bindirs[@]}"; do
-      if [[ -d $bindir ]]; then
-        PATH="${bindir}:$PATH"
-      fi
-    done
-  }
-
-  if [[ ${JX_USE_MACPORTS:-} = 1 ]]; then
-    jx-load-macports
-  fi
-
+  # Nothing here currently
+  true
 fi
 
 
