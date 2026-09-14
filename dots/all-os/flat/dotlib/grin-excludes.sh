@@ -14,6 +14,6 @@
 
 # shellcheck shell=bash
 
-: "${JX_GRIN_EXCLUDE_DIRS=.git:.cvs:.hg:.svn:venv:.venv:node_modules:wp-includes}"
+: "${JX_GRIN_EXCLUDE_DIRS=.git:.cvs:.hg:.svn:venv:.venv:node_modules:wp-includes:dist}"
 : "${JX_GRIN_EXCLUDE_FILES=*.ipynb}"
 export JX_GRIN_EXCLUDE_DIRS JX_GRIN_EXCLUDE_FILES
