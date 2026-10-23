@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# findd - find, with same dir & file exclusions as grin
+# findd - "FIND, Discriminating" - with same dir & file exclusions as grin
 #
 # See bashyrc.sh for the related grin command and its friends, and grin-excludes.sh for the
 # $JX_GRIN_EXCLUDE_DIRS/$JX_GRIN_EXCLUDE_FILES this reads and why they are scalars.

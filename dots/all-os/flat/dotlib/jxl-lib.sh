@@ -710,6 +710,9 @@ function jxl::strsplit() {
   # Empty components are dropped: callers split config strings into patterns and arguments,
   # where an empty element is never meant and often harmful (`--exclude-dir=`, `-name ''`).
   #
+  # DELIM is a literal substring for matching, not a glob pattern or regex. May be multi-
+  # character.
+  #
   # String surgery, not `for x in $str`: zsh does not word-split unquoted expansions even
   # with IFS set. Same reason as jx_maybe_add_path in bashy-paths.sh.
   local _jxl_strsplit_out="$1" _jxl_strsplit_rest="$2" _jxl_strsplit_delim="${3-:}"
