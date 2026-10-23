@@ -106,7 +106,7 @@ function jx-conda-load () {
   conda_impl_cands=('miniforge3' 'miniforge' 'anaconda3' 'anaconda')
 
   if [[ -n $ZSH_VERSION ]]; then my_shell="zsh"; else my_shell="bash"; fi
- 
+
   for conda_prefix in "${conda_prefix_cands[@]}"; do
     for conda_impl in "${conda_impl_cands[@]}"; do
       conda_path_cand="${conda_prefix}/${conda_impl}"
@@ -191,6 +191,9 @@ function jx-nvm-load() {
   done
   if [[ -n $found ]]; then
     source "${found}/nvm.sh"
+    if [[ -s "${found}/bash_completion" ]]; then
+      source "${found}/bash_completion"
+    fi
     if [[ $verbose == 1 ]]; then
       echo >&2 "Loaded NVM from ${found}"
     fi
