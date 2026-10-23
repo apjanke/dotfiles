@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+# test-findd - exercise home-bin-jx/findd, mainly its --dry-run
+#
+# Usage: ./dots/tests/test-findd   (or via ./dots/tests/run-tests)
+#
+# findd is a #!/bin/bash script, so unlike test-bashyrc this needs no per-shell loop. The
+# JX_GRIN_* exclusions are set explicitly on every call, so whatever the calling shell
+# exports does not leak in.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+cd "$(dirname "$0")/../.."
+REPO="$PWD"
+
+# shellcheck source=dots/tests/lib.sh
+source "$REPO/dots/tests/lib.sh"
+trap cleanup_fake_homes EXIT
+
+FINDD="$REPO/home-bin-jx/findd"
+
+function main() {
+  local got want
+
+  echo "===== --dry-run prints the command ====="
+  got=$(findd_with '.git:node modules' '*.ipynb' --dry-run /nonexistent -name x)
+  want="find /nonexistent '(' -type d '(' -name .git -or -name 'node modules' ')'"
+  want+=" -prune -or -name '*.ipynb' ')' -or '(' -name x -print ')'"
+  assert_eq "$got" "$want" 'prints the quoted find command, and does not run it'
+
+  got=$(findd_with '' '' --dry-run . -type f)
+  assert_eq "$got" 'find . -type f -print' 'no prune group when there are no exclusions'
+
+  got=$(findd_with '' '' --dry-run . -type f -print0)
+  assert_eq "$got" 'find . -type f -print0' 'no extra -print after an explicit action'
+
+  got=$(findd_with '' '' --dry-run 2>&1)
+  assert_contains "$got" 'must supply at least 1 argument' '--dry-run alone is an error'
+  assert_contains "$got" 'rc=1' '...with a failing exit status'
+
+  echo "===== the printed command does what findd does ====="
+  new_fake_home
+  local tree="$FAKE_HOME/tree"
+  mkdir -p "$tree/node modules/pkg" "$tree/src dir" "$tree/.git"
+  touch "$tree/node modules/pkg/x.c" "$tree/src dir/a b.c" "$tree/src dir/it's.c" \
+      "$tree/.git/y.c" "$tree/z.ipynb" "$tree/=eq.c"
+  local line ran evald
+  line=$(findd_with '.git:node modules' '*.ipynb' --dry-run "$tree" -name '*.c')
+  ran=$(findd_with '.git:node modules' '*.ipynb' "$tree" -name '*.c' | sort)
+  # Guarded: if --dry-run is broken, $line is a file listing, not code to eval.
+  if [[ $line == 'find '* ]]; then
+    evald=$(eval "$line" | sort) || true
+    assert_eq "$evald" "$ran" 'eval of the dry-run output matches a real run'
+  else
+    fail 'eval of the dry-run output matches a real run' "not a find command: $line"
+  fi
+  assert_contains "$ran" "it's.c" '...on a tree with awkward names'
+  assert_not_contains "$ran" 'pkg/x.c' '...and exclusions applied'
+
+  echo "===== --dry-run elsewhere goes to find ====="
+  local stub="$FAKE_HOME/stub-bin"
+  mkdir -p "$stub"
+  printf '#!/bin/bash\necho "RAN find $*"\n' > "$stub/find"
+  chmod +x "$stub/find"
+  got=$(PATH="$stub:$PATH" findd_with '' '' . -name --dry-run)
+  assert_eq "$got" 'RAN find . -name --dry-run -print' \
+      'a --dry-run that is not the first argument is passed through'
+}
+
+function findd_with() {
+  # A failure shows up as "rc=N" in the output rather than tripping errexit in the caller,
+  # so it fails that one assertion instead of aborting the run.
+  local dirs="$1" files="$2"; shift 2
+  JX_GRIN_EXCLUDE_DIRS="$dirs" JX_GRIN_EXCLUDE_FILES="$files" "$FINDD" "$@" \
+      || echo "rc=$?"
+}
+
+main
+print_summary
+exit $(( FAILS > 0 ? 1 : 0 ))

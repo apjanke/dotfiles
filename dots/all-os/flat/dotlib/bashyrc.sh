@@ -226,19 +226,37 @@ alias fn='find . -iname'
 # still has them when run from a shell that never loaded these rc files.
 source "$HOME/.dotlib/grin-excludes.sh"
 
-# grin - grep, with exclusions
-function grin()  { _grep_nogit -rIn    "$@"; }
-function griin() { _grep_nogit -rIn -i "$@"; }
+# grin - grep, with exclusions. A leading --dry-run prints the grep command instead.
+function grin()  { _grep_nogit -rIn  "$@"; }
+function griin() { _grep_nogit -rIni "$@"; }
+# _grep_nogit FLAGS [--dry-run] [GREP_ARG...]
+#
+# FLAGS is one word, so --dry-run can be found right after it, not wherever the wrapper's
+# own flags happen to end.
 function _grep_nogit() {
+  local _flags="$1"; shift
+  local _dry_run=0
+  if [[ ${1-} == --dry-run ]]; then _dry_run=1; shift; fi
   # Split per call, not once at load: the point is to respect edits made since.
-  local -a _excl_dirs _excl_files
+  local -a _excl_dirs _excl_files _cmd
   jxl::strsplit _excl_dirs  "${JX_GRIN_EXCLUDE_DIRS:-}"
   jxl::strsplit _excl_files "${JX_GRIN_EXCLUDE_FILES:-}"
-  grep -r ${_excl_dirs[@]+"${_excl_dirs[@]/#/--exclude-dir=}"} \
-      ${_excl_files[@]+"${_excl_files[@]/#/--exclude=}"} "$@"
+  _cmd=( grep -r ${_excl_dirs[@]+"${_excl_dirs[@]/#/--exclude-dir=}"}
+      ${_excl_files[@]+"${_excl_files[@]/#/--exclude=}"} "$_flags" "$@" )
+  if [[ $_dry_run == 1 ]]; then
+    jxl::print_cmd "${_cmd[@]}"
+  else
+    "${_cmd[@]}"
+  fi
 }
 # grhino: grep -rhIo, with dir exclusions. (Doesn't actually include a -n option; oh well.)
-function grhino()  { _grep_nogit -rhIo "$@" | sort -u; }
+function grhino() {
+  if [[ ${1-} == --dry-run ]]; then
+    _grep_nogit -rhIo "$@"
+  else
+    _grep_nogit -rhIo "$@" | sort -u
+  fi
+}
 
 # See bin-jx/findd for the related findd command, which also supports the JX_GRIN_*
 # exclusions.

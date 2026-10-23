@@ -48,6 +48,27 @@ function main() {
   done
   ok 'no ERROR on the happy path'
 
+  echo "===== grin --dry-run ====="
+  # <...> around the output turns the containment check into an exact match. The grep and
+  # sort stubs make running them visible in that output.
+  local excl='JX_GRIN_EXCLUDE_DIRS=".git:node modules"; JX_GRIN_EXCLUDE_FILES="*.ipynb"
+      function grep() { echo "RAN grep $*"; }; function sort() { echo SORTED; }'
+  local want_grep="grep -r --exclude-dir=.git"
+  want_grep+=" '--exclude-dir=node modules' '--exclude=*.ipynb'"
+  local want_ran='<RAN grep -r --exclude-dir=.git --exclude-dir=node modules'
+  want_ran+=' --exclude=*.ipynb -rIn -e --dry-run .>'
+  assert_all_shells_bashyrc "$good_home" \
+      "$excl"'; echo "<$(grin --dry-run "foo bar" .)>"' \
+      "<${want_grep} -rIn 'foo bar' .>" 'grin --dry-run prints the quoted grep command'
+  assert_all_shells_bashyrc "$good_home" "$excl"'; echo "<$(griin --dry-run x)>"' \
+      "<${want_grep} -rIni x>" 'griin --dry-run too'
+  assert_all_shells_bashyrc "$good_home" "$excl"'; echo "<$(grhino --dry-run x)>"' \
+      "<${want_grep} -rhIo x>" 'grhino --dry-run does not pipe to sort'
+  assert_all_shells_bashyrc "$good_home" "$excl"'; echo "<$(grhino x)>"' \
+      '<SORTED>' 'grhino still pipes to sort otherwise'
+  assert_all_shells_bashyrc "$good_home" "$excl"'; echo "<$(grin -e --dry-run .)>"' \
+      "$want_ran" 'a --dry-run that is not the first argument goes to grep'
+
   echo "===== with JXL missing ====="
   new_fake_home   # no .dotlib in this one at all
   assert_all_shells_bashyrc "$FAKE_HOME" 'true' 'bashyrc.sh: ERROR:' \

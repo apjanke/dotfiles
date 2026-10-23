@@ -2,6 +2,10 @@
 #
 # findd - "FIND, Discriminating" - with same dir & file exclusions as grin
 #
+# Usage: findd [--dry-run] [FIND_ARG...]
+#
+# --dry-run, only as the first argument, prints the find command instead of running it.
+#
 # See bashyrc.sh for the related grin command and its friends, and grin-excludes.sh for the
 # $JX_GRIN_EXCLUDE_DIRS/$JX_GRIN_EXCLUDE_FILES this reads and why they are scalars.
 
@@ -10,7 +14,7 @@ set -o nounset
 set -o pipefail
 if [[ ${TRACE:-0} == "1" ]]; then set -o xtrace; fi
 
-# Load JXL, for jxl::strsplit. See "Loading JXL" in dots/README.md.
+# Load JXL, for jxl::strsplit and jxl::print_cmd. See "Loading JXL" in dots/README.md.
 source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/jxl-lib.sh" \
     || { echo >&2 "findd: ERROR: failed to load jxl-lib.sh"; exit 1; }
 # Fills in the exclusion defaults only if the calling shell did not already export them.
@@ -18,6 +22,8 @@ source "$(cd "$(dirname "$0")" && pwd -P)/../dots/all-os/flat/dotlib/grin-exclud
     || { echo >&2 "findd: ERROR: failed to load grin-excludes.sh"; exit 1; }
 
 function main {
+  local dry_run=0
+  if [[ ${1-} == --dry-run ]]; then dry_run=1; shift; fi
   if [[ $# -eq 0 ]]; then
     echo >&2 'findd: error: must supply at least 1 argument'
     return 1
@@ -80,10 +86,16 @@ function main {
   local -a tail_expr=( ${args2[@]+"${args2[@]}"} )
   if [[ $has_action == 0 ]]; then tail_expr+=( -print ); fi
 
+  local -a cmd
   if [[ ${#prune_expr[@]} -gt 0 ]]; then
-    find "${args1[@]}" \( "${prune_expr[@]}" \) -or \( "${tail_expr[@]}" \)
+    cmd=( find "${args1[@]}" \( "${prune_expr[@]}" \) -or \( "${tail_expr[@]}" \) )
   else
-    find "${args1[@]}" "${tail_expr[@]}"
+    cmd=( find "${args1[@]}" "${tail_expr[@]}" )
+  fi
+  if [[ $dry_run == 1 ]]; then
+    jxl::print_cmd "${cmd[@]}"
+  else
+    "${cmd[@]}"
   fi
 }
 

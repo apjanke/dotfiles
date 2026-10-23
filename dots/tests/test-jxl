@@ -70,6 +70,24 @@ function main() {
   assert_all_shells '_JXL_DRY_RUN=0; jxl::wet echo ran 2>/dev/null' 'ran' \
       'wet runs the command otherwise'
 
+  echo "===== print_cmd ====="
+  # printf \047 and \303\251, so the snippets need no literal ' or non-ASCII.
+  assert_all_shells 'jxl::print_cmd grep -rIn --exclude-dir=.git a/b.c %h' \
+      'grep -rIn --exclude-dir=.git a/b.c %h' 'print_cmd leaves plain words bare'
+  assert_all_shells \
+      'q=$(printf "\047"); jxl::print_cmd "a b" "it${q}s" "" "\$HOME" "*.c"' \
+      "'a b' 'it'\\''s' '' '\$HOME' '*.c'" 'print_cmd single-quotes everything else'
+  assert_all_shells 'export LC_ALL=en_US.UTF-8; e=$(printf "caf\303\251")
+    jxl::print_cmd "=foo" "~/z" "$e"' \
+      "'=foo' '~/z' '$(printf 'caf\303\251')'" \
+      'print_cmd quotes a leading = or ~, and non-ASCII, the same in every shell'
+  assert_all_shells 'q=$(printf "\047"); e=$(printf "caf\303\251")
+    line=$(jxl::print_cmd x "a b" "it${q}s" "" "=foo" "~/z" "\$HOME" "*.c" \
+        "a#b" "x!y" "$e")
+    eval "set -- $line"; printf "[%s]" "$@"' \
+      "[x][a b][it's][][=foo][~/z][\$HOME][*.c][a#b][x!y][$(printf 'caf\303\251')]" \
+      'print_cmd output evals back to the original words'
+
   echo "===== array accessors ====="
   assert_all_shells 'a=(zero one two); jxl::array_at v a 0; echo "$v"' 'zero' \
       'array_at is 0-based in both shells'

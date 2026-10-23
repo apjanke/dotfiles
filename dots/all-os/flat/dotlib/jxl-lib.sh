@@ -523,6 +523,26 @@ function jxl::forbid_dry_run() {
   fi
 }
 
+# jxl::print_cmd CMD [ARG...] -- print a command line to stdout, quoted for pasting into
+# either bash or zsh.
+#
+# Not printf %q: bash 3.2's leaves a leading ~ or = bare, which zsh then expands.
+#
+# Letters spelled out, not A-Za-z: bash 3.2 matches ranges by locale collation, so é
+# falls inside a-z there but not in zsh.
+function jxl::print_cmd() {
+  local _arg _line='' _q="'" _qq="'\\''"
+  for _arg in "$@"; do
+    case "$_arg" in
+      '' | '='* | \
+          *[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./:,+@%=-]*)
+        _arg="'${_arg//"$_q"/$_qq}'" ;;
+    esac
+    _line="${_line:+${_line} }${_arg}"
+  done
+  printf '%s\n' "$_line"
+}
+
 
 # ========== Timing ==========
 
