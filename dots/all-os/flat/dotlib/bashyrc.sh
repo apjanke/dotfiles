@@ -258,6 +258,34 @@ function grhino() {
   fi
 }
 
+# Load a .env file into this shell's env vars, hopefully safely.
+function load-dotenv() {
+  local file="$1"
+  local line
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*(#|$) ]] && continue
+    if [[ ! "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      printf 'load-dotenv: skipping bad line in %s: %s\n' "$file" "$line" >&2
+      continue
+    fi
+    export "${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
+  done < "$file"
+}
+
+# Load a .env file into this shell's env vars, unsafely with 'source'.
+function source-dotenv() {
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    jxl::error "File not found: ${file}"
+  fi
+  local had_allexport=0
+  [[ -o allexport ]] && had_allexport=1
+  set -a
+  source "$file"
+  [[ "$had_allexport" == 1 ]] || set +a
+}
+
 # See bin-jx/findd for the related findd command, which also supports the JX_GRIN_*
 # exclusions.
 
