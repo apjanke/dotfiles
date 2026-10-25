@@ -149,7 +149,8 @@ fi
 jx_maybe_add_path --prepend "$HOME/bin-local"
 jx_maybe_add_path --prepend "$HOME/local/bin"
 jx_maybe_add_path --prepend "$HOME/.local/bin"
-
+# User-local go installs
+jx_maybe_add_path "$HOME/go/bin"
 
 # RVM and Ruby
 
