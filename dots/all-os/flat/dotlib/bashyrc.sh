@@ -28,7 +28,7 @@ export CLICOLOR=1
 
 export EDITOR="${EDITOR:-vi}"
 if command -v code &>/dev/null; then
-  export VISUAL="${VISUAL:-code}"
+  export VISUAL="${VISUAL:-code --wait}"
   export GUIEDITOR="${GUIEDITOR:-code}"
 else
   export VISUAL="${VISUAL:-vi}"
