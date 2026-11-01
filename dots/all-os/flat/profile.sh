@@ -30,7 +30,7 @@ export JX_CONDA_AUTOACTIVATE="${JX_CONDA_AUTOACTIVATE:-0}"
 # TODO: split in to bool "do autoload" and str "which env manager" controls
 export JX_RUBY_AUTOLOAD_ENVMGR="${JX_RUBY_AUTOLOAD_ENVMGR:-rbenv}"
 
-# NVM controls
+# NVM/NPM/Node controls
 
 # Always set NVM_DIR, to avoid NVM clobbering itself or other system things if you're
 # pulling in the executables from a system install (instead of NVM's recommended per-user
@@ -42,7 +42,8 @@ export NVM_DIR="${NVM_DIR:-${HOME}/.nvm}"
 # I enable it when I'm working with the RogCel MUD project in VS Code. So if it's on, that's
 # probably why.
 export JX_NVM_AUTOLOAD="${JX_NVM_AUTOLOAD:-0}"
-
+# Don't beg me.
+export NPM_CONFIG_FUND="${NPM_CONFIG_FUND:-false}"
 
 # MacOS specifics
 
